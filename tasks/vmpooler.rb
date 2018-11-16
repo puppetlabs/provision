@@ -1,5 +1,7 @@
-#!/opt/puppetlabs/puppet/bin/ruby
+#!/usr/bin/env ruby
 require 'json'
+require 'net/http'
+require 'yaml'
 
 def do_it(platform)
     puts "Using VMPooler for #{platform}"
@@ -19,13 +21,14 @@ def do_it(platform)
      'config' => { 'transport' => 'ssh', 'ssh' => { 'host-key-check' => false } } }] }
     # ammend inventory if exists otherwise create a file
     File.open('inventory.yaml', 'w') { |f| f.write inventory_hash.to_yaml }
+    { status: 'ok', node_name: hostname }
 end
 
 params = JSON.parse(STDIN.read)
 platform = params['platform']
 
 begin
-  result = JSON.parse(do_it(platform))
+  result = do_it(platform)
   puts result.to_json
   exit 0
 rescue => e
