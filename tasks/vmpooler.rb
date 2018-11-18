@@ -2,33 +2,78 @@
 require 'json'
 require 'net/http'
 require 'yaml'
+require 'solid_waffle'
 
-def do_it(platform)
-    puts "Using VMPooler for #{platform}"
-    vmpooler = Net::HTTP.start(ENV['VMPOOLER_HOST'] || 'vmpooler.delivery.puppetlabs.net')
+def platform_uses_ssh(platform)
+  uses_ssh = if platform !~ %r{win-}
+               true
+             else
+               false
+             end
+  uses_ssh
+end
 
-    reply = vmpooler.post("/api/v1/vm/#{platform}", '')
-    raise "Error: #{reply}: #{reply.message}" unless reply.is_a?(Net::HTTPSuccess)
+def provision(platform, inventory_location)
+  include SolidWaffle
+  vmpooler = Net::HTTP.start(ENV['VMPOOLER_HOST'] || 'vmpooler.delivery.puppetlabs.net')
 
-    data = JSON.parse(reply.body)
-    raise "VMPooler is not ok: #{data.inspect}" unless data['ok'] == true
+  reply = vmpooler.post("/api/v1/vm/#{platform}", '')
+  raise "Error: #{reply}: #{reply.message}" unless reply.is_a?(Net::HTTPSuccess)
 
-    hostname = "#{data[platform]['hostname']}.#{data['domain']}"
-    puts "reserved #{hostname} in vmpooler"
-    inventory_hash = { 'groups' =>
-  [{ 'name' => 'ssh_nodes',
-     'groups' => [{ 'name' => 'default', 'nodes' => [hostname] }],
-     'config' => { 'transport' => 'ssh', 'ssh' => { 'host-key-check' => false } } }] }
-    # ammend inventory if exists otherwise create a file
-    File.open('inventory.yaml', 'w') { |f| f.write inventory_hash.to_yaml }
-    { status: 'ok', node_name: hostname }
+  data = JSON.parse(reply.body)
+  raise "VMPooler is not ok: #{data.inspect}" unless data['ok'] == true
+
+  hostname = "#{data[platform]['hostname']}.#{data['domain']}"
+  if platform_uses_ssh(platform)
+    node = { 'name' => hostname,
+             'config' => { 'transport' => 'ssh', 'ssh' => { 'host-key-check' => false } },
+             'facts' => { 'provisioner' => 'vmpooler' } }
+    group_name = 'ssh_nodes'
+  else
+    node = { 'name' => hostname,
+             'config' => { 'transport' => 'winrm', 'winrm' => { 'user' => 'Administrator', 'password' => 'Qu@lity!', 'ssl' => false } },
+             'facts' => { 'provisioner' => 'vmpooler' } }
+    group_name = 'winrm_nodes'
+  end
+  inventory_full_path = File.join(inventory_location, 'inventory.yaml')
+  inventory_hash = if File.file?(inventory_full_path)
+                     inventory_hash_from_inventory_file(inventory_full_path)
+                   else
+                     { 'groups' => [{ 'name' => 'ssh_nodes', 'nodes' => [] }, { 'name' => 'winrm_nodes', 'nodes' => [] }] }
+                   end
+  add_node_to_group(inventory_hash, node, group_name)
+  File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
+  { status: 'ok', node_name: hostname }
+end
+
+def tear_down(node_name, inventory_location)
+  include SolidWaffle
+  uri = URI.parse("http://vcloud.delivery.puppetlabs.net/vm/#{node_name}")
+  http = Net::HTTP.new(uri.host, uri.port)
+  request = Net::HTTP::Delete.new(uri.request_uri)
+  request.basic_auth @username, @password unless @username.nil?
+  http.request(request)
+  inventory_full_path = File.join(inventory_location, 'inventory.yaml')
+  if File.file?(inventory_full_path)
+    inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
+    remove_node(inventory_hash, node_name)
+  end
+  puts "Removed #{node_name}"
+  File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
+  { status: 'ok' }
 end
 
 params = JSON.parse(STDIN.read)
 platform = params['platform']
+action = params['action']
+node_name = params['node_name']
+inventory_location = params['inventory']
+raise 'specify a node_name if tearing down' if action == 'tear_down' && node_name.nil?
+raise 'specify a platform if provisioning' if action == 'provision' && platform.nil?
 
 begin
-  result = do_it(platform)
+  result = provision(platform, inventory_location) if action == 'provision'
+  result = tear_down(node_name, inventory_location) if action == 'tear_down'
   puts result.to_json
   exit 0
 rescue => e
