@@ -68,10 +68,11 @@ def fix_ssh(platform, container)
   end
 end
 
-def provision(platform, _inventory_location)
+def provision(platform, inventory_location)
   include SolidWaffle
-  inventory_hash = if File.file?('inventory.yaml')
-                     inventory_hash_from_inventory_file
+  inventory_full_path = File.join(inventory_location, 'inventory.yaml')
+  inventory_hash = if File.file?(inventory_full_path)
+                     inventory_hash_from_inventory_file(inventory_full_path)
                    else
                      { 'groups' => [{ 'name' => 'ssh_nodes', 'nodes' => [] }, { 'name' => 'winrm_nodes', 'nodes' => [] }] }
                    end
@@ -99,7 +100,7 @@ def provision(platform, _inventory_location)
            'facts' => { 'provisioner' => 'docker', 'container_name' => full_container_name } }
   group_name = 'ssh_nodes'
   add_node_to_group(inventory_hash, node, group_name)
-  File.open('inventory.yaml', 'w') { |f| f.write inventory_hash.to_yaml }
+  File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
   { status: 'ok', node_name: hostname }
 end
 
