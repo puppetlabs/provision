@@ -81,7 +81,20 @@ In the Limitations section, list any incompatibilities, known issues, or other w
 
 ## Development
 
-In the Development section, tell other users the ground rules for contributing to your project and how they should submit their work.
+Testing/development using ruby,  you will need to pass the json parameters.
+
+```
+bundle exec ruby tasks/vmpooler.rb 
+<ENTER>
+{ "platform": "ubuntu-1604-x86_64", "action": "provision", "inventory": "/Users/tp/workspace/git/waffle_provision" } 
+<ENTER>
+<CTRL + d>
+```
+
+Testing using bolt, the second step
+```
+bundle exec bolt --modulepath /Users/tp/workspace/git/ task run waffle_provision::docker --nodes localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/waffle_provision
+```
 
 ## Release Notes/Contributors/Etc. **Optional**
 
