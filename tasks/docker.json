@@ -1,0 +1,24 @@
+{
+  "puppet_task_version": 1,
+  "supports_noop": false,
+  "description": "Provision/Tear down a machine on docket",
+  "parameters": {
+    "action": {
+      "description": "Action to perform, tear_down or provision",
+      "type": "Enum[provision, tear_down]",
+      "default": "provision"
+    },
+    "inventory": {
+      "description": "Location of the inventory file",
+      "type": "Optional[String[1]]"
+    },
+    "node_name": {
+      "description": "The name of the node",
+      "type": "Optional[String[1]]"
+    },
+    "platform": {
+      "description": "Platform to provision, eg  ubuntu:14.04",
+      "type": "Optional[String[1]]"
+    }
+  }
+}
