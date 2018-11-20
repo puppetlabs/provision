@@ -68,7 +68,7 @@ def fix_ssh(platform, container)
   end
 end
 
-def provision(platform, inventory_location)
+def provision(docker_platform, inventory_location)
   include SolidWaffle
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   inventory_hash = if File.file?(inventory_full_path)
@@ -77,7 +77,7 @@ def provision(platform, inventory_location)
                      { 'groups' => [{ 'name' => 'ssh_nodes', 'nodes' => [] }, { 'name' => 'winrm_nodes', 'nodes' => [] }] }
                    end
   warn '!!! Using private port forwarding!!!'
-  platform, version = platform.split(':')
+  platform, version = docker_platform.split(':')
   front_facing_port = 2222
   platform = platform.sub(%r{/}, '_')
   full_container_name = "#{platform}_#{version}-#{front_facing_port}"
@@ -89,7 +89,7 @@ def provision(platform, inventory_location)
     raise 'All front facing ports are in use.' if front_facing_port == 2230
   end
   puts "Provisioning #{full_container_name}"
-  creation_command = "docker run -d -it -p #{front_facing_port}:22 --name #{full_container_name} #{platform}"
+  creation_command = "docker run -d -it -p #{front_facing_port}:22 --name #{full_container_name} #{docker_platform}"
   run_local_command(creation_command)
   install_ssh_components(platform, full_container_name)
   fix_ssh(platform, full_container_name)
