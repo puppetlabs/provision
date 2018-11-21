@@ -1,83 +1,67 @@
 
 # waffle_provision
 
-Welcome to your new module. A short overview of the generated parts can be found in the PDK documentation at https://puppet.com/pdk/latest/pdk_generating_modules.html .
-
-The README template below provides a starting point with details about what information to include in your README.
+Simple tasks to provision and tear_down containers / instances and virtual machines.
 
 #### Table of Contents
 
 1. [Description](#description)
 2. [Setup - The basics of getting started with waffle_provision](#setup)
-    * [What waffle_provision affects](#what-waffle_provision-affects)
     * [Setup requirements](#setup-requirements)
-    * [Beginning with waffle_provision](#beginning-with-waffle_provision)
 3. [Usage - Configuration options and additional functionality](#usage)
 4. [Limitations - OS compatibility, etc.](#limitations)
 5. [Development - Guide for contributing to the module](#development)
 
 ## Description
 
-Briefly tell users why they might want to use your module. Explain what your module does and what kind of problems users can solve with it.
-
-This should be a fairly short description helps the user decide if your module is what they want.
+   Allows a users of puppet to provision and tear down systems. It also maintains a Bolt inventory file.
+   Provisioners so far
+   
+* Docker
+* Vmpooler (internal to puppet)
 
 ## Setup
 
-### What waffle_provision affects **OPTIONAL**
+### Setup Requirements
 
-If it's obvious what your module touches, you can skip this section. For example, folks can probably figure out that your mysql_instance module affects their MySQL instances.
-
-If there's more that they should know about, though, this is the place to mention:
-
-* Files, packages, services, or operations that the module will alter, impact, or execute.
-* Dependencies that your module automatically installs.
-* Warnings or other important notices.
-
-### Setup Requirements **OPTIONAL**
-
-If your module requires anything extra before setting up (pluginsync enabled, another module, etc.), mention it here.
-
-If your most recent release breaks compatibility or requires particular steps for upgrading, you might want to include an additional "Upgrading" section here.
-
-### Beginning with waffle_provision
-
-The very basic steps needed for a user to get the module up and running. This can include setup steps, if necessary, or it can be an example of the most basic use of the module.
+Bolt to be installed to run the tasks. Each provisioner has its own requirements. From having Docker to installed or access to private infrastructure. 
 
 ## Usage
 
-Include usage examples for common use cases in the **Usage** section. Show your users how to use your module to solve problems, and be sure to include code examples. Include three to five examples of the most important or common tasks a user can accomplish with your module. Show users how to accomplish more complex tasks that involve different types, classes, and functions working in tandem.
+There is a basic workflow.
 
-## Reference
+* provision - creates / initiates a platform and edits a bolt inventory file. 
+* tear_down - creates / initiates a system / container and edits a bolt inventory file. 
 
-This section is deprecated. Instead, add reference information to your code as Puppet Strings comments, and then use Strings to generate a REFERENCE.md in your module. For details on how to add code comments and generate documentation with Strings, see the Puppet Strings [documentation](https://puppet.com/docs/puppet/latest/puppet_strings.html) and [style guide](https://puppet.com/docs/puppet/latest/puppet_strings_style.html)
+### Docker
 
-If you aren't ready to use Strings yet, manually create a REFERENCE.md in the root of your module directory and list out each of your module's classes, defined types, facts, functions, Puppet tasks, task plans, and resource types and providers, along with the parameters for each.
+Given an docker image name it will spin up that container and setup external ssh on that platform. 
 
-For each element (class, defined type, function, and so on), list:
-
-  * The data type, if applicable.
-  * A description of what the element does.
-  * Valid values, if the data type doesn't make it obvious.
-  * Default value, if any.
-
-For example:
+provision
 
 ```
-### `pet::cat`
+bundle exec bolt --modulepath /Users/tp/ task run waffle_provision::docker --nodes localhost action=provision platform=ubuntu:14.04 inventory=/Users/tp/
+```
 
-#### Parameters
+tear_down
 
-##### `meow`
+```
+bundle exec bolt --modulepath /Users/tp/workspace/git/ task run waffle_provision::docker --nodes localhost  action=tear_down inventory=/Users/tp/workspace/git/waffle_provision node_name=localhost:2222
+```
 
-Enables vocalization in your cat. Valid options: 'string'.
+### Vmpooler
 
-Default: 'medium-loud'.
+Check http://vcloud.delivery.puppetlabs.net/vm/ for the list of availible platforms. 
+
+```
+ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run waffle_provision::vmpooler --nodes localhost  action=provision platform=ubuntu-1604-x86_64 inventory=/Users/tp/
 ```
 
 ## Limitations
 
-In the Limitations section, list any incompatibilities, known issues, or other warnings.
+* The docker task only supports linux
+* The docker task uses port forwarding, not internal ip addresses. This is because of limitations when running on the mac.
+
 
 ## Development
 
@@ -95,7 +79,3 @@ Testing using bolt, the second step
 ```
 bundle exec bolt --modulepath /Users/tp/workspace/git/ task run waffle_provision::docker --nodes localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/waffle_provision
 ```
-
-## Release Notes/Contributors/Etc. **Optional**
-
-If you aren't using changelog, put your release notes here (though you should consider using changelog). You can also add any additional sections you feel are necessary or important to include here. Please use the `## ` header.
