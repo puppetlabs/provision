@@ -14,8 +14,8 @@ Simple tasks to provision and tear_down containers / instances and virtual machi
 
 ## Description
 
-   Allows a users of puppet to provision and tear down systems. It also maintains a Bolt inventory file.
-   Provisioners so far
+Bolt tasks allowing a user to provision and tear down systems. It also maintains a Bolt inventory file.
+Provisioners so far:
    
 * Docker
 * Vmpooler (internal to puppet)
