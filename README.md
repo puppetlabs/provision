@@ -42,12 +42,30 @@ provision
 
 ```
 bundle exec bolt --modulepath /Users/tp/workspace/git/ task run waffle_provision::abs --nodes localhost action=provision platform=ubuntu-1604-x86_64 inventory=/Users/tp/workspace/git/waffle_provision
+
+Started on localhost...
+Finished on localhost:
+  {
+    "status": "ok",
+    "node_name": "yh6f4djvz7o3te6.delivery.puppetlabs.net"
+  }
+Successful on 1 node: localhost
+Ran on 1 node in 1.44 seconds
 ```
 
 tear_down
 
 ```
-bundle exec bolt --modulepath /Users/tp/workspace/git/ task run waffle_provision::abs --nodes localhost  action=tear_down inventory=/Users/tp/workspace/git/waffle_provision node_name=tmhs04x44zmczan.delivery.puppetlabs.net
+bundle exec bolt --modulepath /Users/tp/workspace/git/ task run waffle_provision::abs --nodes localhost  action=tear_down inventory=/Users/tp/workspace/git/waffle_provision node_name=yh6f4djvz7o3te6.delivery.puppetlabs.net
+
+Started on localhost...
+Finished on localhost:
+  Removed yh6f4djvz7o3te6.delivery.puppetlabs.net
+  {"status":"ok"}
+  {
+  }
+Successful on 1 node: localhost
+Ran on 1 node in 1.54 seconds
 ```
 
 ### Docker
@@ -57,21 +75,64 @@ Given an docker image name it will spin up that container and setup external ssh
 provision
 
 ```
-bundle exec bolt --modulepath /Users/tp/ task run waffle_provision::docker --nodes localhost action=provision platform=ubuntu:14.04 inventory=/Users/tp/
+bundle exec bolt --modulepath /Users/tp/workspace/git/ task run waffle_provision::docker --nodes localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/waffle_provision
+
+Started on localhost...
+Finished on localhost:
+  Provisioning ubuntu_14.04-2222
+  {"status":"ok","node_name":"localhost"}
+  {
+  }
+Successful on 1 node: localhost
+Ran on 1 node in 33.96 seconds
 ```
 
 tear_down
 
 ```
 bundle exec bolt --modulepath /Users/tp/workspace/git/ task run waffle_provision::docker --nodes localhost  action=tear_down inventory=/Users/tp/workspace/git/waffle_provision node_name=localhost:2222
+
+Started on localhost...
+Finished on localhost:
+  Removed localhost:2222
+  {"status":"ok"}
+  {
+  }
+Successful on 1 node: localhost
+Ran on 1 node in 2.02 seconds
 ```
 
 ### Vmpooler
 
 Check http://vcloud.delivery.puppetlabs.net/vm/ for the list of availible platforms. 
 
+provision
+
 ```
- bundle exec bolt --modulepath /Users/tp/workspace/git/ task run waffle_provision::vmpooler --nodes localhost  action=provision platform=ubuntu-1604-x86_64 inventory=/Users/tp/
+bundle exec bolt --modulepath /Users/tp/workspace/git/ task run waffle_provision::vmpooler --nodes localhost  action=provision platform=ubuntu-1604-x86_64 inventory=/Users/tp/workspace/git/waffle_provision
+
+Started on localhost...
+Finished on localhost:
+  {
+    "status": "ok",
+    "node_name": "gffzr8c3gipetkp.delivery.puppetlabs.net"
+  }
+Successful on 1 node: localhost
+Ran on 1 node in 1.46 seconds
+```
+
+tear_down
+
+```
+bundle exec bolt --modulepath /Users/tp/workspace/git/ task run waffle_provision::vmpooler --nodes localhost  action=tear_down inventory=/Users/tp/workspace/git/waffle_provision node_name=gffzr8c3gipetkp.delivery.puppetlabs.net
+Started on localhost...
+Finished on localhost:
+  Removed gffzr8c3gipetkp.delivery.puppetlabs.net
+  {"status":"ok"}
+  {
+  }
+Successful on 1 node: localhost
+Ran on 1 node in 1.45 seconds
 ```
 
 ## Limitations
