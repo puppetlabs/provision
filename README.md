@@ -17,6 +17,7 @@ Simple tasks to provision and tear_down containers / instances and virtual machi
 Bolt tasks allowing a user to provision and tear down systems. It also maintains a Bolt inventory file.
 Provisioners so far:
    
+* ABS (AlwaysBeScheduling)
 * Docker
 * Vmpooler (internal to puppet)
 
@@ -32,6 +33,22 @@ There is a basic workflow.
 
 * provision - creates / initiates a platform and edits a bolt inventory file. 
 * tear_down - creates / initiates a system / container and edits a bolt inventory file. 
+
+### ABS
+
+(internal to puppet) Allows you to provision machines on puppets internal pooler. Reads the '~/.fog' file for your authentication token.
+
+provision
+
+```
+bundle exec bolt --modulepath /Users/tp/workspace/git/ task run waffle_provision::abs --nodes localhost action=provision platform=ubuntu-1604-x86_64 inventory=/Users/tp/workspace/git/waffle_provision
+```
+
+tear_down
+
+```
+bundle exec bolt --modulepath /Users/tp/workspace/git/ task run waffle_provision::abs --nodes localhost  action=tear_down inventory=/Users/tp/workspace/git/waffle_provision node_name=tmhs04x44zmczan.delivery.puppetlabs.net
+```
 
 ### Docker
 
