@@ -85,7 +85,7 @@ def provision(docker_platform, inventory_location)
     front_facing_port = i
     full_container_name = "#{platform}_#{version}-#{front_facing_port}"
     ports = "#{front_facing_port}->22"
-    list_command = "docker container ls -a"
+    list_command = 'docker container ls -a'
     stdout, _stderr, _status = Open3.capture3(list_command)
     break unless stdout.include?(ports)
     raise 'All front facing ports are in use.' if front_facing_port == 2230
