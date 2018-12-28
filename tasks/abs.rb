@@ -38,7 +38,7 @@ def provision(platform, inventory_location)
   hostname = "#{data[platform]['hostname']}.#{data['domain']}"
   if platform_uses_ssh(platform)
     node = { 'name' => hostname,
-             'config' => { 'transport' => 'ssh', 'ssh' => { 'user' => 'root', 'host-key-check' => false } },
+             'config' => { 'transport' => 'ssh', 'ssh' => { 'user' => 'root', 'password' => 'Qu@lity!', 'host-key-check' => false } },
              'facts' => { 'provisioner' => 'abs' } }
     group_name = 'ssh_nodes'
   else
