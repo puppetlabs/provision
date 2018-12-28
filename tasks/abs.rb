@@ -39,12 +39,12 @@ def provision(platform, inventory_location)
   if platform_uses_ssh(platform)
     node = { 'name' => hostname,
              'config' => { 'transport' => 'ssh', 'ssh' => { 'user' => 'root', 'password' => 'Qu@lity!', 'host-key-check' => false } },
-             'facts' => { 'provisioner' => 'abs' } }
+             'facts' => { 'provisioner' => 'abs', 'platform' => platform } }
     group_name = 'ssh_nodes'
   else
     node = { 'name' => hostname,
              'config' => { 'transport' => 'winrm', 'winrm' => { 'user' => 'Administrator', 'password' => 'Qu@lity!', 'ssl' => false } },
-             'facts' => { 'provisioner' => 'abs' } }
+             'facts' => { 'provisioner' => 'abs', 'platform' => platform } }
     group_name = 'winrm_nodes'
   end
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
