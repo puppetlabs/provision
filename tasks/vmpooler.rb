@@ -13,11 +13,22 @@ def platform_uses_ssh(platform)
   uses_ssh
 end
 
+def token_from_fogfile
+  fog_file = File.join(Dir.home, '.fog')
+  raise "Cannot file fog file at #{fog_file}" unless File.file?(fog_file)
+  contents = YAML.load_file(fog_file)
+  token = contents.dig(:default, :vmpooler_token)
+  token
+end
+
 def provision(platform, inventory_location)
   include SolidWaffle
-  vmpooler = Net::HTTP.start(ENV['VMPOOLER_HOST'] || 'vmpooler.delivery.puppetlabs.net')
+  uri = URI.parse("http://vcloud.delivery.puppetlabs.net/vm/#{platform}")
+  headers = { 'X-AUTH-TOKEN' => token_from_fogfile }
 
-  reply = vmpooler.post("/api/v1/vm/#{platform}", '')
+  http = Net::HTTP.new(uri.host, uri.port)
+  request = Net::HTTP::Post.new(uri.request_uri, headers)
+  reply = http.request(request)
   raise "Error: #{reply}: #{reply.message}" unless reply.is_a?(Net::HTTPSuccess)
 
   data = JSON.parse(reply.body)
@@ -26,13 +37,13 @@ def provision(platform, inventory_location)
   hostname = "#{data[platform]['hostname']}.#{data['domain']}"
   if platform_uses_ssh(platform)
     node = { 'name' => hostname,
-             'config' => { 'transport' => 'ssh', 'ssh' => { 'host-key-check' => false } },
-             'facts' => { 'provisioner' => 'vmpooler' } }
+             'config' => { 'transport' => 'ssh', 'ssh' => { 'user' => 'root', 'password' => 'Qu@lity!', 'host-key-check' => false } },
+             'facts' => { 'provisioner' => 'vmpooler', 'platform' => platform } }
     group_name = 'ssh_nodes'
   else
     node = { 'name' => hostname,
              'config' => { 'transport' => 'winrm', 'winrm' => { 'user' => 'Administrator', 'password' => 'Qu@lity!', 'ssl' => false } },
-             'facts' => { 'provisioner' => 'vmpooler' } }
+             'facts' => { 'provisioner' => 'vmpooler', 'platform' => platform } }
     group_name = 'winrm_nodes'
   end
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
@@ -49,8 +60,9 @@ end
 def tear_down(node_name, inventory_location)
   include SolidWaffle
   uri = URI.parse("http://vcloud.delivery.puppetlabs.net/vm/#{node_name}")
+  headers = { 'X-AUTH-TOKEN' => token_from_fogfile }
   http = Net::HTTP.new(uri.host, uri.port)
-  request = Net::HTTP::Delete.new(uri.request_uri)
+  request = Net::HTTP::Delete.new(uri.request_uri, headers)
   request.basic_auth @username, @password unless @username.nil?
   http.request(request)
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
