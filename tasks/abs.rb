@@ -18,24 +18,40 @@ def token_from_fogfile
   fog_file = File.join(Dir.home, '.fog')
   raise "Cannot file fog file at #{fog_file}" unless File.file?(fog_file)
   contents = YAML.load_file(fog_file)
-  token = contents.dig(:default, :vmpooler_token)
+  token = contents.dig(:default, :abs_token)
   token
 end
 
 def provision(platform, inventory_location)
   include SolidWaffle
-  uri = URI.parse("http://vcloud.delivery.puppetlabs.net/vm/#{platform}")
-  headers = { 'X-AUTH-TOKEN' => token_from_fogfile }
-
+  uri = URI.parse('https://cinext-abs.delivery.puppetlabs.net/api/v2/request')
+  headers = { 'X-AUTH-TOKEN' => token_from_fogfile, 'Content-Type' => 'application/json' }
+  payload = { 'resources' => { platform => 1 },
+              'job' => { 'id' => Process.pid.to_s,
+                         'tags' => { 'user' => 'tp', 'jenkins_build_url' => 'https://solid-waffle' } } }
   http = Net::HTTP.new(uri.host, uri.port)
+  http.use_ssl = true
   request = Net::HTTP::Post.new(uri.request_uri, headers)
+  request.body = payload.to_json
+
+  # repeat requests until we get a 200 with a html body
   reply = http.request(request)
-  raise "Error: #{reply}: #{reply.message}" unless reply.is_a?(Net::HTTPSuccess)
-
+  raise "Error: #{reply}: #{reply.message}" unless reply.is_a?(Net::HTTPAccepted) # should be a 202
+  now = Time.now
+  counter = 1
+  loop do
+    if Time.now < now + counter
+      next
+    else
+      reply = http.request(request)
+      break if reply.code == '200' # should be a 200
+    end
+    counter += 1
+    raise 'Timeout: unable to get a 200 response in 30 seconds' if counter > 30
+  end
   data = JSON.parse(reply.body)
-  raise "VMPooler is not ok: #{data.inspect}" unless data['ok'] == true
 
-  hostname = "#{data[platform]['hostname']}.#{data['domain']}"
+  hostname = data.first['hostname']
   if platform_uses_ssh(platform)
     node = { 'name' => hostname,
              'config' => { 'transport' => 'ssh', 'ssh' => { 'user' => 'root', 'password' => 'Qu@lity!', 'host-key-check' => false } },
