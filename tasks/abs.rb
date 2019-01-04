@@ -4,6 +4,7 @@ require 'net/http'
 require 'yaml'
 require 'solid_waffle'
 require 'pry'
+require 'etc'
 
 def platform_uses_ssh(platform)
   uses_ssh = if platform !~ %r{win-}
@@ -24,11 +25,12 @@ end
 
 def provision(platform, inventory_location)
   include SolidWaffle
+  binding.pry()
   uri = URI.parse('https://cinext-abs.delivery.puppetlabs.net/api/v2/request')
   headers = { 'X-AUTH-TOKEN' => token_from_fogfile, 'Content-Type' => 'application/json' }
   payload = { 'resources' => { platform => 1 },
               'job' => { 'id' => Process.pid.to_s,
-                         'tags' => { 'user' => 'tp', 'jenkins_build_url' => 'https://solid-waffle' } } }
+                         'tags' => { 'user' => Etc.getlogin, 'jenkins_build_url' => 'https://solid-waffle' } } }
   http = Net::HTTP.new(uri.host, uri.port)
   http.use_ssl = true
   request = Net::HTTP::Post.new(uri.request_uri, headers)
