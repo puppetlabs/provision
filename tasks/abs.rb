@@ -99,10 +99,7 @@ def tear_down(node_name, inventory_location)
   reply = http.request(request)
   raise "Error: #{reply}: #{reply.message}" unless reply.code == '200'
 
-  if File.file?(inventory_full_path)
-    inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
-    remove_node(inventory_hash, node_name)
-  end
+  remove_node(inventory_hash, node_name)
 
   puts "Removed #{node_name}"
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
