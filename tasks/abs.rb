@@ -25,11 +25,11 @@ end
 
 def provision(platform, inventory_location)
   include SolidWaffle
-  binding.pry()
   uri = URI.parse('https://cinext-abs.delivery.puppetlabs.net/api/v2/request')
+  job_id = Process.pid.to_s
   headers = { 'X-AUTH-TOKEN' => token_from_fogfile, 'Content-Type' => 'application/json' }
   payload = { 'resources' => { platform => 1 },
-              'job' => { 'id' => Process.pid.to_s,
+              'job' => { 'id' => job_id,
                          'tags' => { 'user' => Etc.getlogin, 'jenkins_build_url' => 'https://solid-waffle' } } }
   http = Net::HTTP.new(uri.host, uri.port)
   http.use_ssl = true
@@ -57,12 +57,12 @@ def provision(platform, inventory_location)
   if platform_uses_ssh(platform)
     node = { 'name' => hostname,
              'config' => { 'transport' => 'ssh', 'ssh' => { 'user' => 'root', 'password' => 'Qu@lity!', 'host-key-check' => false } },
-             'facts' => { 'provisioner' => 'abs', 'platform' => platform } }
+             'facts' => { 'provisioner' => 'abs', 'platform' => platform, 'job_id' => job_id } }
     group_name = 'ssh_nodes'
   else
     node = { 'name' => hostname,
              'config' => { 'transport' => 'winrm', 'winrm' => { 'user' => 'Administrator', 'password' => 'Qu@lity!', 'ssl' => false } },
-             'facts' => { 'provisioner' => 'abs', 'platform' => platform } }
+             'facts' => { 'provisioner' => 'abs', 'platform' => platform, 'job_id' => job_id } }
     group_name = 'winrm_nodes'
   end
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
@@ -78,17 +78,29 @@ end
 
 def tear_down(node_name, inventory_location)
   include SolidWaffle
-  uri = URI.parse("http://vcloud.delivery.puppetlabs.net/vm/#{node_name}")
-  headers = { 'X-AUTH-TOKEN' => token_from_fogfile }
-  http = Net::HTTP.new(uri.host, uri.port)
-  request = Net::HTTP::Delete.new(uri.request_uri, headers)
-  request.basic_auth @username, @password unless @username.nil?
-  http.request(request)
+
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   if File.file?(inventory_full_path)
     inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
-    remove_node(inventory_hash, node_name)
+    facts = facts_from_node(inventory_hash, node_name)
+    platform = facts["platform"]
+    job_id = facts["job_id"]
   end
+
+  uri = URI.parse('https://cinext-abs.delivery.puppetlabs.net/api/v2/return')
+  headers = { 'X-AUTH-TOKEN' => token_from_fogfile, 'Content-Type' => 'application/json' }
+  payload = { 'job_id' => job_id,
+              'hosts' => [{ 'hostname' => node_name, 'type' => platform, 'engine' => 'vmpooler' }] }
+  http = Net::HTTP.new(uri.host, uri.port)
+  http.use_ssl = true
+  request = Net::HTTP::Post.new(uri.request_uri, headers)
+  request.body = payload.to_json
+
+  reply = http.request(request)
+  raise "Error: #{reply}: #{reply.message}" unless reply.code == '200'
+
+  remove_node(inventory_hash, node_name)
+
   puts "Removed #{node_name}"
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
   { status: 'ok' }
