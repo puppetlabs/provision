@@ -15,7 +15,10 @@ end
 
 def token_from_fogfile
   fog_file = File.join(Dir.home, '.fog')
-  raise "Cannot file fog file at #{fog_file}" unless File.file?(fog_file)
+  unless File.file?(fog_file)
+    puts "Cannot file fog file at #{fog_file}"
+    return nil
+  end
   contents = YAML.load_file(fog_file)
   token = contents.dig(:default, :vmpooler_token)
   token
@@ -24,10 +27,16 @@ end
 def provision(platform, inventory_location)
   include SolidWaffle
   uri = URI.parse("http://vcloud.delivery.puppetlabs.net/vm/#{platform}")
-  headers = { 'X-AUTH-TOKEN' => token_from_fogfile }
+
+  token = token_from_fogfile
+  headers = { 'X-AUTH-TOKEN' => token } unless token.nil?
 
   http = Net::HTTP.new(uri.host, uri.port)
-  request = Net::HTTP::Post.new(uri.request_uri, headers)
+  request = if token.nil?
+              Net::HTTP::Post.new(uri.request_uri)
+            else
+              Net::HTTP::Post.new(uri.request_uri, headers)
+            end
   reply = http.request(request)
   raise "Error: #{reply}: #{reply.message}" unless reply.is_a?(Net::HTTPSuccess)
 

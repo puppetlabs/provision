@@ -83,8 +83,8 @@ def tear_down(node_name, inventory_location)
   if File.file?(inventory_full_path)
     inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
     facts = facts_from_node(inventory_hash, node_name)
-    platform = facts["platform"]
-    job_id = facts["job_id"]
+    platform = facts['platform']
+    job_id = facts['job_id']
   end
 
   uri = URI.parse('https://cinext-abs.delivery.puppetlabs.net/api/v2/return')
