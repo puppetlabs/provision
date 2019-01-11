@@ -69,9 +69,14 @@ end
 def tear_down(node_name, inventory_location)
   include SolidWaffle
   uri = URI.parse("http://vcloud.delivery.puppetlabs.net/vm/#{node_name}")
-  headers = { 'X-AUTH-TOKEN' => token_from_fogfile }
+  token = token_from_fogfile
+  headers = { 'X-AUTH-TOKEN' => token } unless token.nil?
   http = Net::HTTP.new(uri.host, uri.port)
-  request = Net::HTTP::Delete.new(uri.request_uri, headers)
+  request = if token.nil?
+              Net::HTTP::Delete.new(uri.request_uri)
+            else
+              Net::HTTP::Delete.new(uri.request_uri, headers)
+            end
   request.basic_auth @username, @password unless @username.nil?
   http.request(request)
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
