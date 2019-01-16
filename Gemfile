@@ -1,7 +1,7 @@
 source ENV['GEM_SOURCE'] || 'https://rubygems.org'
 
 gem 'bolt'
-gem 'solid_waffle', path: '/Users/tp/workspace/git/solid-waffle'
+gem 'solid_waffle', git: "https://#{ENV.fetch("GITHUB_TOKEN")}@github.com/puppetlabs/solid-waffle.git"
 ruby_version_segments = Gem::Version.new(RUBY_VERSION.dup).segments
 minor_version = ruby_version_segments[0..1].join('.')
 group :development do
