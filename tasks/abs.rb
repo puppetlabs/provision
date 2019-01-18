@@ -42,12 +42,9 @@ def provision(platform, inventory_location)
   now = Time.now
   counter = 1
   loop do
-    if Time.now < now + counter
-      next
-    else
-      reply = http.request(request)
-      break if reply.code == '200' # should be a 200
-    end
+    next if Time.now < now + counter
+    reply = http.request(request)
+    break if reply.code == '200' # should be a 200
     counter += 1
     raise 'Timeout: unable to get a 200 response in 30 seconds' if counter > 30
   end
