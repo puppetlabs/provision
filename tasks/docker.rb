@@ -26,8 +26,8 @@ def install_ssh_components(platform, container)
   when %r{centos}, %r{^el-}, %r{eos}, %r{fedora}, %r{oracle}, %r{redhat}, %r{scientific}
     run_local_command("docker exec #{container} yum clean all")
     run_local_command("docker exec #{container} yum install -y sudo openssh-server openssh-clients")
-    run_local_command("docker exec #{container} [ -f /etc/ssh/ssh_host_rsa_key ] || ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N ''")
-    run_local_command("docker exec #{container} [ -f /etc/ssh/ssh_host_dsa_key ] || ssh-keygen -t dsa -f /etc/ssh/ssh_host_dsa_key -N ''")
+    run_local_command("docker exec #{container} ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N ''")
+    run_local_command("docker exec #{container} ssh-keygen -t dsa -f /etc/ssh/ssh_host_dsa_key -N ''")
   when %r{opensuse}, %r{sles}
     run_local_command("docker exec #{container} zypper -n in openssh")
     run_local_command("docker exec #{container} ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key")
