@@ -2,7 +2,7 @@
 require 'json'
 require 'net/http'
 require 'yaml'
-require 'solid_waffle'
+require 'puppet_fuse'
 require 'pry'
 require 'etc'
 
@@ -24,13 +24,13 @@ def token_from_fogfile
 end
 
 def provision(platform, inventory_location)
-  include SolidWaffle
+  include PuppetFuse
   uri = URI.parse('https://cinext-abs.delivery.puppetlabs.net/api/v2/request')
   job_id = Process.pid.to_s
   headers = { 'X-AUTH-TOKEN' => token_from_fogfile, 'Content-Type' => 'application/json' }
   payload = { 'resources' => { platform => 1 },
               'job' => { 'id' => job_id,
-                         'tags' => { 'user' => Etc.getlogin, 'jenkins_build_url' => 'https://solid-waffle' } } }
+                         'tags' => { 'user' => Etc.getlogin, 'jenkins_build_url' => 'https://puppet_fuse' } } }
   http = Net::HTTP.new(uri.host, uri.port)
   http.use_ssl = true
   request = Net::HTTP::Post.new(uri.request_uri, headers)
@@ -74,7 +74,7 @@ def provision(platform, inventory_location)
 end
 
 def tear_down(node_name, inventory_location)
-  include SolidWaffle
+  include PuppetFuse
 
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   if File.file?(inventory_full_path)

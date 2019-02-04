@@ -1,7 +1,7 @@
 {
   "puppet_task_version": 1,
   "supports_noop": false,
-  "description": "Provision/Tear down a machine on docket",
+  "description": "Provision/Tear down a machine on docker",
   "parameters": {
     "action": {
       "description": "Action to perform, tear_down or provision",
