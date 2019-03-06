@@ -2,7 +2,7 @@
 require 'json'
 require 'net/http'
 require 'yaml'
-require 'solid_waffle'
+require 'puppet_litmus'
 
 def platform_uses_ssh(platform)
   uses_ssh = if platform !~ %r{win-}
@@ -25,7 +25,7 @@ def token_from_fogfile
 end
 
 def provision(platform, inventory_location)
-  include SolidWaffle
+  include PuppetLitmus
   uri = URI.parse("http://vcloud.delivery.puppetlabs.net/vm/#{platform}")
 
   token = token_from_fogfile
@@ -67,7 +67,7 @@ def provision(platform, inventory_location)
 end
 
 def tear_down(node_name, inventory_location)
-  include SolidWaffle
+  include PuppetLitmus
   uri = URI.parse("http://vcloud.delivery.puppetlabs.net/vm/#{node_name}")
   token = token_from_fogfile
   headers = { 'X-AUTH-TOKEN' => token } unless token.nil?
