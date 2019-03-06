@@ -1,12 +1,12 @@
 
-# waffle_provision
+# Provision
 
 Simple tasks to provision and tear_down containers / instances and virtual machines.
 
 #### Table of Contents
 
 1. [Description](#description)
-2. [Setup - The basics of getting started with waffle_provision](#setup)
+2. [Setup - The basics of getting started with provision](#setup)
     * [Setup requirements](#setup-requirements)
 3. [Usage - Configuration options and additional functionality](#usage)
     * [ABS](#abs)
@@ -79,7 +79,7 @@ $ cat ~/.fog
 ##### Setting up a new macine
 
 ```
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run waffle_provision::abs --nodes localhost action=provision platform=ubuntu-1604-x86_64 inventory=/Users/tp/workspace/git/waffle_provision
+$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::abs --nodes localhost action=provision platform=ubuntu-1604-x86_64 inventory=/Users/tp/workspace/git/provision
 
 Started on localhost...
 Finished on localhost:
@@ -94,7 +94,7 @@ Ran on 1 node in 1.44 seconds
 ##### Tearing down a finished machine
 
 ```
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run waffle_provision::abs --nodes localhost  action=tear_down inventory=/Users/tp/workspace/git/waffle_provision node_name=yh6f4djvz7o3te6.delivery.puppetlabs.net
+$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::abs --nodes localhost  action=tear_down inventory=/Users/tp/workspace/git/provision node_name=yh6f4djvz7o3te6.delivery.puppetlabs.net
 
 Started on localhost...
 Finished on localhost:
@@ -113,7 +113,7 @@ Given an docker image name it will spin up that container and setup external ssh
 provision
 
 ```
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run waffle_provision::docker --nodes localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/waffle_provision
+$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --nodes localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/provision
 
 Started on localhost...
 Finished on localhost:
@@ -128,7 +128,7 @@ Ran on 1 node in 33.96 seconds
 tear_down
 
 ```
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run waffle_provision::docker --nodes localhost  action=tear_down inventory=/Users/tp/workspace/git/waffle_provision node_name=localhost:2222
+$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --nodes localhost  action=tear_down inventory=/Users/tp/workspace/git/provision node_name=localhost:2222
 
 Started on localhost...
 Finished on localhost:
@@ -147,7 +147,7 @@ Check http://vcloud.delivery.puppetlabs.net/vm/ for the list of availible platfo
 provision
 
 ```
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run waffle_provision::vmpooler --nodes localhost  action=provision platform=ubuntu-1604-x86_64 inventory=/Users/tp/workspace/git/waffle_provision
+$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vmpooler --nodes localhost  action=provision platform=ubuntu-1604-x86_64 inventory=/Users/tp/workspace/git/provision
 
 Started on localhost...
 Finished on localhost:
@@ -162,7 +162,7 @@ Ran on 1 node in 1.46 seconds
 tear_down
 
 ```
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run waffle_provision::vmpooler --nodes localhost  action=tear_down inventory=/Users/tp/workspace/git/waffle_provision node_name=gffzr8c3gipetkp.delivery.puppetlabs.net
+$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vmpooler --nodes localhost  action=tear_down inventory=/Users/tp/workspace/git/provision node_name=gffzr8c3gipetkp.delivery.puppetlabs.net
 Started on localhost...
 Finished on localhost:
   Removed gffzr8c3gipetkp.delivery.puppetlabs.net
@@ -186,12 +186,12 @@ Testing/development using ruby,  you will need to pass the json parameters.
 ```
 $ bundle exec ruby tasks/vmpooler.rb 
 <ENTER>
-{ "platform": "ubuntu-1604-x86_64", "action": "provision", "inventory": "/Users/tp/workspace/git/waffle_provision" } 
+{ "platform": "ubuntu-1604-x86_64", "action": "provision", "inventory": "/Users/tp/workspace/git/provision" } 
 <ENTER>
 <CTRL + d>
 ```
 
 Testing using bolt, the second step
 ```
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run waffle_provision::docker --nodes localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/waffle_provision
+$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --nodes localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/provision
 ```

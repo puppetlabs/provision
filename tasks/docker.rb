@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 require 'json'
 require 'yaml'
-require 'solid_waffle'
+require 'puppet_litmus'
 
 def run_local_command(command)
   stdout, stderr, status = Open3.capture3(command)
@@ -69,7 +69,7 @@ def fix_ssh(platform, container)
 end
 
 def provision(docker_platform, inventory_location)
-  include SolidWaffle
+  include PuppetLitmus
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   inventory_hash = if File.file?(inventory_full_path)
                      inventory_hash_from_inventory_file(inventory_full_path)
@@ -107,7 +107,7 @@ def provision(docker_platform, inventory_location)
 end
 
 def tear_down(node_name, inventory_location)
-  include SolidWaffle
+  include PuppetLitmus
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   raise "Unable to find '#{inventory_full_path}'" unless File.file?(inventory_full_path)
   inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
