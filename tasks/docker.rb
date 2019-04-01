@@ -92,7 +92,7 @@ def provision(docker_platform, inventory_location)
     raise 'All front facing ports are in use.' if front_facing_port == 2230
   end
   puts "Provisioning #{full_container_name}"
-  creation_command = "docker run -d -it -p #{front_facing_port}:22 --name #{full_container_name} #{docker_platform}"
+  creation_command = "docker run -d -it --privileged -p #{front_facing_port}:22 --name #{full_container_name} #{docker_platform}"
   run_local_command(creation_command)
   install_ssh_components(platform, full_container_name)
   fix_ssh(platform, full_container_name)
