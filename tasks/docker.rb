@@ -91,7 +91,6 @@ def provision(docker_platform, inventory_location)
     break unless stdout.include?(ports)
     raise 'All front facing ports are in use.' if front_facing_port == 2230
   end
-  puts "Provisioning #{full_container_name}"
   creation_command = "docker run -d -it --privileged -p #{front_facing_port}:22 --name #{full_container_name} #{docker_platform}"
   run_local_command(creation_command)
   install_ssh_components(platform, full_container_name)
@@ -104,7 +103,7 @@ def provision(docker_platform, inventory_location)
   group_name = 'ssh_nodes'
   add_node_to_group(inventory_hash, node, group_name)
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
-  { status: 'ok', node_name: hostname }
+  { status: 'ok', node_name: "#{hostname}:#{front_facing_port}" }
 end
 
 def tear_down(node_name, inventory_location)
