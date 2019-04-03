@@ -108,7 +108,7 @@ Ran on 1 node in 1.54 seconds
 
 ### Docker
 
-Given an docker image name it will spin up that container and setup external ssh on that platform. 
+Given an docker image name it will spin up that container and setup external ssh on that platform. For helpful docker tips look [here](https://github.com/puppetlabs/litmus_image/blob/master/README.md) 
 
 provision
 
