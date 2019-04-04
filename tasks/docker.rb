@@ -91,7 +91,14 @@ def provision(docker_platform, inventory_location)
     break unless stdout.include?(ports)
     raise 'All front facing ports are in use.' if front_facing_port == 2230
   end
-  creation_command = "docker run -d -it --privileged -p #{front_facing_port}:22 --name #{full_container_name} #{docker_platform}"
+  # setting volume parameter for debian9 and ubuntu16/18
+  os_string = docker_platform.split('/').last
+  if os_string == 'debian9' || os_string == 'ubuntu16.04' || os_string == 'ubuntu18.04'
+    deb_family_systemd_volume = '--volume /sys/fs/cgroup:/sys/fs/cgroup:ro'
+  else
+    deb_family_systemd_volume = ""
+  end
+  creation_command = "docker run -d -it #{deb_family_systemd_volume} --privileged -p #{front_facing_port}:22 --name #{full_container_name} #{docker_platform}"
   run_local_command(creation_command)
   install_ssh_components(platform, full_container_name)
   fix_ssh(platform, full_container_name)
