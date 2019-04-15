@@ -2,9 +2,11 @@
   "name": "puppetlabs-provision",
   "version": "0.1.0",
   "author": "puppetlabs",
-  "summary": "",
+  "summary": "Provisions and tears down containers / vms / machines through tasks.",
   "license": "Apache-2.0",
-  "source": "",
+  "source": "https://github.com/puppetlabs/provision/",
+  "project_page": "https://github.com/puppetlabs/provision/",
+  "issues_url": "https://github.com/puppetlabs/provision/issues",
   "dependencies": [
 
   ],
@@ -60,7 +62,7 @@
       "version_requirement": ">= 4.7.0 < 7.0.0"
     }
   ],
-  "pdk-version": "1.7.1",
-  "template-url": "file:///opt/puppetlabs/pdk/share/cache/pdk-templates.git",
-  "template-ref": "1.7.1-0-g810b982"
+  "pdk-version": "1.9.1",
+  "template-url": "https://github.com/puppetlabs/pdk-templates/",
+  "template-ref": "heads/master-0-gf778803"
 }

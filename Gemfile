@@ -1,7 +1,7 @@
 source ENV['GEM_SOURCE'] || 'https://rubygems.org'
 
 gem 'bolt'
-gem 'puppet_litmus', git: "https://github.com/puppetlabs/puppet_litmus.git"
+gem 'puppet_litmus'
 ruby_version_segments = Gem::Version.new(RUBY_VERSION.dup).segments
 minor_version = ruby_version_segments[0..1].join('.')
 group :development do
