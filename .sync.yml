@@ -1,3 +1,5 @@
 ---
 Gemfile:
   unmanaged: true
+Rakefile:
+  changelog_project: provision
