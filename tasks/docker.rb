@@ -70,7 +70,7 @@ def fix_ssh(platform, container)
 end
 
 def provision(docker_platform, inventory_location)
-  include PuppetLitmus
+  include PuppetLitmus::InventoryManipulation
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   inventory_hash = if File.file?(inventory_full_path)
                      inventory_hash_from_inventory_file(inventory_full_path)
@@ -112,7 +112,7 @@ def provision(docker_platform, inventory_location)
 end
 
 def tear_down(node_name, inventory_location)
-  include PuppetLitmus
+  include PuppetLitmus::InventoryManipulation
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   raise "Unable to find '#{inventory_full_path}'" unless File.file?(inventory_full_path)
   inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)

@@ -24,7 +24,7 @@ def token_from_fogfile
 end
 
 def provision(platform, inventory_location)
-  include PuppetLitmus
+  include PuppetLitmus::InventoryManipulation
   uri = URI.parse('https://cinext-abs.delivery.puppetlabs.net/api/v2/request')
   job_id = Process.pid.to_s
   headers = { 'X-AUTH-TOKEN' => token_from_fogfile, 'Content-Type' => 'application/json' }
@@ -74,7 +74,7 @@ def provision(platform, inventory_location)
 end
 
 def tear_down(node_name, inventory_location)
-  include PuppetLitmus
+  include PuppetLitmus::InventoryManipulation
 
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   if File.file?(inventory_full_path)
