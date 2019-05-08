@@ -4,11 +4,7 @@ require 'yaml'
 require 'puppet_litmus'
 
 # TODO: detect what shell to use
-@shell_command = {
-  'waffleimage/ubuntu14.04' => 'bash -lc',
-  'waffleimage/ubuntu16.04' => 'bash -lc',
-  'waffleimage/ubuntu18.04' => 'bash -lc',
-}
+@shell_command = 'bash -lc'
 
 def run_local_command(command)
   stdout, stderr, status = Open3.capture3(command)
@@ -34,8 +30,8 @@ def provision(docker_platform, inventory_location)
   creation_command = "docker run -d -it #{deb_family_systemd_volume} --privileged #{docker_platform}"
   container_id = run_local_command(creation_command).strip
   node = { 'name' => "#{container_id}",
-           'config' => { 'transport' => 'docker', 'docker' => { 'shell_command' => @shell_command[docker_platform], 'tty' => true } },
-           'facts' => { 'provisioner' => 'docker', 'container_id' => container_id } }
+           'config' => { 'transport' => 'docker', 'docker' => { 'shell_command' => "#{@shell_command}"} },
+           'facts' => { 'provisioner' => 'docker', 'container_id' => container_id, 'platform' => docker_platform } }
   group_name = 'docker_nodes'
   add_node_to_group(inventory_hash, node, group_name)
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
