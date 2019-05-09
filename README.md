@@ -11,6 +11,7 @@ Simple tasks to provision and tear_down containers / instances and virtual machi
 3. [Usage - Configuration options and additional functionality](#usage)
     * [ABS](#abs)
     * [Docker](#docker)
+    * [Vagrant](#vagrant)
     * [Vmpooler](#vmpooler)
 4. [Limitations - OS compatibility, etc.](#limitations)
 5. [Development - Guide for contributing to the module](#development)
@@ -138,6 +139,44 @@ Finished on localhost:
   }
 Successful on 1 node: localhost
 Ran on 1 node in 2.02 seconds
+```
+
+### Vagrant
+
+Tested with vagrant images:
+  * ubuntu/trusty64
+  * ubuntu/xenial64
+  * ubuntu/bionic64
+  * debian/jessie64
+  * centos/7
+
+provision
+
+```
+$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vagrant --nodes localhost  action=provision platform=ubuntu/xenial64 inventory=/Users/tp/workspace/git/provision
+
+Started on localhost...
+Finished on localhost:
+  {
+    "status": "ok",
+    "node_name": "127.0.0.1:2222"
+  }
+Successful on 1 node: localhost
+Ran on 1 node in 51.98 seconds
+```
+
+tear_down
+```
+$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vagrant --nodes localhost  action=tear_down inventory=/Users/tp/workspace/git/provision node_name=127.0.0.1:2222
+
+Started on localhost...
+Finished on localhost:
+  Removed 127.0.0.1:2222
+  {"status":"ok"}
+  {
+  }
+Successful on 1 node: localhost
+Ran on 1 node in 4.52 seconds
 ```
 
 ### Vmpooler
