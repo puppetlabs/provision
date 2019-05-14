@@ -104,7 +104,7 @@ def provision(docker_platform, inventory_location)
   node = { 'name' => "#{hostname}:#{front_facing_port}",
            'config' => { 'transport' => 'ssh',
                          'ssh' => { 'user' => 'root', 'password' => 'root', 'port' => front_facing_port, 'host-key-check' => false } },
-           'facts' => { 'provisioner' => 'docker', 'container_name' => full_container_name } }
+           'facts' => { 'provisioner' => 'docker', 'container_name' => full_container_name, 'platform' => docker_platform} }
   group_name = 'ssh_nodes'
   add_node_to_group(inventory_hash, node, group_name)
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
