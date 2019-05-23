@@ -31,7 +31,7 @@ def provision(docker_platform, inventory_location)
   container_id = run_local_command(creation_command).strip
   node = { 'name' => container_id,
            'config' => { 'transport' => 'docker', 'docker' => { 'shell-command' => @shell_command } },
-           'facts' => { 'provisioner' => 'docker', 'container_id' => container_id, 'platform' => docker_platform } }
+           'facts' => { 'provisioner' => 'docker_exp', 'container_id' => container_id, 'platform' => docker_platform } }
   group_name = 'docker_nodes'
   add_node_to_group(inventory_hash, node, group_name)
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
