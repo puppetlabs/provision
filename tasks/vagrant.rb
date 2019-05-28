@@ -58,8 +58,8 @@ def configure_ssh(platform, ssh_config_path)
   Net::SSH.start(
     ssh_config['hostname'],
     ssh_config['user'],
-    port => ssh_config['port'],
-    keys => ssh_config['identityfile'],
+    port: ssh_config['port'],
+    keys: ssh_config['identityfile'],
   ) do |session|
     session.exec!('sudo su -c "cp -r .ssh /root/."')
     session.exec!('sudo su -c "sed -i \"s/.*PermitUserEnvironment\s.*/PermitUserEnvironment yes/g\" /etc/ssh/sshd_config"')
