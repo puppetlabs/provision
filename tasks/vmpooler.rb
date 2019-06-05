@@ -26,7 +26,12 @@ end
 
 def provision(platform, inventory_location)
   include PuppetLitmus::InventoryManipulation
-  uri = URI.parse("http://vcloud.delivery.puppetlabs.net/vm/#{platform}")
+  vmpooler_hostname = if ENV['VMPOOLER_HOSTNAME'].nil?
+                        'vcloud.delivery.puppetlabs.net'
+                      else
+                        ENV['VMPOOLER_HOSTNAME']
+                      end
+  uri = URI.parse("http://#{vmpooler_hostname}/vm/#{platform}")
 
   token = token_from_fogfile
   headers = { 'X-AUTH-TOKEN' => token } unless token.nil?
@@ -68,7 +73,12 @@ end
 
 def tear_down(node_name, inventory_location)
   include PuppetLitmus::InventoryManipulation
-  uri = URI.parse("http://vcloud.delivery.puppetlabs.net/vm/#{node_name}")
+  vmpooler_hostname = if ENV['VMPOOLER_HOSTNAME'].nil?
+                        'vcloud.delivery.puppetlabs.net'
+                      else
+                        ENV['VMPOOLER_HOSTNAME']
+                      end
+  uri = URI.parse("http://#{vmpooler_hostname}/vm/#{node_name}")
   token = token_from_fogfile
   headers = { 'X-AUTH-TOKEN' => token } unless token.nil?
   http = Net::HTTP.new(uri.host, uri.port)

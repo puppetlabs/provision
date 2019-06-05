@@ -182,6 +182,11 @@ Ran on 1 node in 4.52 seconds
 ### Vmpooler
 
 Check http://vcloud.delivery.puppetlabs.net/vm/ for the list of availible platforms. 
+Environment variables, can modify its behaviour:
+VMPOOLER_HOSTNAME, will change the default hostname used to connect to the vmpooler instance.
+```
+export VMPOOLER_HOSTNAME=vcloud.delivery.puppetlabs.net
+```
 
 provision
 
