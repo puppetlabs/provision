@@ -48,9 +48,9 @@ def configure_ssh(platform, ssh_config_path)
   run_local_command(command, @vagrant_env)
   ssh_config = Net::SSH::Config.load(ssh_config_path, 'default')
   case platform
-  when %r{/debian.*|ubuntu.*/}
+  when %r{debian.*|ubuntu.*}
     restart_command = 'service ssh restart'
-  when %r{/centos.*/}
+  when %r{centos.*}
     restart_command = 'systemctl restart sshd.service'
   else
     raise ArgumentError, "Unsupported Platform: '#{platform}'"
