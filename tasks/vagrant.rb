@@ -5,22 +5,7 @@ require 'yaml'
 require 'puppet_litmus'
 require 'fileutils'
 require 'net/ssh'
-
-def run_local_command(command, wd = Dir.pwd)
-  stdout, stderr, status = Open3.capture3(command, chdir: wd)
-  error_message = "Attempted to run\ncommand:'#{command}'\nstdout:#{stdout}\nstderr:#{stderr}"
-  raise error_message unless status.to_i.zero?
-  stdout
-end
-
-def platform_uses_ssh(platform)
-  uses_ssh = if platform !~ %r{win-}
-               true
-             else
-               false
-             end
-  uses_ssh
-end
+require_relative '../lib/task_helper'
 
 def generate_vagrantfile(file_path, platform)
   vf = <<-VF
@@ -71,11 +56,7 @@ end
 def provision(platform, inventory_location)
   include PuppetLitmus
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
-  inventory_hash = if File.file?(inventory_full_path)
-                     inventory_hash_from_inventory_file(inventory_full_path)
-                   else
-                     { 'groups' => [{ 'name' => 'ssh_nodes', 'nodes' => [] }, { 'name' => 'winrm_nodes', 'nodes' => [] }] }
-                   end
+  inventory_hash = get_inventory_hash(inventory_full_path)
   vagrant_dirs = Dir.glob("#{File.join(inventory_location, '.vagrant')}/*/").map { |d| File.basename(d) }
   @vagrant_env = File.join(inventory_location, '.vagrant', get_vagrant_dir(platform, vagrant_dirs))
   FileUtils.mkdir_p @vagrant_env

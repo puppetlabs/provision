@@ -2,25 +2,15 @@
 require 'json'
 require 'yaml'
 require 'puppet_litmus'
+require_relative '../lib/task_helper'
 
 # TODO: detect what shell to use
 @shell_command = 'bash -lc'
 
-def run_local_command(command)
-  stdout, stderr, status = Open3.capture3(command)
-  error_message = "Attempted to run\ncommand:'#{command}'\nstdout:#{stdout}\nstderr:#{stderr}"
-  raise error_message unless status.to_i.zero?
-  stdout
-end
-
 def provision(docker_platform, inventory_location)
   include PuppetLitmus::InventoryManipulation
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
-  inventory_hash = if File.file?(inventory_full_path)
-                     inventory_hash_from_inventory_file(inventory_full_path)
-                   else
-                     { 'groups' => [{ 'name' => 'docker_nodes', 'nodes' => [] }, { 'name' => 'ssh_nodes', 'nodes' => [] }, { 'name' => 'winrm_nodes', 'nodes' => [] }] }
-                   end
+  inventory_hash = get_inventory_hash(inventory_full_path)
 
   deb_family_systemd_volume = if (docker_platform =~ %r{debian|ubuntu}) && (docker_platform !~ %r{debian8|ubuntu14})
                                 '--volume /sys/fs/cgroup:/sys/fs/cgroup:ro'
