@@ -2,13 +2,7 @@
 require 'json'
 require 'yaml'
 require 'puppet_litmus'
-
-def run_local_command(command)
-  stdout, stderr, status = Open3.capture3(command)
-  error_message = "Attempted to run\ncommand:'#{command}'\nstdout:#{stdout}\nstderr:#{stderr}"
-  raise error_message unless status.to_i.zero?
-  stdout
-end
+require_relative '../lib/task_helper'
 
 def install_ssh_components(platform, container)
   case platform
@@ -72,11 +66,7 @@ end
 def provision(docker_platform, inventory_location)
   include PuppetLitmus::InventoryManipulation
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
-  inventory_hash = if File.file?(inventory_full_path)
-                     inventory_hash_from_inventory_file(inventory_full_path)
-                   else
-                     { 'groups' => [{ 'name' => 'ssh_nodes', 'nodes' => [] }, { 'name' => 'winrm_nodes', 'nodes' => [] }] }
-                   end
+  inventory_hash = get_inventory_hash(inventory_full_path)
   warn '!!! Using private port forwarding!!!'
   platform, version = docker_platform.split(':')
   front_facing_port = 2222

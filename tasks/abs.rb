@@ -3,25 +3,8 @@ require 'json'
 require 'net/http'
 require 'yaml'
 require 'puppet_litmus'
-require 'pry'
 require 'etc'
-
-def platform_uses_ssh(platform)
-  uses_ssh = if platform !~ %r{win-}
-               true
-             else
-               false
-             end
-  uses_ssh
-end
-
-def token_from_fogfile
-  fog_file = File.join(Dir.home, '.fog')
-  raise "Cannot file fog file at #{fog_file}" unless File.file?(fog_file)
-  contents = YAML.load_file(fog_file)
-  token = contents.dig(:default, :abs_token)
-  token
-end
+require_relative '../lib/task_helper'
 
 def provision(platform, inventory_location)
   include PuppetLitmus::InventoryManipulation
@@ -63,11 +46,7 @@ def provision(platform, inventory_location)
     group_name = 'winrm_nodes'
   end
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
-  inventory_hash = if File.file?(inventory_full_path)
-                     inventory_hash_from_inventory_file(inventory_full_path)
-                   else
-                     { 'groups' => [{ 'name' => 'ssh_nodes', 'nodes' => [] }, { 'name' => 'winrm_nodes', 'nodes' => [] }] }
-                   end
+  inventory_hash = get_inventory_hash(inventory_full_path)
   add_node_to_group(inventory_hash, node, group_name)
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
   { status: 'ok', node_name: hostname }
