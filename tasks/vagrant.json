@@ -19,6 +19,20 @@
     "platform": {
       "description": "Platform to provision, eg  ubuntu:14.04",
       "type": "Optional[String[1]]"
+    },
+    "hyperv_vswitch": {
+      "description": "The Hyper-V virtual switch to spin the vagrant image up on",
+      "type": "Optional[String[1]]",
+      "default": "Default Switch"
+    },
+    "hyperv_smb_username": {
+      "description": "The username on the Hyper-V machine to use for authenticating the shared folder. Required to use Hyper-V.",
+      "type": "Optional[String[1]]"
+    },
+    "hyperv_smb_password": {
+      "description": "The password on the Hyper-V machine to use for authenticating the shared folder. Required to use Hyper-V.",
+      "type": "Optional[String[1]]",
+      "sensitive": true
     }
   },
   "files": [
