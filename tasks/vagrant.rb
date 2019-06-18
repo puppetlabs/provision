@@ -7,17 +7,36 @@ require 'fileutils'
 require 'net/ssh'
 require_relative '../lib/task_helper'
 
-def generate_vagrantfile(file_path, platform)
+def generate_vagrantfile(file_path, platform, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password)
+  if on_windows?
+    # Even though this is the default value in the metadata it isn't sent along if tthe parameter is unspecified for some reason.
+    network = "config.vm.network 'public_network', bridge: '#{hyperv_vswitch.nil? ? 'Default Switch' : hyperv_vswitch}'"
+    unless hyperv_smb_username.nil? || hyperv_smb_password.nil?
+      synced_folder = "config.vm.synced_folder '.', '/vagrant', type: 'smb', smb_username: '#{hyperv_smb_username}', smb_password: '#{hyperv_smb_password}'"
+    end
+  end
   vf = <<-VF
 Vagrant.configure(\"2\") do |config|
   config.vm.box = '#{platform}'
   config.vm.boot_timeout = 600
   config.ssh.insert_key = false
+  #{network}
+  #{synced_folder}
 end
 VF
   File.open(file_path, 'w') do |f|
     f.write(vf)
   end
+end
+
+def on_windows?
+  # Stolen directly from Puppet::Util::Platform.windows?
+  # Ruby only sets File::ALT_SEPARATOR on Windows and the Ruby standard
+  # library uses that to test what platform it's on. In some places we
+  # would use Puppet.features.microsoft_windows?, but this method can be
+  # used to determine the behavior of the underlying system without
+  # requiring features to be initialized and without side effect.
+  !!File::ALT_SEPARATOR # rubocop:disable Style/DoubleNegation
 end
 
 def get_vagrant_dir(platform, vagrant_dirs, i = 0)
@@ -53,19 +72,20 @@ def configure_ssh(platform, ssh_config_path)
   ssh_config
 end
 
-def provision(platform, inventory_location)
+def provision(platform, inventory_location, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password)
   include PuppetLitmus
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   inventory_hash = get_inventory_hash(inventory_full_path)
   vagrant_dirs = Dir.glob("#{File.join(inventory_location, '.vagrant')}/*/").map { |d| File.basename(d) }
   @vagrant_env = File.join(inventory_location, '.vagrant', get_vagrant_dir(platform, vagrant_dirs))
   FileUtils.mkdir_p @vagrant_env
-  generate_vagrantfile(File.join(@vagrant_env, 'Vagrantfile'), platform)
-  command = 'vagrant up --provider virtualbox'
+  generate_vagrantfile(File.join(@vagrant_env, 'Vagrantfile'), platform, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password)
+  provider = on_windows? ? 'hyperv' : 'virtualbox'
+  command = "vagrant up --provider #{provider}"
   run_local_command(command, @vagrant_env)
   ssh_config = configure_ssh(platform, File.join(@vagrant_env, 'ssh-config'))
   node_name = "#{ssh_config['hostname']}:#{ssh_config['port']}"
-  vm_id = File.read(File.join(@vagrant_env, '.vagrant', 'machines', 'default', 'virtualbox', 'index_uuid'))
+  vm_id = File.read(File.join(@vagrant_env, '.vagrant', 'machines', 'default', provider, 'index_uuid'))
   if platform_uses_ssh(platform)
     node = { 'name' => node_name,
              'config' => { 'transport' => 'ssh', 'ssh' => { 'user' => 'root', 'host' => ssh_config['hostname'], 'private-key' => ssh_config['identityfile'][0],
@@ -100,15 +120,19 @@ def tear_down(node_name, inventory_location)
 end
 
 params = JSON.parse(STDIN.read)
+puts params
 platform = params['platform']
 action = params['action']
 node_name = params['node_name']
 inventory_location = params['inventory']
+hyperv_vswitch = params['hyperv_vswitch'].nil? ? ENV['LITMUS_HYPERV_VSWITCH'] : params['hyperv_vswitch']
+hyperv_smb_username = params['hyperv_smb_username'].nil? ? ENV['LITMUS_HYPERV_SMB_USERNAME'] : params['hyperv_smb_username']
+hyperv_smb_password = params['hyperv_smb_password'].nil? ? ENV['LITMUS_HYPERV_SMB_PASSWORD'] : params['hyperv_smb_password']
 raise 'specify a node_name if tearing down' if action == 'tear_down' && node_name.nil?
 raise 'specify a platform if provisioning' if action == 'provision' && platform.nil?
 
 begin
-  result = provision(platform, inventory_location) if action == 'provision'
+  result = provision(platform, inventory_location, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password) if action == 'provision'
   result = tear_down(node_name, inventory_location) if action == 'tear_down'
   puts result.to_json
   exit 0
