@@ -27,13 +27,13 @@ def install_ssh_components(platform, container)
     run_local_command("docker exec #{container} zypper -n in openssh")
     run_local_command("docker exec #{container} ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key")
     run_local_command("docker exec #{container} ssh-keygen -t dsa -f /etc/ssh/ssh_host_dsa_key")
-    run_local_command("docker exec #{container} sed -ri 's/^#?UsePAM .*/UsePAM no/' /etc/ssh/sshd_config")
+    run_local_command("docker exec #{container} sed -ri \"s/^#?UsePAM .*/UsePAM no/\" /etc/ssh/sshd_config")
   when %r{archlinux}
     run_local_command("docker exec #{container} pacman --noconfirm -Sy archlinux-keyring")
     run_local_command("docker exec #{container} pacman --noconfirm -Syu")
     run_local_command("docker exec #{container} pacman -S --noconfirm openssh")
     run_local_command("docker exec #{container} ssh-keygen -A")
-    run_local_command("docker exec #{container} sed -ri 's/^#?UsePAM .*/UsePAM no/' /etc/ssh/sshd_config")
+    run_local_command("docker exec #{container} sed -ri \"s/^#?UsePAM .*/UsePAM no/\" /etc/ssh/sshd_config")
     run_local_command("docker exec #{container} systemctl enable sshd")
   else
     raise "platform #{platform} not yet supported on docker"
@@ -41,14 +41,14 @@ def install_ssh_components(platform, container)
 
   # Make sshd directory, set root password
   run_local_command("docker exec #{container} mkdir -p /var/run/sshd")
-  run_local_command("docker exec #{container} bash -c 'echo root:root | /usr/sbin/chpasswd'")
+  run_local_command("docker exec #{container} bash -c \"echo root:root | /usr/sbin/chpasswd\"")
 end
 
 def fix_ssh(platform, container)
-  run_local_command("docker exec #{container} sed -ri 's/^#?PermitRootLogin .*/PermitRootLogin yes/' /etc/ssh/sshd_config")
-  run_local_command("docker exec #{container} sed -ri 's/^#?PasswordAuthentication .*/PasswordAuthentication yes/' /etc/ssh/sshd_config")
-  run_local_command("docker exec #{container} sed -ri 's/^#?UseDNS .*/UseDNS no/' /etc/ssh/sshd_config")
-  run_local_command("docker exec #{container} sed -e '/HostKey.*ssh_host_e.*_key/ s/^#*/#/' -ri /etc/ssh/sshd_config")
+  run_local_command("docker exec #{container} sed -ri \"s/^#?PermitRootLogin .*/PermitRootLogin yes/\" /etc/ssh/sshd_config")
+  run_local_command("docker exec #{container} sed -ri \"s/^#?PasswordAuthentication .*/PasswordAuthentication yes/\" /etc/ssh/sshd_config")
+  run_local_command("docker exec #{container} sed -ri \"s/^#?UseDNS .*/UseDNS no/\" /etc/ssh/sshd_config")
+  run_local_command("docker exec #{container} sed -e \"/HostKey.*ssh_host_e.*_key/ s/^#*/#/\" -ri /etc/ssh/sshd_config")
   case platform
   when %r{debian}, %r{ubuntu}
     run_local_command("docker exec #{container} service ssh restart")
