@@ -32,6 +32,16 @@ def platform_is_windows?(platform)
   platform =~ windows_regex
 end
 
+def on_windows?
+  # Stolen directly from Puppet::Util::Platform.windows?
+  # Ruby only sets File::ALT_SEPARATOR on Windows and the Ruby standard
+  # library uses that to test what platform it's on. In some places we
+  # would use Puppet.features.microsoft_windows?, but this method can be
+  # used to determine the behavior of the underlying system without
+  # requiring features to be initialized and without side effect.
+  !!File::ALT_SEPARATOR # rubocop:disable Style/DoubleNegation
+end
+
 def platform_uses_ssh(platform)
   # TODO: This seems sub-optimal. We should be able to override/specify what transport to use on a per target basis
   !platform_is_windows?(platform)

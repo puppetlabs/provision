@@ -29,17 +29,6 @@ VF
   end
 end
 
-def on_windows?
-  # TODO: This should probably be in task_helper.rb
-  # Stolen directly from Puppet::Util::Platform.windows?
-  # Ruby only sets File::ALT_SEPARATOR on Windows and the Ruby standard
-  # library uses that to test what platform it's on. In some places we
-  # would use Puppet.features.microsoft_windows?, but this method can be
-  # used to determine the behavior of the underlying system without
-  # requiring features to be initialized and without side effect.
-  !!File::ALT_SEPARATOR # rubocop:disable Style/DoubleNegation
-end
-
 def get_vagrant_dir(platform, vagrant_dirs, i = 0)
   platform_dir = "#{platform}-#{i}"
   if vagrant_dirs.include?(platform_dir)
