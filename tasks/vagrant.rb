@@ -29,16 +29,6 @@ VF
   end
 end
 
-def on_windows?
-  # Stolen directly from Puppet::Util::Platform.windows?
-  # Ruby only sets File::ALT_SEPARATOR on Windows and the Ruby standard
-  # library uses that to test what platform it's on. In some places we
-  # would use Puppet.features.microsoft_windows?, but this method can be
-  # used to determine the behavior of the underlying system without
-  # requiring features to be initialized and without side effect.
-  !!File::ALT_SEPARATOR # rubocop:disable Style/DoubleNegation
-end
-
 def get_vagrant_dir(platform, vagrant_dirs, i = 0)
   platform_dir = "#{platform}-#{i}"
   if vagrant_dirs.include?(platform_dir)
@@ -47,29 +37,38 @@ def get_vagrant_dir(platform, vagrant_dirs, i = 0)
   platform_dir
 end
 
-def configure_ssh(platform, ssh_config_path)
-  command = "vagrant ssh-config > #{ssh_config_path}"
-  run_local_command(command, @vagrant_env)
-  ssh_config = Net::SSH::Config.load(ssh_config_path, 'default')
-  case platform
-  when %r{debian.*|ubuntu.*}
-    restart_command = 'service ssh restart'
-  when %r{centos.*}
-    restart_command = 'systemctl restart sshd.service'
+def configure_remoting(platform, remoting_config_path)
+  if platform_uses_ssh(platform)
+    command = "vagrant ssh-config > #{remoting_config_path}"
+    run_local_command(command, @vagrant_env)
+    remoting_config = Net::SSH::Config.load(remoting_config_path, 'default')
+    case platform
+    when %r{debian.*|ubuntu.*}
+      restart_command = 'service ssh restart'
+    when %r{centos.*}
+      restart_command = 'systemctl restart sshd.service'
+    else
+      raise ArgumentError, "Unsupported Platform: '#{platform}'"
+    end
+    # Pre-configure sshd on the platform prior to handing back
+    Net::SSH.start(
+      remoting_config['hostname'],
+      remoting_config['user'],
+      port: remoting_config['port'],
+      keys: remoting_config['identityfile'],
+    ) do |session|
+      session.exec!('sudo su -c "cp -r .ssh /root/."')
+      session.exec!('sudo su -c "sed -i \"s/.*PermitUserEnvironment\s.*/PermitUserEnvironment yes/g\" /etc/ssh/sshd_config"')
+      session.exec!("sudo su -c \"#{restart_command}\"")
+    end
   else
-    raise ArgumentError, "Unsupported Platform: '#{platform}'"
+    command = "vagrant winrm-config > #{remoting_config_path}"
+    run_local_command(command, @vagrant_env)
+    remoting_config = Net::SSH::Config.load(remoting_config_path, 'default')
+    # TODO: Delete remoting_config_path as it's no longer needed
+    # TODO: It's possible we may want to configure WinRM on the target platform beyond the defaults
   end
-  Net::SSH.start(
-    ssh_config['hostname'],
-    ssh_config['user'],
-    port: ssh_config['port'],
-    keys: ssh_config['identityfile'],
-  ) do |session|
-    session.exec!('sudo su -c "cp -r .ssh /root/."')
-    session.exec!('sudo su -c "sed -i \"s/.*PermitUserEnvironment\s.*/PermitUserEnvironment yes/g\" /etc/ssh/sshd_config"')
-    session.exec!("sudo su -c \"#{restart_command}\"")
-  end
-  ssh_config
+  remoting_config
 end
 
 def provision(platform, inventory_location, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password)
@@ -83,19 +82,53 @@ def provision(platform, inventory_location, hyperv_vswitch, hyperv_smb_username,
   provider = on_windows? ? 'hyperv' : 'virtualbox'
   command = "vagrant up --provider #{provider}"
   run_local_command(command, @vagrant_env)
-  ssh_config = configure_ssh(platform, File.join(@vagrant_env, 'ssh-config'))
-  node_name = "#{ssh_config['hostname']}:#{ssh_config['port']}"
   vm_id = File.read(File.join(@vagrant_env, '.vagrant', 'machines', 'default', provider, 'index_uuid'))
+
+  remote_config_file = platform_uses_ssh(platform) ? File.join(@vagrant_env, 'ssh-config') : File.join(@vagrant_env, 'winrm-config')
+  remote_config = configure_remoting(platform, remote_config_file)
+  node_name = "#{remote_config['hostname']}:#{remote_config['port']}"
+
   if platform_uses_ssh(platform)
-    node = { 'name' => node_name,
-             'config' => { 'transport' => 'ssh', 'ssh' => { 'user' => 'root', 'host' => ssh_config['hostname'], 'private-key' => ssh_config['identityfile'][0],
-                                                            'host-key-check' => ssh_config['stricthostkeychecking'], 'port' => ssh_config['port'] } },
-             'facts' => { 'provisioner' => 'vagrant', 'platform' => platform, 'id' => vm_id, 'vagrant_env' => @vagrant_env } }
+    node = {
+      'name' => node_name,
+      'config' => {
+        'transport' => 'ssh',
+        'ssh' => {
+          'user' => 'root',
+          'host' => remote_config['hostname'],
+          'private-key' => remote_config['identityfile'][0],
+          'host-key-check' => remote_config['stricthostkeychecking'],
+          'port' => remote_config['port'],
+        },
+      },
+      'facts' => {
+        'provisioner' => 'vagrant',
+        'platform' => platform,
+        'id' => vm_id,
+        'vagrant_env' => @vagrant_env,
+      },
+    }
     group_name = 'ssh_nodes'
   else
-    node = { 'name' => node_name,
-             'config' => { 'transport' => 'winrm', 'winrm' => { 'user' => 'Administrator', 'password' => '', 'ssl' => false } },
-             'facts' => { 'provisioner' => 'vagrant', 'platform' => platform, 'id' => vm_id, 'vagrant_env' => @vagrant_env } }
+    # TODO: Need to figure out where SSL comes from
+    remote_config['uses_ssl'] ||= false # TODO: Is the default _actually_ false?
+    node = {
+      'name' => node_name,
+      'config' => {
+        'transport'   => 'winrm',
+        'winrm'       => {
+          'user' => remote_config['user'],
+          'password' => remote_config['password'],
+          'ssl' => remote_config['uses_ssl'],
+        },
+      },
+      'facts' => {
+        'provisioner' => 'vagrant',
+        'platform' => platform,
+        'id' => vm_id,
+        'vagrant_env' => @vagrant_env,
+      },
+    }
     group_name = 'winrm_nodes'
   end
   add_node_to_group(inventory_hash, node, group_name)
