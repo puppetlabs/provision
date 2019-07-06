@@ -7,17 +7,18 @@ require_relative '../lib/task_helper'
 # TODO: detect what shell to use
 @shell_command = 'bash -lc'
 
-def provision(docker_platform, inventory_location)
+def provision(docker_platform, inventory_location, append_cli)
   include PuppetLitmus::InventoryManipulation
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   inventory_hash = get_inventory_hash(inventory_full_path)
+  append_cli = " #{append_cli}"
 
   deb_family_systemd_volume = if (docker_platform =~ %r{debian|ubuntu}) && (docker_platform !~ %r{debian8|ubuntu14})
                                 '--volume /sys/fs/cgroup:/sys/fs/cgroup:ro'
                               else
                                 ''
                               end
-  creation_command = "docker run -d -it #{deb_family_systemd_volume} --privileged #{docker_platform}"
+  creation_command = "docker run -d -it #{deb_family_systemd_volume} --privileged #{docker_platform}#{append_cli}"
   container_id = run_local_command(creation_command).strip
   node = { 'name' => container_id,
            'config' => { 'transport' => 'docker', 'docker' => { 'shell-command' => @shell_command } },
@@ -43,15 +44,16 @@ def tear_down(node_name, inventory_location)
 end
 
 params = JSON.parse(STDIN.read)
-platform = params['platform']
 action = params['action']
-node_name = params['node_name']
+append_cli = params['append_cli']
 inventory_location = params['inventory']
+node_name = params['node_name']
+platform = params['platform']
 raise 'specify a node_name if tearing down' if action == 'tear_down' && node_name.nil?
 raise 'specify a platform if provisioning' if action == 'provision' && platform.nil?
 
 begin
-  result = provision(platform, inventory_location) if action == 'provision'
+  result = provision(platform, inventory_location, append_cli) if action == 'provision'
   result = tear_down(node_name, inventory_location) if action == 'tear_down'
   puts result.to_json
   exit 0
