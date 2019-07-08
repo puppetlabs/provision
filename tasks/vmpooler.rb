@@ -5,8 +5,11 @@ require 'yaml'
 require 'puppet_litmus'
 require_relative '../lib/task_helper'
 
-def provision(platform, inventory_location)
+def provision(platform, inventory_location, vars)
   include PuppetLitmus::InventoryManipulation
+  unless vars.nil?
+    vars_hash = YAML.safe_load(vars)
+  end
   vmpooler_hostname = if ENV['VMPOOLER_HOSTNAME'].nil?
                         'vcloud.delivery.puppetlabs.net'
                       else
@@ -33,12 +36,14 @@ def provision(platform, inventory_location)
   if platform_uses_ssh(platform)
     node = { 'name' => hostname,
              'config' => { 'transport' => 'ssh', 'ssh' => { 'user' => 'root', 'password' => 'Qu@lity!', 'host-key-check' => false } },
-             'facts' => { 'provisioner' => 'vmpooler', 'platform' => platform } }
+             'facts' => { 'provisioner' => 'vmpooler', 'platform' => platform },
+             'vars'  => vars_hash }
     group_name = 'ssh_nodes'
   else
     node = { 'name' => hostname,
              'config' => { 'transport' => 'winrm', 'winrm' => { 'user' => 'Administrator', 'password' => 'Qu@lity!', 'ssl' => false } },
-             'facts' => { 'provisioner' => 'vmpooler', 'platform' => platform } }
+             'facts' => { 'provisioner' => 'vmpooler', 'platform' => platform },
+             'vars' => vars_hash }
     group_name = 'winrm_nodes'
   end
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
@@ -81,11 +86,12 @@ platform = params['platform']
 action = params['action']
 node_name = params['node_name']
 inventory_location = params['inventory']
+vars = params['vars']
 raise 'specify a node_name if tearing down' if action == 'tear_down' && node_name.nil?
 raise 'specify a platform if provisioning' if action == 'provision' && platform.nil?
 
 begin
-  result = provision(platform, inventory_location) if action == 'provision'
+  result = provision(platform, inventory_location, vars) if action == 'provision'
   result = tear_down(node_name, inventory_location) if action == 'tear_down'
   puts result.to_json
   exit 0
