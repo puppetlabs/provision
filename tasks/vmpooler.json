@@ -19,7 +19,12 @@
     "platform": {
       "description": "Platform to provision, eg ubuntu-1604-x86_64",
       "type": "Optional[String[1]]"
+    },
+    "vars": {
+      "description": "key/value pairs to add to the vars section",
+      "type": "Optional[String[1]]"
     }
+
   },
   "files": [
     "provision/lib/task_helper.rb"
