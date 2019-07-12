@@ -7,6 +7,27 @@ require_relative '../lib/task_helper'
 # TODO: detect what shell to use
 @shell_command = 'bash -lc'
 
+def docker_version
+  return @docker_info unless @docker_info.nil?
+  result = run_local_command('docker version --format "{{json .}}"').strip
+
+  begin
+    @docker_info = JSON.parse(result)
+  rescue StandardError => e
+    raise "Unable to determine Docker version information: #{result}"
+  end
+  raise "Missing Docker server information from #{result}" if @docker_info['Server'].nil?
+  @docker_info
+end
+
+def windows_docker_server?
+  docker_version['Server']['Os'].downcase == 'windows'
+end
+
+def windows_platform?(platform)
+  platform =~ /windows/
+end
+
 def provision(docker_platform, inventory_location)
   include PuppetLitmus::InventoryManipulation
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
@@ -17,7 +38,10 @@ def provision(docker_platform, inventory_location)
                               else
                                 ''
                               end
-  creation_command = "docker run -d -it #{deb_family_systemd_volume} --privileged #{docker_platform}"
+
+  # privileged is supported on Windows based Docker daemons
+  priv_mode = windows_docker_server? ? '' : '--privileged '
+  creation_command = "docker run -d -it #{deb_family_systemd_volume} #{priv_mode} #{docker_platform}"
   container_id = run_local_command(creation_command).strip
   node = { 'name' => container_id,
            'config' => { 'transport' => 'docker', 'docker' => { 'shell-command' => @shell_command } },
@@ -41,6 +65,8 @@ def tear_down(node_name, inventory_location)
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
   { status: 'ok' }
 end
+
+#provision('mcr.microsoft.com/windows/servercore:1903', 'C:\Source\puppet-strings')
 
 params = JSON.parse(STDIN.read)
 platform = params['platform']

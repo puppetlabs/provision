@@ -4,28 +4,6 @@ require 'yaml'
 require 'puppet_litmus'
 require_relative '../lib/task_helper'
 
-
-def docker_version
-  return @docker_info unless @docker_info.nil?
-  result = run_local_command('docker version --format "{{json .}}"').strip
-
-  begin
-    @docker_info = JSON.parse(result)
-  rescue StandardError => e
-    raise "Unable to determine Docker version information: #{result}"
-  end
-  raise "Missing Docker server information from #{result}" if @docker_info['Server'].nil?
-  @docker_info
-end
-
-def windows_docker_server?
-  docker_version['Server']['Os'].downcase == 'windows'
-end
-
-def windows_platform?(platform)
-  platform =~ /windows/
-end
-
 def install_ssh_components(platform, container)
   case platform
   when %r{debian}, %r{ubuntu}
@@ -66,14 +44,6 @@ def install_ssh_components(platform, container)
   run_local_command("docker exec #{container} bash -c \"echo root:root | /usr/sbin/chpasswd\"")
 end
 
-def install_winrm_components(platform, container)
-  # Configure WinRM
-  run_local_command("docker exec #{container} cmd.exe /c winrm quickconfig -transport:http -force")
-  # Configure a WinRM User
-  run_local_command("docker exec #{container} cmd.exe /c NET USER litmus \"Password01!\" /ADD")
-  run_local_command("docker exec #{container} cmd.exe /c NET LOCALGROUP \"Administrators\" \"litmus\" /ADD")
-end
-
 def fix_ssh(platform, container)
   run_local_command("docker exec #{container} sed -ri \"s/^#?PermitRootLogin .*/PermitRootLogin yes/\" /etc/ssh/sshd_config")
   run_local_command("docker exec #{container} sed -ri \"s/^#?PasswordAuthentication .*/PasswordAuthentication yes/\" /etc/ssh/sshd_config")
@@ -99,15 +69,13 @@ def provision(docker_platform, inventory_location)
   inventory_hash = get_inventory_hash(inventory_full_path)
   warn '!!! Using private port forwarding!!!'
   platform, version = docker_platform.split(':')
-  # Switch between WinRM and SSH
-  container_port = windows_platform?(platform) ? 5985 : 22
   front_facing_port = 2222
-  platform = platform.gsub(%r{\/}, '_')
+  platform = platform.sub(%r{/}, '_')
   full_container_name = "#{platform}_#{version}-#{front_facing_port}"
   (front_facing_port..2230).each do |i|
     front_facing_port = i
     full_container_name = "#{platform}_#{version}-#{front_facing_port}"
-    ports = "#{front_facing_port}->#{container_port}"
+    ports = "#{front_facing_port}->22"
     list_command = 'docker container ls -a'
     stdout, _stderr, _status = Open3.capture3(list_command)
     break unless stdout.include?(ports)
@@ -118,31 +86,17 @@ def provision(docker_platform, inventory_location)
                               else
                                 ''
                               end
-  # privileged is supported on Windows based Docker daemons
-  priv_mode = windows_docker_server? ? '' : '--privileged '
-  creation_command = "docker run -d -it #{deb_family_systemd_volume} #{priv_mode} -p #{front_facing_port}:#{container_port} --name #{full_container_name} #{docker_platform}"
+  creation_command = "docker run -d -it #{deb_family_systemd_volume} --privileged -p #{front_facing_port}:22 --name #{full_container_name} #{docker_platform}"
   run_local_command(creation_command)
-
-  if windows_platform?(platform)
-    install_winrm_components(platform, full_container_name)
-    hostname = 'localhost'
-    node = { 'name' => "#{hostname}:#{front_facing_port}",
-             'config' => { 'transport' => 'winrm',
-                           'winrm' => { 'user' => 'litmus', 'password' => 'Password01!', 'port' => front_facing_port } },
-             'facts' => { 'provisioner' => 'docker', 'container_name' => full_container_name, 'platform' => docker_platform } }
-    group_name = 'winrm_nodes'
-    add_node_to_group(inventory_hash, node, group_name)
-  else
-    install_ssh_components(platform, full_container_name)
-    fix_ssh(platform, full_container_name)
-    hostname = 'localhost'
-    node = { 'name' => "#{hostname}:#{front_facing_port}",
-            'config' => { 'transport' => 'ssh',
-                          'ssh' => { 'user' => 'root', 'password' => 'root', 'port' => front_facing_port, 'host-key-check' => false } },
-            'facts' => { 'provisioner' => 'docker', 'container_name' => full_container_name, 'platform' => docker_platform } }
-    group_name = 'ssh_nodes'
-    add_node_to_group(inventory_hash, node, group_name)
-  end
+  install_ssh_components(platform, full_container_name)
+  fix_ssh(platform, full_container_name)
+  hostname = 'localhost'
+  node = { 'name' => "#{hostname}:#{front_facing_port}",
+           'config' => { 'transport' => 'ssh',
+                         'ssh' => { 'user' => 'root', 'password' => 'root', 'port' => front_facing_port, 'host-key-check' => false } },
+           'facts' => { 'provisioner' => 'docker', 'container_name' => full_container_name, 'platform' => docker_platform } }
+  group_name = 'ssh_nodes'
+  add_node_to_group(inventory_hash, node, group_name)
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
   { status: 'ok', node_name: "#{hostname}:#{front_facing_port}" }
 end
