@@ -4,8 +4,8 @@
   "description": "Provision/Tear down a machine on vmpooler",
   "parameters": {
     "action": {
-      "description": "Action to perform, tear_down or provision",
-      "type": "Enum[provision, tear_down]",
+      "description": "Action to perform, tear_down (single), tear_down_nodes (all), or provision",
+      "type": "Enum[provision, tear_down, tear_down_nodes]",
       "default": "provision"
     },
     "inventory": {

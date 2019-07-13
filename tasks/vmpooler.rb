@@ -53,6 +53,15 @@ def provision(platform, inventory_location, vars)
   { status: 'ok', node_name: hostname }
 end
 
+def tear_down_nodes(inventory_location)
+  include PuppetLitmus::InventoryManipulation
+  inventory_hash = inventory_hash_from_inventory_file
+  nodes_names = find_targets(inventory_hash, nil) #TODO: find_targets should default to nil if a second param isn't given.
+  nodes_names.each do |node_name|
+    tear_down(node_name, inventory_location)
+  end
+end
+
 def tear_down(node_name, inventory_location)
   include PuppetLitmus::InventoryManipulation
   vmpooler_hostname = if ENV['VMPOOLER_HOSTNAME'].nil?
@@ -93,6 +102,7 @@ raise 'specify a platform if provisioning' if action == 'provision' && platform.
 begin
   result = provision(platform, inventory_location, vars) if action == 'provision'
   result = tear_down(node_name, inventory_location) if action == 'tear_down'
+  result = tear_down_nodes(inventory_location) if action == 'tear_down_nodes'
   puts result.to_json
   exit 0
 rescue => e
