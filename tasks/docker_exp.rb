@@ -11,14 +11,13 @@ def provision(docker_platform, inventory_location, append_cli)
   include PuppetLitmus::InventoryManipulation
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   inventory_hash = get_inventory_hash(inventory_full_path)
-  append_cli = " #{append_cli}"
 
   deb_family_systemd_volume = if (docker_platform =~ %r{debian|ubuntu}) && (docker_platform !~ %r{debian8|ubuntu14})
                                 '--volume /sys/fs/cgroup:/sys/fs/cgroup:ro'
                               else
                                 ''
                               end
-  creation_command = "docker run -d -it #{deb_family_systemd_volume} --privileged #{docker_platform}#{append_cli}"
+  creation_command = "docker run -d -it #{deb_family_systemd_volume} --privileged #{append_cli} #{docker_platform}"
   container_id = run_local_command(creation_command).strip
   node = { 'name' => container_id,
            'config' => { 'transport' => 'docker', 'docker' => { 'shell-command' => @shell_command } },
