@@ -26,13 +26,18 @@
       "default": "Default Switch"
     },
     "hyperv_smb_username": {
-      "description": "The username on the Hyper-V machine to use for authenticating the shared folder. Required to use Hyper-V.",
+      "description": "The username on the Hyper-V machine to use for authenticating the shared folder. Required to use Hyper-V with a synced folder.",
       "type": "Optional[String[1]]"
     },
     "hyperv_smb_password": {
-      "description": "The password on the Hyper-V machine to use for authenticating the shared folder. Required to use Hyper-V.",
+      "description": "The password on the Hyper-V machine to use for authenticating the shared folder. Required to use Hyper-V with a synced folder.",
       "type": "Optional[String[1]]",
       "sensitive": true
+    },
+    "enable_synced_folder": {
+      "description": "Whether to use the vagrant synced folder for the provisioned machine",
+      "type": "Optional[Boolean]",
+      "default": false
     }
   },
   "files": [

@@ -7,11 +7,14 @@ require 'fileutils'
 require 'net/ssh'
 require_relative '../lib/task_helper'
 
-def generate_vagrantfile(file_path, platform, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password)
+def generate_vagrantfile(file_path, platform, enable_synced_folder, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password)
+  unless enable_synced_folder
+    synced_folder = 'config.vm.synced_folder ".", "/vagrant", disabled: true'
+  end
   if on_windows?
     # Even though this is the default value in the metadata it isn't sent along if tthe parameter is unspecified for some reason.
     network = "config.vm.network 'public_network', bridge: '#{hyperv_vswitch.nil? ? 'Default Switch' : hyperv_vswitch}'"
-    unless hyperv_smb_username.nil? || hyperv_smb_password.nil?
+    if enable_synced_folder && !hyperv_smb_username.nil? && !hyperv_smb_password.nil?
       synced_folder = "config.vm.synced_folder '.', '/vagrant', type: 'smb', smb_username: '#{hyperv_smb_username}', smb_password: '#{hyperv_smb_password}'"
     end
   end
@@ -71,14 +74,14 @@ def configure_remoting(platform, remoting_config_path)
   remoting_config
 end
 
-def provision(platform, inventory_location, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password)
+def provision(platform, inventory_location, enable_synced_folder, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password)
   include PuppetLitmus
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   inventory_hash = get_inventory_hash(inventory_full_path)
   vagrant_dirs = Dir.glob("#{File.join(inventory_location, '.vagrant')}/*/").map { |d| File.basename(d) }
   @vagrant_env = File.join(inventory_location, '.vagrant', get_vagrant_dir(platform, vagrant_dirs))
   FileUtils.mkdir_p @vagrant_env
-  generate_vagrantfile(File.join(@vagrant_env, 'Vagrantfile'), platform, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password)
+  generate_vagrantfile(File.join(@vagrant_env, 'Vagrantfile'), platform, enable_synced_folder, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password)
   provider = on_windows? ? 'hyperv' : 'virtualbox'
   command = "vagrant up --provider #{provider}"
   run_local_command(command, @vagrant_env)
@@ -158,6 +161,10 @@ platform = params['platform']
 action = params['action']
 node_name = params['node_name']
 inventory_location = params['inventory']
+enable_synced_folder = params['enable_synced_folder'].nil? ? ENV['LITMUS_ENABLE_SYNCED_FOLDER'] : params['enable_synced_folder']
+if enable_synced_folder.is_a?(String)
+  enable_synced_folder = enable_synced_folder.casecmp('true').zero? ? true : false
+end
 hyperv_vswitch = params['hyperv_vswitch'].nil? ? ENV['LITMUS_HYPERV_VSWITCH'] : params['hyperv_vswitch']
 hyperv_smb_username = params['hyperv_smb_username'].nil? ? ENV['LITMUS_HYPERV_SMB_USERNAME'] : params['hyperv_smb_username']
 hyperv_smb_password = params['hyperv_smb_password'].nil? ? ENV['LITMUS_HYPERV_SMB_PASSWORD'] : params['hyperv_smb_password']
@@ -165,7 +172,7 @@ raise 'specify a node_name if tearing down' if action == 'tear_down' && node_nam
 raise 'specify a platform if provisioning' if action == 'provision' && platform.nil?
 
 begin
-  result = provision(platform, inventory_location, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password) if action == 'provision'
+  result = provision(platform, inventory_location, enable_synced_folder, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password) if action == 'provision'
   result = tear_down(node_name, inventory_location) if action == 'tear_down'
   puts result.to_json
   exit 0
