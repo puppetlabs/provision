@@ -179,6 +179,12 @@ Successful on 1 node: localhost
 Ran on 1 node in 4.52 seconds
 ```
 
+#### Synced Folders
+
+By default the task will provision a Vagrant box with the [synced folder]() **disabled**.
+To enable the synced folder you must specify the parameter `enable_synced_folder` as `true`.
+Instead of passing this parameter directly you can instead specify the environment variable `LITMUS_ENABLE_SYNCED_FOLDER` as `true`.
+
 #### Hyper-V Provider
 
 This task can also be used against a Windows host to utilize Hyper-V Vagrant boxes.
@@ -186,8 +192,8 @@ When provisioning, a few additional parameters need to be passed:
 
 - `hyperv_vswitch`, which specifies the Hyper-V Virtual Switch to assign the VM.
   If you do not specify one the [`Default Switch`](https://searchenterprisedesktop.techtarget.com/blog/Windows-Enterprise-Desktop/Default-Switch-Makes-Hyper-V-Networking-Dead-Simple) will be used.
-- `hyperv_smb_username` and `hyperv_smb_password`, which ensure the synced folder works correctly.
-  If these parameters are omitted when provisioning on Windows Vagrant will try to prompt for input and the task will hang indefinitely until it finally times out.
+- `hyperv_smb_username` and `hyperv_smb_password`, which ensure the synced folder works correctly (only neccessary is `enable_synced_folder` is `true`).
+  If these parameters are omitted when provisioning on Windows and using synced folders Vagrant will try to prompt for input and the task will hang indefinitely until it finally times out.
   The context in which a Bolt task is run does not allow for mid-task input.
 
 Instead of passing them as parameters directly they can also be passed as environment variables:
@@ -197,6 +203,7 @@ Instead of passing them as parameters directly they can also be passed as enviro
 - `HYPERV_SMB_PASSWORD` for `hyperv_smb_password`
 
 provision
+
 ```
 PS> $env:LITMUS_HYPERV_VSWITCH = 'internal_nat'
 PS> bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vagrant --nodes localhost  action=provision platform=centos/7 inventory=/Users/tp/workspace/git/provision hyperv_smb_username=tp hyperv_smb_password=notMyrealPassword
