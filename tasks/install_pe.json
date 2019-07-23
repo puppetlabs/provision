@@ -1,0 +1,11 @@
+{
+  "puppet_task_version": 1,
+  "supports_noop": false,
+  "description": "Installs PE on a target",
+  "parameters": {
+      "manifest": {
+      "description": "something ?",
+      "type": "Optional[String[1]]"
+    }
+  }
+}
