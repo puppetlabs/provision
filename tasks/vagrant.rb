@@ -136,7 +136,7 @@ def provision(platform, inventory_location, enable_synced_folder, hyperv_vswitch
   end
   add_node_to_group(inventory_hash, node, group_name)
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
-  { status: 'ok', node_name: node_name }
+  { status: 'ok', node_name: node_name, node: node }
 end
 
 def tear_down(node_name, inventory_location)

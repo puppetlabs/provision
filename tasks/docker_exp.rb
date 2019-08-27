@@ -25,7 +25,7 @@ def provision(docker_platform, inventory_location, append_cli)
   group_name = 'docker_nodes'
   add_node_to_group(inventory_hash, node, group_name)
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
-  { status: 'ok', node_name: container_id }
+  { status: 'ok', node_name: container_id, node: node }
 end
 
 def tear_down(node_name, inventory_location)
