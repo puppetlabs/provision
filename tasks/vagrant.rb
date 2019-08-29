@@ -79,7 +79,7 @@ def provision(platform, inventory_location, enable_synced_folder, hyperv_vswitch
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   inventory_hash = get_inventory_hash(inventory_full_path)
   vagrant_dirs = Dir.glob("#{File.join(inventory_location, '.vagrant')}/*/").map { |d| File.basename(d) }
-  @vagrant_env = File.join(inventory_location, '.vagrant', get_vagrant_dir(platform, vagrant_dirs))
+  @vagrant_env = File.expand_path(File.join(inventory_location, '.vagrant', get_vagrant_dir(platform, vagrant_dirs)))
   FileUtils.mkdir_p @vagrant_env
   generate_vagrantfile(File.join(@vagrant_env, 'Vagrantfile'), platform, enable_synced_folder, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password)
   provider = on_windows? ? 'hyperv' : 'virtualbox'
