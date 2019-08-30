@@ -49,7 +49,7 @@ def provision(platform, inventory_location)
   inventory_hash = get_inventory_hash(inventory_full_path)
   add_node_to_group(inventory_hash, node, group_name)
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
-  { status: 'ok', node_name: hostname }
+  { status: 'ok', node_name: hostname, node: node }
 end
 
 def tear_down(node_name, inventory_location)
