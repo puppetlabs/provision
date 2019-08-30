@@ -161,13 +161,13 @@ platform = params['platform']
 action = params['action']
 node_name = params['node_name']
 inventory_location = params['inventory']
-enable_synced_folder = params['enable_synced_folder'].nil? ? ENV['LITMUS_ENABLE_SYNCED_FOLDER'] : params['enable_synced_folder']
+enable_synced_folder = params['enable_synced_folder'].nil? ? ENV['VAGRANT_ENABLE_SYNCED_FOLDER'] : params['enable_synced_folder']
 if enable_synced_folder.is_a?(String)
   enable_synced_folder = enable_synced_folder.casecmp('true').zero? ? true : false
 end
-hyperv_vswitch = params['hyperv_vswitch'].nil? ? ENV['LITMUS_HYPERV_VSWITCH'] : params['hyperv_vswitch']
-hyperv_smb_username = params['hyperv_smb_username'].nil? ? ENV['LITMUS_HYPERV_SMB_USERNAME'] : params['hyperv_smb_username']
-hyperv_smb_password = params['hyperv_smb_password'].nil? ? ENV['LITMUS_HYPERV_SMB_PASSWORD'] : params['hyperv_smb_password']
+hyperv_vswitch = params['hyperv_vswitch'].nil? ? ENV['VAGRANT_HYPERV_VSWITCH'] : params['hyperv_vswitch']
+hyperv_smb_username = params['hyperv_smb_username'].nil? ? ENV['VAGRANT_HYPERV_SMB_USERNAME'] : params['hyperv_smb_username']
+hyperv_smb_password = params['hyperv_smb_password'].nil? ? ENV['VAGRANT_HYPERV_SMB_PASSWORD'] : params['hyperv_smb_password']
 raise 'specify a node_name if tearing down' if action == 'tear_down' && node_name.nil?
 raise 'specify a platform if provisioning' if action == 'provision' && platform.nil?
 
