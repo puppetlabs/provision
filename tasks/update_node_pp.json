@@ -1,0 +1,15 @@
+{
+  "puppet_task_version": 1,
+  "supports_noop": false,
+  "description": "Creates a manifest file for a target node on pe server",
+  "parameters": {
+      "manifest": {
+      "description": "The manifest code",
+      "type": "String[1]"
+    },
+      "target_node": {
+      "description": "The target node",
+      "type": "String[1]"
+    }
+  }
+}
