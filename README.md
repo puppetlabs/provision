@@ -266,15 +266,15 @@ Ran on 1 node in 1.45 seconds
 
 ## Development
 
-Testing/development using ruby,  you will need to pass the json parameters.
+Testing/development/debugging it is better to use ruby directly, you will need to pass the json parameters.
 
 ```
-$ bundle exec ruby tasks/vmpooler.rb 
-<ENTER>
-{ "platform": "ubuntu-1604-x86_64", "action": "provision", "inventory": "/Users/tp/workspace/git/provision" } 
-<ENTER>
-<CTRL + d>
+# windows
+ echo '{ "platform": "ubuntu-1604-x86_64", "action": "provision", "inventory": "c:\\workspace\\puppetlabs-motd\\" }' | bundle exec ruby .\spec\fixtures\modules\provision\tasks\vmpooler.rb
+# linux
+ echo '{ "platform": "ubuntu-1604-x86_64", "action": "provision", "inventory": "/home/tp/workspace/puppetlabs-motd/" }' | bundle exec ruby spec/fixtures/modules/provision/tasks/vmpooler.rb 
 ```
+ 
 
 Testing using bolt, the second step
 ```
