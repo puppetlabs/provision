@@ -2,7 +2,7 @@ plan provision::tester(
 ) {
   # get pe_server ?
   $server = get_targets('*').filter |$n| { $n.vars['role'] == 'pe' }
-  $agents = get_targets('*').filter |$n| { $n.vars['role'] =~ /agent/}
+  $agents = get_targets('*').filter |$n| { $n.vars['role'] != 'pe' }
   $agent_names = $agents.map |$n| { $n.name }
 
   $manifest = "class { 'motd':\ncontent => 'foomph\n'\n}"
