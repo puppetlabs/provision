@@ -222,6 +222,8 @@ Using the `tear_down` task is the same as on Linux or MacOS.
 
 ### Vmpooler
 
+*Warning* this is currently setup to work with puppet's internal infrasture, its behaviour can be modified below.
+
 Check http://vcloud.delivery.puppetlabs.net/vm/ for the list of availible platforms. 
 Environment variables, can modify its behaviour:
 VMPOOLER_HOSTNAME, will change the default hostname used to connect to the vmpooler instance.
