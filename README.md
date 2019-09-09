@@ -286,12 +286,12 @@ Ran on 1 node in 1.45 seconds
 
 ## Development
 
-Testing/development/debugging it is better to use ruby directly, you will need to pass the json parameters.
+Testing/development/debugging it is better to use ruby directly, you will need to pass the json parameters. Depending on how you are running (using a puppet file or as part of a puppet_litmus). The dependcies of provision will need to be availible. See the setup section above.
 
 ```
-# windows
+# powershell
  echo '{ "platform": "ubuntu-1604-x86_64", "action": "provision", "inventory": "c:\\workspace\\puppetlabs-motd\\" }' | bundle exec ruby .\spec\fixtures\modules\provision\tasks\vmpooler.rb
-# linux
+# bash / zshell ...
  echo '{ "platform": "ubuntu-1604-x86_64", "action": "provision", "inventory": "/home/tp/workspace/puppetlabs-motd/" }' | bundle exec ruby spec/fixtures/modules/provision/tasks/vmpooler.rb 
 ```
  
