@@ -41,7 +41,10 @@ Please follow the documentation here https://github.com/puppetlabs/puppet_litmus
 For provisioning to work you will need to have a number of other modules available. Using bolt to install the modules for you, your puppet file https://puppet.com/docs/bolt/latest/installing_tasks_from_the_forge.html The required modules are:
 
 ```
-cat $HOME/.puppetlabs/bolt/Puppetfile                                                                                                    mod 'puppetlabs-puppet_agent'                                                                                                           mod 'puppetlabs-facts'                                                                                                                  mod 'puppetlabs-puppet_conf'                  
+cat $HOME/.puppetlabs/bolt/Puppetfile
+mod 'puppetlabs-puppet_agent'
+mod 'puppetlabs-facts'
+mod 'puppetlabs-puppet_conf'                  
 ```
 
 ## Usage
