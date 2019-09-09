@@ -23,20 +23,35 @@ Provisioners so far:
    
 * ABS (AlwaysBeScheduling)
 * Docker
+* Vagrant
 * Vmpooler (internal to puppet)
 
 ## Setup
 
 ### Setup Requirements
 
-Bolt to be installed to run the tasks. Each provisioner has its own requirements. From having Docker to installed or access to private infrastructure. 
+Bolt has to be installed to run the tasks. Each provisioner has its own requirements. From having Docker to installed or access to private infrastructure. 
+
+#### Running the tasks as part of puppet_litmus
+
+Please follow the documentation here https://github.com/puppetlabs/puppet_litmus/wiki/Converting-a-module-to-use-Litmus#fixturesyml
+
+#### Running the module stand-alone call the tasks/plans directly
+
+For provisioning to work you will need to have a number of other modules available. Using bolt to install the modules for you, your puppet file https://puppet.com/docs/bolt/latest/installing_tasks_from_the_forge.html The required modules are:
+
+```
+cat $HOME/.puppetlabs/bolt/Puppetfile                                                                                                    mod 'puppetlabs-puppet_agent'                                                                                                           mod 'puppetlabs-facts'                                                                                                                  mod 'puppetlabs-puppet_conf'                  
+```
 
 ## Usage
 
-There is a basic workflow.
+There is a basic workflow for the provision tasks.
 
 * provision - creates / initiates a platform and edits a bolt inventory file. 
 * tear_down - creates / initiates a system / container and edits a bolt inventory file. 
+
+For extended functionality please look at the wiki https://github.com/puppetlabs/provision/wiki
 
 ### ABS
 
