@@ -1,0 +1,18 @@
+{
+  "puppet_task_version": 1,
+  "supports_noop": false,
+  "description": "Run rspec tests against a target machine",
+  "parameters": {
+    "sut": {
+      "description": "The target SUT to run tests against",
+      "type": "String[1]"
+    },
+    "test_path": {
+      "description": "Location of the test files. Defaults to './spec/acceptance'",
+      "type": "Optional[String[1]]"
+    }
+  },
+  "files": [
+    "provision/lib/task_helper.rb"
+  ]
+}
