@@ -53,7 +53,7 @@ def fix_ssh(platform, container)
   when %r{debian}, %r{ubuntu}
     run_local_command("docker exec #{container} service ssh restart")
   when %r{centos}, %r{^el-}, %r{eos}, %r{fedora}, %r{oracle}, %r{redhat}, %r{scientific}
-    if container !~ %r{7|systemd}
+    if (container !~ %r{7}) && (platform !~ %r{systemd})
       run_local_command("docker exec #{container} service sshd restart")
     else
       run_local_command("docker exec -d #{container} /usr/sbin/sshd -D")
