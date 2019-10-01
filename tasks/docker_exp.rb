@@ -19,6 +19,7 @@ def provision(docker_platform, inventory_location, append_cli)
                               end
   creation_command = "docker run -d -it #{deb_family_systemd_volume} --privileged #{append_cli} #{docker_platform}"
   container_id = run_local_command(creation_command).strip[0..11]
+  fix_missing_tty_error_message(container_id) unless platform_is_windows?(docker_platform)
   node = { 'name' => container_id,
            'config' => { 'transport' => 'docker', 'docker' => { 'shell-command' => @shell_command } },
            'facts' => { 'provisioner' => 'docker_exp', 'container_id' => container_id, 'platform' => docker_platform } }
