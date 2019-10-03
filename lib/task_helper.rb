@@ -57,3 +57,8 @@ def token_from_fogfile
   token = contents.dig(:default, :vmpooler_token)
   token
 end
+
+# Workaround for fixing the bash message in stderr when tty is missing
+def fix_missing_tty_error_message(container_id)
+  system("docker exec #{container_id} sed -i 's/^mesg n/tty -s \\&\\& mesg n/g' /root/.profile")
+end
