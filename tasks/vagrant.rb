@@ -168,8 +168,18 @@ end
 hyperv_vswitch = params['hyperv_vswitch'].nil? ? ENV['VAGRANT_HYPERV_VSWITCH'] : params['hyperv_vswitch']
 hyperv_smb_username = params['hyperv_smb_username'].nil? ? ENV['VAGRANT_HYPERV_SMB_USERNAME'] : params['hyperv_smb_username']
 hyperv_smb_password = params['hyperv_smb_password'].nil? ? ENV['VAGRANT_HYPERV_SMB_PASSWORD'] : params['hyperv_smb_password']
-raise 'specify a node_name if tearing down' if action == 'tear_down' && node_name.nil?
-raise 'specify a platform if provisioning' if action == 'provision' && platform.nil?
+raise 'specify a node_name when tearing down' if action == 'tear_down' && node_name.nil?
+raise 'specify a platform when provisioning' if action == 'provision' && platform.nil?
+unless node_name.nil? ^ platform.nil?
+  case action
+  when 'tear_down'
+    raise 'specify only a node_name, not platform, when tearing down'
+  when 'provision'
+    raise 'specify only a platform, not node_name, when provisioning'
+  else
+    raise 'specify only one of: node_name, platform'
+  end
+end
 
 begin
   result = provision(platform, inventory_location, enable_synced_folder, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password) if action == 'provision'
