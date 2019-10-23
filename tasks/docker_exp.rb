@@ -49,8 +49,18 @@ append_cli = params['append_cli']
 inventory_location = params['inventory']
 node_name = params['node_name']
 platform = params['platform']
-raise 'specify a node_name if tearing down' if action == 'tear_down' && node_name.nil?
-raise 'specify a platform if provisioning' if action == 'provision' && platform.nil?
+raise 'specify a node_name when tearing down' if action == 'tear_down' && node_name.nil?
+raise 'specify a platform when provisioning' if action == 'provision' && platform.nil?
+unless node_name.nil? ^ platform.nil?
+  case action
+  when 'tear_down'
+    raise 'specify only a node_name, not platform, when tearing down'
+  when 'provision'
+    raise 'specify only a platform, not node_name, when provisioning'
+  else
+    raise 'specify only one of: node_name, platform'
+  end
+end
 
 begin
   result = provision(platform, inventory_location, append_cli) if action == 'provision'
