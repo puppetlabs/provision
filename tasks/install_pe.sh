@@ -1,6 +1,13 @@
 #!/bin/bash
+set -e
 
-PE_RELEASE=2019.2
+if [ -z ${PT_version+x} ]; then
+  PE_RELEASE=2019.2
+
+else
+  PE_RELEASE=$PT_version
+fi
+
 PE_LATEST=$(curl http://enterprise.delivery.puppetlabs.net/${PE_RELEASE}/ci-ready/LATEST)
 PE_FILE_NAME=puppet-enterprise-${PE_LATEST}-el-7-x86_64
 TAR_FILE=${PE_FILE_NAME}.tar

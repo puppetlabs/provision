@@ -3,8 +3,8 @@
   "supports_noop": false,
   "description": "Installs PE on a target",
   "parameters": {
-      "manifest": {
-      "description": "something ?",
+      "version": {
+      "description": "The release of PE you want to install e.g. 2018.1 (Default: 2019.2)",
       "type": "Optional[String[1]]"
     }
   }
