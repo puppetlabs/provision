@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 if [ -z ${PT_version+x} ]; then
   PE_RELEASE=2019.3
