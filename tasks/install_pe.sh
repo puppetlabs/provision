@@ -2,7 +2,7 @@
 set -e
 
 if [ -z ${PT_version+x} ]; then
-  PE_RELEASE=2019.2
+  PE_RELEASE=2019.3
 
 else
   PE_RELEASE=$PT_version
