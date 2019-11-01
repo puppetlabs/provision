@@ -6,18 +6,14 @@ require_relative '../lib/task_helper'
 
 def install_ssh_components(platform, container)
   case platform
-  when %r{debian}, %r{ubuntu}
+  when %r{debian}, %r{ubuntu}, %r{cumulus}
     run_local_command("docker exec #{container} apt-get update")
     run_local_command("docker exec #{container} apt-get install -y openssh-server openssh-client")
-  when %r{cumulus}
-    run_local_command("docker exec #{container} apt-get update")
-    run_local_command("docker exec #{container} apt-get install -y openssh-server openssh-client")
-  when %r{fedora-(2[2-9])}
+  when %r{fedora}
     run_local_command("docker exec #{container} dnf clean all")
     run_local_command("docker exec #{container} dnf install -y sudo openssh-server openssh-clients")
-    run_local_command("docker exec #{container} ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key")
-    run_local_command("docker exec #{container} ssh-keygen -t dsa -f /etc/ssh/ssh_host_dsa_key")
-  when %r{centos}, %r{^el-}, %r{eos}, %r{fedora}, %r{oracle}, %r{redhat}, %r{scientific}
+    run_local_command("docker exec #{container} ssh-keygen -A")
+  when %r{centos}, %r{^el-}, %r{eos}, %r{oracle}, %r{redhat}, %r{scientific}
     run_local_command("docker exec #{container} yum clean all")
     run_local_command("docker exec #{container} yum install -y sudo openssh-server openssh-clients")
     ssh_folder = run_local_command("docker exec #{container} ls /etc/ssh/")
