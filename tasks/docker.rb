@@ -6,7 +6,7 @@ require_relative '../lib/task_helper'
 
 def install_ssh_components(platform, container)
   case platform
-  when %r{debian}, %r{ubuntu}, %{cumulus}
+  when %r{debian}, %r{ubuntu}, %r{cumulus}
     run_local_command("docker exec #{container} apt-get update")
     run_local_command("docker exec #{container} apt-get install -y openssh-server openssh-client")
   when %r{fedora}
