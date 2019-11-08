@@ -160,7 +160,7 @@ STDERR.puts params
 platform = params['platform']
 action = params['action']
 node_name = params['node_name']
-inventory_location = params['inventory']
+inventory_location = sanitise_inventory_location(params['inventory'])
 enable_synced_folder = params['enable_synced_folder'].nil? ? ENV['VAGRANT_ENABLE_SYNCED_FOLDER'] : params['enable_synced_folder']
 if enable_synced_folder.is_a?(String)
   enable_synced_folder = enable_synced_folder.casecmp('true').zero? ? true : false

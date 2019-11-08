@@ -46,7 +46,7 @@ end
 params = JSON.parse(STDIN.read)
 action = params['action']
 append_cli = params['append_cli']
-inventory_location = params['inventory']
+inventory_location = sanitise_inventory_location(params['inventory'])
 node_name = params['node_name']
 platform = params['platform']
 raise 'specify a node_name when tearing down' if action == 'tear_down' && node_name.nil?
