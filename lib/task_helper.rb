@@ -1,15 +1,19 @@
-require 'yaml'
-require 'puppet_litmus'
+def sanitise_inventory_location(location)
+  # Inventory location is an optional task parameter. If not specified use the current directory
+  location.nil? ? Dir.pwd : location
+end
 
 def get_inventory_hash(inventory_full_path)
   if File.file?(inventory_full_path)
-    inventory_hash_from_inventory_file(inventory_full_path)
+    require 'puppet_litmus/inventory_manipulation'
+    PuppetLitmus::InventoryManipulation.inventory_hash_from_inventory_file(inventory_full_path)
   else
     { 'groups' => [{ 'name' => 'docker_nodes', 'nodes' => [] }, { 'name' => 'ssh_nodes', 'nodes' => [] }, { 'name' => 'winrm_nodes', 'nodes' => [] }] }
   end
 end
 
 def run_local_command(command, wd = Dir.pwd)
+  require 'open3'
   stdout, stderr, status = Open3.capture3(command, chdir: wd)
   error_message = "Attempted to run\ncommand:'#{command}'\nstdout:#{stdout}\nstderr:#{stderr}"
   raise error_message unless status.to_i.zero?
@@ -53,6 +57,7 @@ def token_from_fogfile
     puts "Cannot file fog file at #{fog_file}"
     return nil
   end
+  require 'yaml'
   contents = YAML.load_file(fog_file)
   token = contents.dig(:default, :vmpooler_token)
   token

@@ -86,7 +86,7 @@ params = JSON.parse(STDIN.read)
 platform = params['platform']
 action = params['action']
 node_name = params['node_name']
-inventory_location = params['inventory']
+inventory_location = sanitise_inventory_location(params['inventory'])
 raise 'specify a node_name when tearing down' if action == 'tear_down' && node_name.nil?
 raise 'specify a platform when provisioning' if action == 'provision' && platform.nil?
 unless node_name.nil? ^ platform.nil?
