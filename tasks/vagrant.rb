@@ -7,6 +7,22 @@ require 'fileutils'
 require 'net/ssh'
 require_relative '../lib/task_helper'
 
+def vagrant_version
+  return @vagrant_version if defined?(@vagrant_version)
+  @vagrant_version = begin
+    command = 'vagrant --version'
+    output = run_local_command(command)
+    Gem::Version.new(output.strip.split(%r{\s+})[1])
+  end
+  @vagrant_version
+end
+
+def supports_windows_platform?
+  # Relies on the winrm-config command added in 2.2.0:
+  # https://github.com/hashicorp/vagrant/blob/master/CHANGELOG.md#220-october-16-2018
+  vagrant_version >= Gem::Version.new('2.2.0')
+end
+
 def generate_vagrantfile(file_path, platform, enable_synced_folder, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password)
   unless enable_synced_folder
     synced_folder = 'config.vm.synced_folder ".", "/vagrant", disabled: true'
@@ -75,6 +91,9 @@ def configure_remoting(platform, remoting_config_path)
 end
 
 def provision(platform, inventory_location, enable_synced_folder, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password)
+  if platform_is_windows?(platform) && !supports_windows_platform?
+    raise "To provision a Windows VM with this task you must have vagrant 2.2.0 or later installed; vagrant seems to be installed at v#{vagrant_version}"
+  end
   include PuppetLitmus
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   inventory_hash = get_inventory_hash(inventory_full_path)
