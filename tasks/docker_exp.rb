@@ -7,8 +7,11 @@ require_relative '../lib/task_helper'
 # TODO: detect what shell to use
 @shell_command = 'bash -lc'
 
-def provision(docker_platform, inventory_location, append_cli)
+def provision(docker_platform, inventory_location, append_cli, vars)
   include PuppetLitmus::InventoryManipulation
+  unless vars.nil?
+    vars_hash = YAML.safe_load(vars)
+  end
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   inventory_hash = get_inventory_hash(inventory_full_path)
 
@@ -22,7 +25,8 @@ def provision(docker_platform, inventory_location, append_cli)
   fix_missing_tty_error_message(container_id) unless platform_is_windows?(docker_platform)
   node = { 'name' => container_id,
            'config' => { 'transport' => 'docker', 'docker' => { 'shell-command' => @shell_command } },
-           'facts' => { 'provisioner' => 'docker_exp', 'container_id' => container_id, 'platform' => docker_platform } }
+           'facts' => { 'provisioner' => 'docker_exp', 'container_id' => container_id, 'platform' => docker_platform },
+           'vars' => vars_hash }
   group_name = 'docker_nodes'
   add_node_to_group(inventory_hash, node, group_name)
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
@@ -49,6 +53,7 @@ append_cli = params['append_cli']
 inventory_location = sanitise_inventory_location(params['inventory'])
 node_name = params['node_name']
 platform = params['platform']
+vars = params['vars']
 raise 'specify a node_name when tearing down' if action == 'tear_down' && node_name.nil?
 raise 'specify a platform when provisioning' if action == 'provision' && platform.nil?
 unless node_name.nil? ^ platform.nil?
@@ -63,7 +68,7 @@ unless node_name.nil? ^ platform.nil?
 end
 
 begin
-  result = provision(platform, inventory_location, append_cli) if action == 'provision'
+  result = provision(platform, inventory_location, append_cli, vars) if action == 'provision'
   result = tear_down(node_name, inventory_location) if action == 'tear_down'
   puts result.to_json
   exit 0
