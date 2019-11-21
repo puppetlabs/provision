@@ -1,4 +1,6 @@
 ---
+".gitlab-ci.yml":
+  delete: true
 Gemfile:
   unmanaged: true
 Rakefile:
