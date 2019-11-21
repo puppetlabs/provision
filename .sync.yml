@@ -5,3 +5,5 @@ Gemfile:
   unmanaged: true
 Rakefile:
   changelog_project: provision
+spec/spec_helper.rb:
+  coverage_report: true
