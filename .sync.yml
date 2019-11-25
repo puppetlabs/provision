@@ -1,6 +1,8 @@
 ---
 ".gitlab-ci.yml":
   delete: true
+".travis.yml":
+  simplecov: true
 Gemfile:
   unmanaged: true
 Rakefile:
