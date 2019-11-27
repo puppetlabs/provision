@@ -3,6 +3,8 @@
   delete: true
 ".travis.yml":
   simplecov: true
+appveyor.yml:
+  delete: true
 Gemfile:
   unmanaged: true
 Rakefile:
