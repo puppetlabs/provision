@@ -7,6 +7,8 @@ require_relative '../lib/task_helper'
 def install_ssh_components(platform, container)
   case platform
   when %r{debian}, %r{ubuntu}, %r{cumulus}
+    warn '!!! Disabling ESM security updates for ubuntu - no access without privilege !!!'
+    run_local_command("docker exec #{container} rm -f /etc/apt/sources.list.d/ubuntu-esm-infra-trusty.list")
     run_local_command("docker exec #{container} apt-get update")
     run_local_command("docker exec #{container} apt-get install -y openssh-server openssh-client")
   when %r{fedora}
