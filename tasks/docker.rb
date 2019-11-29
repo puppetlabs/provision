@@ -16,8 +16,14 @@ def install_ssh_components(platform, container)
     run_local_command("docker exec #{container} dnf install -y sudo openssh-server openssh-clients")
     run_local_command("docker exec #{container} ssh-keygen -A")
   when %r{centos}, %r{^el-}, %r{eos}, %r{oracle}, %r{redhat}, %r{scientific}
-    run_local_command("docker exec #{container} yum clean all")
-    run_local_command("docker exec #{container} yum install -y sudo openssh-server openssh-clients")
+    # sometimes the redhat 6 variant containers like to eat their rpmdb, leading to
+    # issues with "rpmdb: unable to join the environment" errors
+    # This "fix" is from https://www.srv24x7.com/criticalyum-main-error-rpmdb-open-failed/
+    run_local_command("docker exec #{container} bash -exc 'rm -f /var/lib/rpm/__db*; "\
+      'db_verify /var/lib/rpm/Packages; '\
+      'rpm --rebuilddb; '\
+      'yum clean all; '\
+      "yum install -y sudo openssh-server openssh-clients'")
     ssh_folder = run_local_command("docker exec #{container} ls /etc/ssh/")
     run_local_command("docker exec #{container} ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N \"\"") unless ssh_folder =~ %r{ssh_host_rsa_key}
     run_local_command("docker exec #{container} ssh-keygen -t dsa -f /etc/ssh/ssh_host_dsa_key -N \"\"") unless ssh_folder =~ %r{ssh_host_dsa_key}
