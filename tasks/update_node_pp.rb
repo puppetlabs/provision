@@ -9,9 +9,17 @@ def update_file(manifest, target_node)
   _stdout, stderr, status = Open3.capture3("mkdir -p #{path}")
   raise Puppet::Error, _("stderr: ' %{stderr}')" % { stderr: stderr }) if status != 0
   site_path = File.join(path, "#{target_node}.pp")
-  final_manifest = "node '#{target_node}' { #{manifest} } "
+  if File.file?(site_path)
+    existing_manifest = File.readlines(site_path)
+    # remove the last bracket in the manifest
+    existing_manifest.pop
+    existing_manifest.push("\n  #{manifest}\n}")
+    final_manifest = existing_manifest.join('')
+  else
+    final_manifest = "node '#{target_node}' \n{\n  #{manifest} \n}"
+  end
   File.open(site_path, 'w+') { |f| f.write(final_manifest) }
-  'site.pp updated'
+  "#{site_path} updated"
 end
 
 params = JSON.parse(STDIN.read)
