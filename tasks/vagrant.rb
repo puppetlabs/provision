@@ -23,7 +23,7 @@ def supports_windows_platform?
   vagrant_version >= Gem::Version.new('2.2.0')
 end
 
-def generate_vagrantfile(file_path, platform, enable_synced_folder, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password)
+def generate_vagrantfile(file_path, platform, enable_synced_folder, provider, cpus, memory, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password)
   unless enable_synced_folder
     synced_folder = 'config.vm.synced_folder ".", "/vagrant", disabled: true'
   end
@@ -34,6 +34,19 @@ def generate_vagrantfile(file_path, platform, enable_synced_folder, hyperv_vswit
       synced_folder = "config.vm.synced_folder '.', '/vagrant', type: 'smb', smb_username: '#{hyperv_smb_username}', smb_password: '#{hyperv_smb_password}'"
     end
   end
+  if cpus.nil? && memory.nil?
+    provider_config_block = ''
+  else
+    if provider.nil?
+      provider = on_windows? ? 'hyperv' : 'virtualbox'
+    end
+    provider_config_block = <<-PCB
+config.vm.provider "#{provider}" do |v|
+    #{"v.cpus = #{cpus}" unless cpus.nil?}
+    #{"v.memory = #{memory}" unless memory.nil?}
+  end
+PCB
+  end
   vf = <<-VF
 Vagrant.configure(\"2\") do |config|
   config.vm.box = '#{platform}'
@@ -41,6 +54,7 @@ Vagrant.configure(\"2\") do |config|
   config.ssh.insert_key = false
   #{network}
   #{synced_folder}
+  #{provider_config_block}
 end
 VF
   File.open(file_path, 'w') do |f|
@@ -90,18 +104,21 @@ def configure_remoting(platform, remoting_config_path)
   remoting_config
 end
 
-def provision(platform, inventory_location, enable_synced_folder, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password)
+def provision(platform, inventory_location, enable_synced_folder, provider, cpus, memory, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password)
   if platform_is_windows?(platform) && !supports_windows_platform?
     raise "To provision a Windows VM with this task you must have vagrant 2.2.0 or later installed; vagrant seems to be installed at v#{vagrant_version}"
   end
+  if provider.nil?
+    provider = on_windows? ? 'hyperv' : 'virtualbox'
+  end
+
   include PuppetLitmus
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   inventory_hash = get_inventory_hash(inventory_full_path)
   vagrant_dirs = Dir.glob("#{File.join(inventory_location, '.vagrant')}/*/").map { |d| File.basename(d) }
   @vagrant_env = File.expand_path(File.join(inventory_location, '.vagrant', get_vagrant_dir(platform, vagrant_dirs)))
   FileUtils.mkdir_p @vagrant_env
-  generate_vagrantfile(File.join(@vagrant_env, 'Vagrantfile'), platform, enable_synced_folder, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password)
-  provider = on_windows? ? 'hyperv' : 'virtualbox'
+  generate_vagrantfile(File.join(@vagrant_env, 'Vagrantfile'), platform, enable_synced_folder, provider, cpus, memory, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password)
   command = "vagrant up --provider #{provider}"
   run_local_command(command, @vagrant_env)
   vm_id = File.read(File.join(@vagrant_env, '.vagrant', 'machines', 'default', provider, 'index_uuid'))
@@ -184,7 +201,10 @@ enable_synced_folder = params['enable_synced_folder'].nil? ? ENV['VAGRANT_ENABLE
 if enable_synced_folder.is_a?(String)
   enable_synced_folder = enable_synced_folder.casecmp('true').zero? ? true : false
 end
-hyperv_vswitch = params['hyperv_vswitch'].nil? ? ENV['VAGRANT_HYPERV_VSWITCH'] : params['hyperv_vswitch']
+provider            = params['provider'].nil? ? ENV['VAGRANT_PROVIDER'] : params['provider']
+cpus                = params['cpus'].nil? ? ENV['VAGRANT_CPUS'] : params['cpus']
+memory              = params['memory'].nil? ? ENV['VAGRANT_MEMORY'] : params['memory']
+hyperv_vswitch      = params['hyperv_vswitch'].nil? ? ENV['VAGRANT_HYPERV_VSWITCH'] : params['hyperv_vswitch']
 hyperv_smb_username = params['hyperv_smb_username'].nil? ? ENV['VAGRANT_HYPERV_SMB_USERNAME'] : params['hyperv_smb_username']
 hyperv_smb_password = params['hyperv_smb_password'].nil? ? ENV['VAGRANT_HYPERV_SMB_PASSWORD'] : params['hyperv_smb_password']
 raise 'specify a node_name when tearing down' if action == 'tear_down' && node_name.nil?
@@ -201,7 +221,7 @@ unless node_name.nil? ^ platform.nil?
 end
 
 begin
-  result = provision(platform, inventory_location, enable_synced_folder, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password) if action == 'provision'
+  result = provision(platform, inventory_location, enable_synced_folder, provider, cpus, memory, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password) if action == 'provision'
   result = tear_down(node_name, inventory_location) if action == 'tear_down'
   puts result.to_json
   exit 0

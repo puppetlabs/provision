@@ -20,6 +20,18 @@
       "description": "Platform to provision, eg  ubuntu:14.04",
       "type": "Optional[String[1]]"
     },
+    "provider": {
+      "description": "Provider to use provision, eg virtualbox",
+      "type": "Optional[String[1]]"
+    },
+    "cpus": {
+      "description": "Number of CPUs. Eg 2",
+      "type": "Optional[Integer]"
+    },
+    "memory": {
+      "description": "MB Memory. Eg 4000",
+      "type": "Optional[Integer]"
+    },
     "hyperv_vswitch": {
       "description": "The Hyper-V virtual switch to spin the vagrant image up on",
       "type": "Optional[String[1]]",
