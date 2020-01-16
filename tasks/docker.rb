@@ -143,6 +143,6 @@ begin
   puts result.to_json
   exit 0
 rescue => e
-  puts({ _error: { kind: 'facter_task/failure', msg: e.message } }.to_json)
+  puts({ _error: { kind: 'provision/docker_failure', msg: e.message, backtrace: e.backtrace } }.to_json)
   exit 1
 end
