@@ -4,7 +4,7 @@ require 'yaml'
 require 'puppet_litmus'
 require_relative '../lib/task_helper'
 
-def install_ssh_components(platform, container)
+def install_ssh_components(platform, version, container)
   case platform
   when %r{debian}, %r{ubuntu}, %r{cumulus}
     warn '!!! Disabling ESM security updates for ubuntu - no access without privilege !!!'
@@ -16,14 +16,18 @@ def install_ssh_components(platform, container)
     run_local_command("docker exec #{container} dnf install -y sudo openssh-server openssh-clients")
     run_local_command("docker exec #{container} ssh-keygen -A")
   when %r{centos}, %r{^el-}, %r{eos}, %r{oracle}, %r{redhat}, %r{scientific}
-    # sometimes the redhat 6 variant containers like to eat their rpmdb, leading to
-    # issues with "rpmdb: unable to join the environment" errors
-    # This "fix" is from https://www.srv24x7.com/criticalyum-main-error-rpmdb-open-failed/
-    run_local_command("docker exec #{container} bash -exc \"rm -f /var/lib/rpm/__db*; "\
-      'db_verify /var/lib/rpm/Packages; '\
-      'rpm --rebuilddb; '\
-      'yum clean all; '\
-      'yum install -y sudo openssh-server openssh-clients"')
+    if version == '6'
+      # sometimes the redhat 6 variant containers like to eat their rpmdb, leading to
+      # issues with "rpmdb: unable to join the environment" errors
+      # This "fix" is from https://www.srv24x7.com/criticalyum-main-error-rpmdb-open-failed/
+      run_local_command("docker exec #{container} bash -exc \"rm -f /var/lib/rpm/__db*; "\
+        'db_verify /var/lib/rpm/Packages; '\
+        'rpm --rebuilddb; '\
+        'yum clean all; '\
+        'yum install -y sudo openssh-server openssh-clients"')
+    else
+      run_local_command("docker exec #{container} yum install -y sudo openssh-server openssh-clients")
+    end
     ssh_folder = run_local_command("docker exec #{container} ls /etc/ssh/")
     run_local_command("docker exec #{container} ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N \"\"") unless ssh_folder =~ %r{ssh_host_rsa_key}
     run_local_command("docker exec #{container} ssh-keygen -t dsa -f /etc/ssh/ssh_host_dsa_key -N \"\"") unless ssh_folder =~ %r{ssh_host_dsa_key}
@@ -92,7 +96,7 @@ def provision(docker_platform, inventory_location)
                               end
   creation_command = "docker run -d -it #{deb_family_systemd_volume} --privileged -p #{front_facing_port}:22 --name #{full_container_name} #{docker_platform}"
   run_local_command(creation_command)
-  install_ssh_components(platform, full_container_name)
+  install_ssh_components(platform, version, full_container_name)
   fix_ssh(platform, full_container_name)
   hostname = 'localhost'
   node = { 'name' => "#{hostname}:#{front_facing_port}",
@@ -143,6 +147,6 @@ begin
   puts result.to_json
   exit 0
 rescue => e
-  puts({ _error: { kind: 'facter_task/failure', msg: e.message } }.to_json)
+  puts({ _error: { kind: 'provision/docker_failure', msg: e.message, backtrace: e.backtrace } }.to_json)
   exit 1
 end
