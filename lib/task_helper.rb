@@ -32,7 +32,7 @@ def platform_is_windows?(platform)
   # (bare_win_with_demlimiter) win-2008
   # (plain_windows)            webserserver-windows-2008
   # (bare_win_with_demlimiter) webserver-win-2008
-  windows_regex = %r{(?<plain_windows>windows)|(?<bare_win_with_demlimiter>(?:^|[\/:\-\\;])win(?:[\/:\-\\;]|$))}
+  windows_regex = %r{(?<plain_windows>windows)|(?<bare_win_with_demlimiter>(?:^|[\/:\-\\;])win(?:[\/:\-\\;]|$))}i
   platform =~ windows_regex
 end
 
