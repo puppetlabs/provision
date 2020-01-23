@@ -129,7 +129,7 @@ def provision(platform, inventory_location, enable_synced_folder, provider, cpus
 
   if platform_uses_ssh(platform)
     node = {
-      'name' => node_name,
+      'uri' => node_name,
       'config' => {
         'transport' => 'ssh',
         'ssh' => {
@@ -152,7 +152,7 @@ def provision(platform, inventory_location, enable_synced_folder, provider, cpus
     # TODO: Need to figure out where SSL comes from
     remote_config['uses_ssl'] ||= false # TODO: Is the default _actually_ false?
     node = {
-      'name' => node_name,
+      'uri' => node_name,
       'config' => {
         'transport'   => 'winrm',
         'winrm'       => {

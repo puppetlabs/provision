@@ -99,7 +99,7 @@ def provision(docker_platform, inventory_location)
   install_ssh_components(platform, version, full_container_name)
   fix_ssh(platform, full_container_name)
   hostname = 'localhost'
-  node = { 'name' => "#{hostname}:#{front_facing_port}",
+  node = { 'uri' => "#{hostname}:#{front_facing_port}",
            'config' => { 'transport' => 'ssh',
                          'ssh' => { 'user' => 'root', 'password' => 'root', 'port' => front_facing_port, 'host-key-check' => false } },
            'facts' => { 'provisioner' => 'docker', 'container_name' => full_container_name, 'platform' => docker_platform } }

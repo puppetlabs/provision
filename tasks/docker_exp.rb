@@ -9,9 +9,6 @@ require_relative '../lib/task_helper'
 
 def provision(docker_platform, inventory_location, append_cli, vars)
   include PuppetLitmus::InventoryManipulation
-  unless vars.nil?
-    vars_hash = YAML.safe_load(vars)
-  end
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   inventory_hash = get_inventory_hash(inventory_full_path)
 
@@ -23,10 +20,13 @@ def provision(docker_platform, inventory_location, append_cli, vars)
   creation_command = "docker run -d -it #{deb_family_systemd_volume} --privileged #{append_cli} #{docker_platform}"
   container_id = run_local_command(creation_command).strip[0..11]
   fix_missing_tty_error_message(container_id) unless platform_is_windows?(docker_platform)
-  node = { 'name' => container_id,
+  node = { 'uri' => container_id,
            'config' => { 'transport' => 'docker', 'docker' => { 'shell-command' => @shell_command } },
-           'facts' => { 'provisioner' => 'docker_exp', 'container_id' => container_id, 'platform' => docker_platform },
-           'vars' => vars_hash }
+           'facts' => { 'provisioner' => 'docker_exp', 'container_id' => container_id, 'platform' => docker_platform } }
+  unless vars.nil?
+    var_hash = YAML.safe_load(vars)
+    node['vars'] = var_hash
+  end
   group_name = 'docker_nodes'
   add_node_to_group(inventory_hash, node, group_name)
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }

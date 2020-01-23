@@ -7,9 +7,6 @@ require_relative '../lib/task_helper'
 
 def provision(platform, inventory_location, vars)
   include PuppetLitmus::InventoryManipulation
-  unless vars.nil?
-    vars_hash = YAML.safe_load(vars)
-  end
   vmpooler_hostname = if ENV['VMPOOLER_HOSTNAME'].nil?
                         'vcloud.delivery.puppetlabs.net'
                       else
@@ -34,17 +31,19 @@ def provision(platform, inventory_location, vars)
 
   hostname = "#{data[platform]['hostname']}.#{data['domain']}"
   if platform_uses_ssh(platform)
-    node = { 'name' => hostname,
+    node = { 'uri' => hostname,
              'config' => { 'transport' => 'ssh', 'ssh' => { 'user' => 'root', 'password' => 'Qu@lity!', 'host-key-check' => false } },
-             'facts' => { 'provisioner' => 'vmpooler', 'platform' => platform },
-             'vars'  => vars_hash }
+             'facts' => { 'provisioner' => 'vmpooler', 'platform' => platform } }
     group_name = 'ssh_nodes'
   else
-    node = { 'name' => hostname,
+    node = { 'uri' => hostname,
              'config' => { 'transport' => 'winrm', 'winrm' => { 'user' => 'Administrator', 'password' => 'Qu@lity!', 'ssl' => false } },
-             'facts' => { 'provisioner' => 'vmpooler', 'platform' => platform },
-             'vars' => vars_hash }
+             'facts' => { 'provisioner' => 'vmpooler', 'platform' => platform } }
     group_name = 'winrm_nodes'
+  end
+  unless vars.nil?
+    var_hash = YAML.safe_load(vars)
+    node['vars'] = var_hash
   end
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   inventory_hash = get_inventory_hash(inventory_full_path)

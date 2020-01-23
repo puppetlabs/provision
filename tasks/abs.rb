@@ -35,12 +35,12 @@ def provision(platform, inventory_location)
 
   hostname = data.first['hostname']
   if platform_uses_ssh(platform)
-    node = { 'name' => hostname,
+    node = { 'uri' => hostname,
              'config' => { 'transport' => 'ssh', 'ssh' => { 'user' => 'root', 'password' => 'Qu@lity!', 'host-key-check' => false } },
              'facts' => { 'provisioner' => 'abs', 'platform' => platform, 'job_id' => job_id } }
     group_name = 'ssh_nodes'
   else
-    node = { 'name' => hostname,
+    node = { 'uri' => hostname,
              'config' => { 'transport' => 'winrm', 'winrm' => { 'user' => 'Administrator', 'password' => 'Qu@lity!', 'ssl' => false } },
              'facts' => { 'provisioner' => 'abs', 'platform' => platform, 'job_id' => job_id } }
     group_name = 'winrm_nodes'
