@@ -71,7 +71,7 @@ def fix_ssh(platform, container)
   end
 end
 
-def provision(docker_platform, inventory_location)
+def provision(docker_platform, inventory_location, vars)
   include PuppetLitmus::InventoryManipulation
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   inventory_hash = get_inventory_hash(inventory_full_path)
@@ -103,6 +103,10 @@ def provision(docker_platform, inventory_location)
            'config' => { 'transport' => 'ssh',
                          'ssh' => { 'user' => 'root', 'password' => 'root', 'port' => front_facing_port, 'host-key-check' => false } },
            'facts' => { 'provisioner' => 'docker', 'container_name' => full_container_name, 'platform' => docker_platform } }
+  unless vars.nil?
+    var_hash = YAML.safe_load(vars)
+    node['vars'] = var_hash
+  end
   group_name = 'ssh_nodes'
   add_node_to_group(inventory_hash, node, group_name)
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
@@ -128,6 +132,7 @@ platform = params['platform']
 action = params['action']
 node_name = params['node_name']
 inventory_location = sanitise_inventory_location(params['inventory'])
+vars = params['vars']
 raise 'specify a node_name when tearing down' if action == 'tear_down' && node_name.nil?
 raise 'specify a platform when provisioning' if action == 'provision' && platform.nil?
 unless node_name.nil? ^ platform.nil?
@@ -142,7 +147,7 @@ unless node_name.nil? ^ platform.nil?
 end
 
 begin
-  result = provision(platform, inventory_location) if action == 'provision'
+  result = provision(platform, inventory_location, vars) if action == 'provision'
   result = tear_down(node_name, inventory_location) if action == 'tear_down'
   puts result.to_json
   exit 0

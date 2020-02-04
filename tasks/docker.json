@@ -19,6 +19,10 @@
     "platform": {
       "description": "Platform to provision, eg  ubuntu:14.04",
       "type": "Optional[String[1]]"
+    },
+    "vars": {
+      "description": "YAML string of key/value pairs to add to the inventory vars section",
+      "type": "Optional[String[1]]"
     }
   },
   "files": [
