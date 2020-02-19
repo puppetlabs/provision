@@ -61,6 +61,8 @@ def token_from_fogfile
   contents = YAML.load_file(fog_file)
   token = contents.dig(:default, :vmpooler_token)
   token
+rescue
+  puts 'Failed to get vmpooler token from .fog file'
 end
 
 # Workaround for fixing the bash message in stderr when tty is missing
