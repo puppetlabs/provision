@@ -138,7 +138,7 @@ def provision(platform, inventory_location, enable_synced_folder, provider, cpus
           'private-key' => remote_config['identityfile'][0],
           'host-key-check' => remote_config['stricthostkeychecking'],
           'port' => remote_config['port'],
-          'run-as' => 'root'
+          'run-as' => 'root',
         },
       },
       'facts' => {
