@@ -25,3 +25,8 @@
 .project
 .envrc
 /inventory.yaml
+*.ruby-gemset
+*.ruby-version
+*.code-workspace
+Puppetfile
+Vagrantfile

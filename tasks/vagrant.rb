@@ -72,7 +72,7 @@ end
 
 def configure_remoting(platform, remoting_config_path)
   if platform_uses_ssh(platform)
-    command = "vagrant ssh-config > #{remoting_config_path}"
+    command = "vagrant ssh-config > '#{remoting_config_path}'"
     run_local_command(command, @vagrant_env)
     remoting_config = Net::SSH::Config.load(remoting_config_path, 'default')
     case platform
@@ -95,7 +95,7 @@ def configure_remoting(platform, remoting_config_path)
       session.exec!("sudo su -c \"#{restart_command}\"")
     end
   else
-    command = "vagrant winrm-config > #{remoting_config_path}"
+    command = "vagrant winrm-config > '#{remoting_config_path}'"
     run_local_command(command, @vagrant_env)
     remoting_config = Net::SSH::Config.load(remoting_config_path, 'default')
     # TODO: Delete remoting_config_path as it's no longer needed
