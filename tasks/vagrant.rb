@@ -58,7 +58,7 @@ end
 
 def configure_remoting(platform, remoting_config_path)
   if platform_uses_ssh(platform)
-    command = "vagrant ssh-config > #{remoting_config_path}"
+    command = "vagrant ssh-config > '#{remoting_config_path}'"
     run_local_command(command, @vagrant_env)
     remoting_config = Net::SSH::Config.load(remoting_config_path, 'default')
     case platform
@@ -81,7 +81,7 @@ def configure_remoting(platform, remoting_config_path)
       session.exec!("sudo su -c \"#{restart_command}\"")
     end
   else
-    command = "vagrant winrm-config > #{remoting_config_path}"
+    command = "vagrant winrm-config > '#{remoting_config_path}'"
     run_local_command(command, @vagrant_env)
     remoting_config = Net::SSH::Config.load(remoting_config_path, 'default')
     # TODO: Delete remoting_config_path as it's no longer needed
@@ -98,7 +98,7 @@ def provision(platform, inventory_location, enable_synced_folder, hyperv_vswitch
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   inventory_hash = get_inventory_hash(inventory_full_path)
   vagrant_dirs = Dir.glob("#{File.join(inventory_location, '.vagrant')}/*/").map { |d| File.basename(d) }
-  @vagrant_env = File.expand_path(File.join(inventory_location, '.vagrant', get_vagrant_dir(platform, vagrant_dirs)))
+  @vagrant_env = File.expand_path(File.join(inventory_location, '.vagrant', get_vagrant_dir(platform, vagrant_dirs))).gsub(%r{ }, '\ ')
   FileUtils.mkdir_p @vagrant_env
   generate_vagrantfile(File.join(@vagrant_env, 'Vagrantfile'), platform, enable_synced_folder, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password)
   provider = on_windows? ? 'hyperv' : 'virtualbox'
