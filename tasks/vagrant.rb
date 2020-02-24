@@ -133,11 +133,12 @@ def provision(platform, inventory_location, enable_synced_folder, provider, cpus
       'config' => {
         'transport' => 'ssh',
         'ssh' => {
-          'user' => 'root',
+          'user' => remote_config['user'],
           'host' => remote_config['hostname'],
           'private-key' => remote_config['identityfile'][0],
           'host-key-check' => remote_config['stricthostkeychecking'],
           'port' => remote_config['port'],
+          'run-as': 'root'
         },
       },
       'facts' => {
