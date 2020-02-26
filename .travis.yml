@@ -43,6 +43,7 @@ branches:
   only:
     - master
     - /^v\d/
+    - /^feature\/.*/
 notifications:
   email: false
   slack:

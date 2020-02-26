@@ -1,0 +1,102 @@
+{
+  "puppet_task_version": 1,
+  "supports_noop": false,
+  "input_method": "stdin",
+  "description": "Provision/Tear down a machine on Google Cloud Platform",
+  "parameters": {
+    "action": {
+      "description": "Action to perform, tear_down or provision",
+      "type": "Enum[provision, tear_down]",
+      "default": "provision"
+    },
+    "inventory": {
+      "description": "Location of the inventory file",
+      "type": "Optional[String[1]]"
+    },
+    "platform": {
+      "description": "Platform to provision. Corresponds to the cloud image id used to provision the vm. eg centos-cloud/centos-7",
+      "type": "Optional[String[1]]"
+    },
+    "node_name": {
+      "description": "The name of the node. Used by tear_down. Is incompatible with platform",
+      "type": "Optional[String[1]]"
+    },
+    "credentials_file": {
+      "type": "Optional[String[1]]",
+      "description": "Path to json credentials file.",
+      "default": "~/.ssh/litmus-compute.json"
+    },
+    "project_id": {
+      "type": "Optional[String[1]]",
+      "description": "Id of the Google Compute Project",
+      "default": "litmus-compute"
+    },
+    "region": {
+      "type": "Optional[String[1]]",
+      "description": "Compute Region where resources will be created",
+      "default": "us-central1"
+    },
+    "zone": {
+      "type": "Optional[String[1]]",
+      "description": "Compute Zone where resources will be created",
+      "default": "us-central1-a"
+    },
+    "machine_type": {
+      "type": "Optional[String[1]]",
+      "description": "Type of machine",
+      "default": "n1-standard-1"
+    },
+    "vm_name": {
+      "type": "Optional[String[1]]",
+      "description": "Overwrite the VM name. Defaults to litmus-test-[CREATED_BY]-[RANDOMNUMBER]"
+    },
+    "ssh_user": {
+      "type": "Optional[String[1]]",
+      "description": "User that litmus will use to ssh into the vm. Defaults to $USER"
+    },
+    "ssh_private_key": {
+      "type": "Optional[String[1]]",
+      "description": "Private ssh key used by \"ssh_user\" to connect to the vm.",
+      "default": "~/.ssh/litmus_compute"
+    },
+    "ssh_public_key": {
+      "type": "Optional[String[1]]",
+      "description": "Public ssh key used by \"ssh_user\" to connect to the vm.",
+      "default": "~/.ssh/litmus_compute.pub"
+    },
+    "ssh_host_key_check": {
+      "type": "Optional[Boolean]",
+      "description": "Host verification enabled.",
+      "default": false
+    },
+    "ssh_port": {
+      "type": "Optional[Integer]",
+      "description": "Port used to connect to the vm via ssh.",
+      "default": 22
+    },
+    "owner": {
+      "type": "Optional[String[1]]",
+      "description": "Metadata. Adds a label to the vm to identify the team/owner that owns the vm. Defaults to $USER."
+    },
+    "created_by": {
+      "type": "Optional[String[1]]",
+      "description": "Metadata. Adds a label to the vm to indentify the user that created the resources. Defaults to $USER."
+    },
+    "build_url": {
+      "type": "Optional[String[1]]",
+      "description": "Metadata. Adds a label to the vm to identify the CI build url that created the vm."
+    },
+    "main_template": {
+      "type": "Optional[String[1]]",
+      "description": "Path to a custom main.tf file template. The file will be parsed as ERB."
+    },
+    "vars_template": {
+      "type": "Optional[String[1]]",
+      "description": "Path to a custom vars.tf file template. The file will be parsed as ERB."
+    }
+  },
+  "files": [
+    "provision/lib/task_helper.rb",
+    "provision/lib/terraform.rb"
+  ]
+}

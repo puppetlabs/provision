@@ -1,4 +1,6 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
+
 require 'json'
 require 'net/http'
 require 'yaml'
@@ -6,6 +8,8 @@ require 'puppet_litmus'
 require 'fileutils'
 require 'net/ssh'
 require_relative '../lib/task_helper'
+
+include Provision::TaskHelper
 
 def vagrant_version
   return @vagrant_version if defined?(@vagrant_version)

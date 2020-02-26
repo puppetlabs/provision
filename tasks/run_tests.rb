@@ -1,6 +1,10 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
+
 require 'puppet_litmus'
 require_relative '../lib/task_helper'
+
+include Provision::TaskHelper
 
 def run_tests(sut, test_path)
   test = "bundle exec rspec #{test_path} --format progress"

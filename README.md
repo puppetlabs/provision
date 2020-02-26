@@ -5,32 +5,44 @@ Simple tasks to provision and tear_down containers / instances and virtual machi
 
 #### Table of Contents
 
-1. [Description](#description)
-2. [Setup - The basics of getting started with provision](#setup)
-    * [Setup requirements](#setup-requirements)
-3. [Usage - Configuration options and additional functionality](#usage)
-    * [ABS](#abs)
-    * [Docker](#docker)
-    * [Vagrant](#vagrant)
-    * [Vmpooler](#vmpooler)
-4. [Limitations - OS compatibility, etc.](#limitations)
-5. [Development - Guide for contributing to the module](#development)
+- [Provision](#provision)
+      - [Table of Contents](#table-of-contents)
+  - [Description](#description)
+  - [Setup](#setup)
+    - [Setup Requirements](#setup-requirements)
+      - [Running the tasks as part of puppet_litmus](#running-the-tasks-as-part-of-puppetlitmus)
+      - [Running the module stand-alone call the tasks/plans directly](#running-the-module-stand-alone-call-the-tasksplans-directly)
+  - [Usage](#usage)
+    - [ABS](#abs)
+      - [Setting up your Token](#setting-up-your-token)
+      - [Running the Commands](#running-the-commands)
+        - [Setting up a new macine](#setting-up-a-new-macine)
+        - [Tearing down a finished machine](#tearing-down-a-finished-machine)
+    - [Docker](#docker)
+    - [Vagrant](#vagrant)
+      - [Synced Folders](#synced-folders)
+      - [Hyper-V Provider](#hyper-v-provider)
+    - [Terraform](#terraform)
+    - [Vmpooler](#vmpooler)
+  - [Limitations](#limitations)
+  - [Development](#development)
 
 ## Description
 
 Bolt tasks allowing a user to provision and tear down systems. It also maintains a Bolt inventory file.
 Provisioners so far:
-   
+
 * ABS (AlwaysBeScheduling)
 * Docker
 * Vagrant
+* Terraform
 * Vmpooler (internal to puppet)
 
 ## Setup
 
 ### Setup Requirements
 
-Bolt has to be installed to run the tasks. Each provisioner has its own requirements. From having Docker to installed or access to private infrastructure. 
+Bolt has to be installed to run the tasks. Each provisioner has its own requirements. From having Docker to installed or access to private infrastructure.
 
 #### Running the tasks as part of puppet_litmus
 
@@ -44,15 +56,15 @@ For provisioning to work you will need to have a number of other modules availab
 cat $HOME/.puppetlabs/bolt/Puppetfile
 mod 'puppetlabs-puppet_agent'
 mod 'puppetlabs-facts'
-mod 'puppetlabs-puppet_conf'                  
+mod 'puppetlabs-puppet_conf'
 ```
 
 ## Usage
 
 There is a basic workflow for the provision tasks.
 
-* provision - creates / initiates a platform and edits a bolt inventory file. 
-* tear_down - creates / initiates a system / container and edits a bolt inventory file. 
+* provision - creates / initiates a platform and edits a bolt inventory file.
+* tear_down - creates / initiates a system / container and edits a bolt inventory file.
 
 For extended functionality please look at the wiki https://github.com/puppetlabs/provision/wiki
 
@@ -127,7 +139,7 @@ Ran on 1 node in 1.54 seconds
 
 ### Docker
 
-Given an docker image name it will spin up that container and setup external ssh on that platform. For helpful docker tips look [here](https://github.com/puppetlabs/litmus_image/blob/master/README.md) 
+Given an docker image name it will spin up that container and setup external ssh on that platform. For helpful docker tips look [here](https://github.com/puppetlabs/litmus_image/blob/master/README.md)
 
 provision
 
@@ -238,11 +250,17 @@ Ran on 1 node in 51.98 seconds
 
 Using the `tear_down` task is the same as on Linux or MacOS.
 
+### Terraform
+
+Allows the user to provision the required infrastructure using [Terraform](https://www.terraform.io/).
+
+Read more about this provisioner under [docs/terraform.md](docs/terraform.md)
+
 ### Vmpooler
 
 *Warning* this is currently setup to work with puppet's internal infrasture, its behaviour can be modified below.
 It will utilise a $home/.fog file. Have a look here https://confluence.puppetlabs.com/display/SRE/Generating+and+using+vmpooler+tokens
-Check http://vcloud.delivery.puppetlabs.net/vm/ for the list of availible platforms. 
+Check http://vcloud.delivery.puppetlabs.net/vm/ for the list of availible platforms.
 Environment variables, can modify its behaviour:
 VMPOOLER_HOSTNAME, will change the default hostname used to connect to the vmpooler instance.
 ```
@@ -286,17 +304,42 @@ Ran on 1 node in 1.45 seconds
 
 ## Development
 
-Testing/development/debugging it is better to use ruby directly, you will need to pass the json parameters. Depending on how you are running (using a puppet file or as part of a puppet_litmus). The dependcies of provision will need to be availible. See the setup section above.
+Configure your local development environment by running one of the `provision:development` rake tasks.
+
+```bash
+$ rake -vT | grep provision:development
+rake provision:development:link     # Link current module to $HOME/.puppetlabs/bolt/site-modules/
+rake provision:development:setup    # Setup minimal development requirements
+rake provision:development:unlink   # Unlink current module from $HOME/.puppetlabs/bolt/site-modules/provision
+```
+
+Running `rake provision::development:setup` will make the tasks included in this repository available to your console.
+
+```bash
+➜  provision git:(feature/my-feature) ✗ bolt task show | grep provision
+provision::abs              Provision/Tear down a machine using abs
+provision::docker           Provision/Tear down a machine on docker
+provision::docker_exp       Provision/Tear down a machine on docker
+provision::install_pe       Installs PE on a target
+provision::run_tests        Run rspec tests against a target machine
+provision::terraform_gcp    Provision/Tear down a machine on Google Cloud Platform
+provision::update_node_pp   Creates a manifest file for a target node on pe server
+provision::update_site_pp   Updates the site.pp on a target
+provision::vagrant          Provision/Tear down a machine on vagrant
+provision::vmpooler         Provision/Tear down a machine on vmpooler
+```
+
+Alternative you can execute ruby directly, you will need to pass the json parameters. Depending on how you are running (using a puppet file or as part of a puppet_litmus). The dependencies of provision will need to be availible. See the setup section above.
 
 ```
 # powershell
  echo '{ "platform": "ubuntu-1604-x86_64", "action": "provision", "inventory": "c:\\workspace\\puppetlabs-motd\\" }' | bundle exec ruby .\spec\fixtures\modules\provision\tasks\vmpooler.rb
 # bash / zshell ...
- echo '{ "platform": "ubuntu-1604-x86_64", "action": "provision", "inventory": "/home/tp/workspace/puppetlabs-motd/" }' | bundle exec ruby spec/fixtures/modules/provision/tasks/vmpooler.rb 
+ echo '{ "platform": "ubuntu-1604-x86_64", "action": "provision", "inventory": "/home/tp/workspace/puppetlabs-motd/" }' | bundle exec ruby spec/fixtures/modules/provision/tasks/vmpooler.rb
 ```
- 
 
 Testing using bolt, the second step
 ```
 $ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --nodes localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/provision
 ```
+

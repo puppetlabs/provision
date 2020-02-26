@@ -30,3 +30,6 @@
 *.code-workspace
 Puppetfile
 Vagrantfile
+**/*/.terraform
+*.tfstate
+.terraform

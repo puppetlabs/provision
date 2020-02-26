@@ -1,6 +1,7 @@
 {
   "recommendations": [
     "jpogran.puppet-vscode",
-    "rebornix.Ruby"
+    "rebornix.Ruby",
+    "editorconfig.editorconfig"
   ]
 }

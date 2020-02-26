@@ -1,10 +1,14 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
+
 require 'json'
 require 'net/http'
 require 'yaml'
 require 'puppet_litmus'
 require 'etc'
 require_relative '../lib/task_helper'
+
+include Provision::TaskHelper
 
 def provision(platform, inventory_location)
   include PuppetLitmus::InventoryManipulation
