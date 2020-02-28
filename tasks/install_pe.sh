@@ -7,10 +7,10 @@ else
   PE_RELEASE=$PT_version
 fi
 
-PE_LATEST=$(curl http://enterprise.delivery.puppetlabs.net/${PE_RELEASE}/ci-ready/LATEST)
+PE_LATEST=$(curl https://artifactory.delivery.puppetlabs.net/artifactory/generic_enterprise__local/${PE_RELEASE}/ci-ready/LATEST)
 PE_FILE_NAME=puppet-enterprise-${PE_LATEST}-el-7-x86_64
 TAR_FILE=${PE_FILE_NAME}.tar
-DOWNLOAD_URL=http://enterprise.delivery.puppetlabs.net/${PE_RELEASE}/ci-ready/${TAR_FILE}
+DOWNLOAD_URL=https://artifactory.delivery.puppetlabs.net/artifactory/generic_enterprise__local/${PE_RELEASE}/ci-ready/${TAR_FILE}
 
 ## Download PE
 curl -o ${TAR_FILE} ${DOWNLOAD_URL}
