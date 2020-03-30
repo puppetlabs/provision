@@ -64,7 +64,7 @@ def fix_ssh(platform, container)
     if container !~ %r{7|8|2}
       run_local_command("docker exec #{container} service sshd restart")
     else
-      run_local_command("docker exec -d #{container} /usr/sbin/sshd -D")
+      run_local_command("docker exec #{container} /usr/sbin/sshd")
     end
   else
     raise "platform #{platform} not yet supported on docker"
