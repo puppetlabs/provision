@@ -4,8 +4,8 @@ require 'yaml'
 require 'puppet_litmus'
 require_relative '../lib/task_helper'
 
-def install_ssh_components(platform, version, container)
-  case platform
+def install_ssh_components(distro, version, container)
+  case distro
   when %r{debian}, %r{ubuntu}, %r{cumulus}
     warn '!!! Disabling ESM security updates for ubuntu - no access without privilege !!!'
     run_local_command("docker exec #{container} rm -f /etc/apt/sources.list.d/ubuntu-esm-infra-trusty.list")
@@ -44,7 +44,7 @@ def install_ssh_components(platform, version, container)
     run_local_command("docker exec #{container} sed -ri \"s/^#?UsePAM .*/UsePAM no/\" /etc/ssh/sshd_config")
     run_local_command("docker exec #{container} systemctl enable sshd")
   else
-    raise "platform #{platform} not yet supported on docker"
+    raise "distribution #{distro} not yet supported on docker"
   end
 
   # Make sshd directory, set root password
@@ -52,57 +52,89 @@ def install_ssh_components(platform, version, container)
   run_local_command("docker exec #{container} bash -c \"echo root:root | /usr/sbin/chpasswd\"")
 end
 
-def fix_ssh(platform, container)
+def fix_ssh(distro, version, container)
   run_local_command("docker exec #{container} sed -ri \"s/^#?PermitRootLogin .*/PermitRootLogin yes/\" /etc/ssh/sshd_config")
   run_local_command("docker exec #{container} sed -ri \"s/^#?PasswordAuthentication .*/PasswordAuthentication yes/\" /etc/ssh/sshd_config")
   run_local_command("docker exec #{container} sed -ri \"s/^#?UseDNS .*/UseDNS no/\" /etc/ssh/sshd_config")
   run_local_command("docker exec #{container} sed -e \"/HostKey.*ssh_host_e.*_key/ s/^#*/#/\" -ri /etc/ssh/sshd_config")
-  case platform
+  case distro
   when %r{debian}, %r{ubuntu}
     run_local_command("docker exec #{container} service ssh restart")
   when %r{centos}, %r{^el-}, %r{eos}, %r{fedora}, %r{oracle}, %r{redhat}, %r{scientific}, %r{amazonlinux}
-    if container !~ %r{7|8|2}
+    if version !~ %r{7|8|2}
       run_local_command("docker exec #{container} service sshd restart")
     else
       run_local_command("docker exec #{container} /usr/sbin/sshd")
     end
   else
-    raise "platform #{platform} not yet supported on docker"
+    raise "distribution #{distro} not yet supported on docker"
   end
 end
 
-def provision(docker_platform, inventory_location, vars)
+def get_image_os_release_facts(image)
+  os_release_facts = {}
+  os_release = run_local_command("docker run --rm #{image} cat /etc/os-release")
+  # The or-release file is a newline-separated list of environment-like
+  # shell-compatible variable assignments.
+  re = '^(.+)=(.+)'
+  os_release.each_line do |line|
+    line = line.strip || line
+    next unless !line.nil? && !line.empty?
+
+    _, key, value = line.match(re).to_a
+    # The values seems to be quoted most of the time, however debian only quotes
+    # some of the values :/.  Parse it, as if it was a JSON string.
+    value = JSON.parse(value) unless value[0] != '"'
+    os_release_facts[key] = value
+  end
+  os_release_facts
+end
+
+def provision(image, inventory_location, vars)
   include PuppetLitmus::InventoryManipulation
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   inventory_hash = get_inventory_hash(inventory_full_path)
+  os_release_facts = get_image_os_release_facts(image)
+  distro = os_release_facts['ID']
+  version = os_release_facts['VERSION_ID']
   warn '!!! Using private port forwarding!!!'
-  platform, version = docker_platform.split(':')
   front_facing_port = 2222
-  platform = platform.sub(%r{/}, '_')
-  full_container_name = "#{platform}_#{version}-#{front_facing_port}"
   (front_facing_port..2230).each do |i|
     front_facing_port = i
-    full_container_name = "#{platform}_#{version}-#{front_facing_port}"
     ports = "#{front_facing_port}->22"
     list_command = 'docker container ls -a'
-    stdout, _stderr, _status = Open3.capture3(list_command)
+    stdout = run_local_command(list_command)
     break unless stdout.include?(ports)
     raise 'All front facing ports are in use.' if front_facing_port == 2230
   end
-  deb_family_systemd_volume = if (docker_platform =~ %r{debian|ubuntu}) && (docker_platform !~ %r{debian8|ubuntu14})
+  full_container_name = "#{distro}_#{version}-#{front_facing_port}"
+  deb_family_systemd_volume = if (image =~ %r{debian|ubuntu}) && (image !~ %r{debian8|ubuntu14})
                                 '--volume /sys/fs/cgroup:/sys/fs/cgroup:ro'
                               else
                                 ''
                               end
-  creation_command = "docker run -d -it #{deb_family_systemd_volume} --privileged -p #{front_facing_port}:22 --name #{full_container_name} #{docker_platform}"
-  run_local_command(creation_command)
-  install_ssh_components(platform, version, full_container_name)
-  fix_ssh(platform, full_container_name)
+  creation_command = %W[
+    docker run -d -it #{deb_family_systemd_volume} --privileged
+    -p #{front_facing_port}:22
+    --name #{full_container_name} #{image}
+  ].join(' ')
+  run_local_command(creation_command).strip
+  install_ssh_components(distro, version, full_container_name)
+  fix_ssh(distro, version, full_container_name)
   hostname = 'localhost'
-  node = { 'uri' => "#{hostname}:#{front_facing_port}",
-           'config' => { 'transport' => 'ssh',
-                         'ssh' => { 'user' => 'root', 'password' => 'root', 'port' => front_facing_port, 'host-key-check' => false } },
-           'facts' => { 'provisioner' => 'docker', 'container_name' => full_container_name, 'platform' => docker_platform } }
+  node = {
+    'uri' => "#{hostname}:#{front_facing_port}",
+    'config' => {
+      'transport' => 'ssh',
+      'ssh' => { 'user' => 'root', 'password' => 'root', 'port' => front_facing_port, 'host-key-check' => false },
+    },
+    'facts' => {
+      'provisioner' => 'docker',
+      'container_name' => full_container_name,
+      'platform' => image,
+      'os-release' => os_release_facts,
+    },
+  }
   unless vars.nil?
     var_hash = YAML.safe_load(vars)
     node['vars'] = var_hash
