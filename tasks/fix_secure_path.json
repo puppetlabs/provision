@@ -1,0 +1,13 @@
+{
+    "puppet_task_version": 1,
+    "supports_noop": false,
+    "description": "Add puppet agent bin directory to sudo secure_path",
+    "parameters": {
+      "path": {
+        "description": "Puppet agent bin directory path",
+        "type": "Optional[String[1]]",
+        "default": "/opt/puppetlabs/bin"
+      }
+    }
+  }
+  
