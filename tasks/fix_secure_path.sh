@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ -z "${PT_path}" ] ; then
-  pupt_pah="/opt/puppetlabs/bin"
+  pupt_path="/opt/puppetlabs/bin"
 else
   pupt_path=$PT_path
 fi
