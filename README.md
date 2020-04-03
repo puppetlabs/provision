@@ -183,6 +183,23 @@ Successful on 1 node: localhost
 Ran on 1 node in 51.98 seconds
 ```
 
+sudo secure_path fix
+
+As some Vagrant boxes do not allow ssh root logins, the **vagrant** user is used to login and *sudo* is used to execute privileged commands as root user. 
+By default the Puppet agent installation does not change the systems' sudo *secure_path* configuration.
+This leads to errors when anything tries to execute `puppet` commands on the test system.
+To add the Puppet agent binary path to the *secure_path* please run the `provision::fix_secure_path` Bolt task:
+
+```
+$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::fix_secure_path path=/opt/pupperlabs/bin -i inventory.yaml -t ssh_nodes
+
+Started on 127.0.0.1:2222...
+Finished on 127.0.0.1:2222:
+  Task completed successfully with no result
+Successful on 1 target: 127.0.0.1:2222
+Ran on 1 target in 0.84 sec
+```
+
 tear_down
 ```
 $ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vagrant --nodes localhost  action=tear_down inventory=/Users/tp/workspace/git/provision node_name=127.0.0.1:2222
