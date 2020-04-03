@@ -173,9 +173,6 @@ def provision(platform, inventory_location, enable_synced_folder, provider, cpus
   end
   add_node_to_group(inventory_hash, node, group_name)
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
-  modulpath = File.join(Dir.pwd, 'spec', 'fixtures', 'modules')
-  command = "bolt task run provision::fix_secure_path path=/opt/puppetlabs/bin --modulepath #{modulpath} -i #{inventory_full_path} -t ssh_nodes"
-  run_local_command(command)
   { status: 'ok', node_name: node_name, node: node }
 end
 
