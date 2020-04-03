@@ -185,7 +185,10 @@ Ran on 1 node in 51.98 seconds
 
 sudo secure_path fix
 
-As some Vagrant boxes do not allow ssh root logins, the **vargrant** user is used to login and *sudo* is used to execute privileged commands as root user. The Puppet agent is not installed into one of the directories included into the sudo *secure_path* configuration. To add the Puppet agent binary path to the *secure_path* please run the follwong Bolt task.
+As some Vagrant boxes do not allow ssh root logins, the **vagrant** user is used to login and *sudo* is used to execute privileged commands as root user. 
+By default the Puppet agent installation does not change the systems' sudo *secure_path* configuration.
+This leads to errors when anything tries to execute `puppet` commands on the test system.
+To add the Puppet agent binary path to the *secure_path* please run the `provision::fix_secure_path` Bolt task:
 
 ```
 $ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::fix_secure_path path=/opt/pupperlabs/bin -i inventory.yaml -t ssh_nodes
