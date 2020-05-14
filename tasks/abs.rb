@@ -9,7 +9,7 @@ require_relative '../lib/task_helper'
 def provision(platform, inventory_location)
   include PuppetLitmus::InventoryManipulation
   uri = URI.parse('https://cinext-abs.delivery.puppetlabs.net/api/v2/request')
-  job_id = "IAC-#{Process.pid.to_s}"
+  job_id = "IAC-#{Process.pid}"
   headers = { 'X-AUTH-TOKEN' => token_from_fogfile('abs'), 'Content-Type' => 'application/json' }
   payload = { 'resources' => { platform => 1 },
               'priority' => 2,

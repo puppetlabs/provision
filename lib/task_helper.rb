@@ -51,7 +51,7 @@ def platform_uses_ssh(platform)
   !platform_is_windows?(platform)
 end
 
-def token_from_fogfile(provider = "vmpooler")
+def token_from_fogfile(provider = 'vmpooler')
   fog_file = File.join(Dir.home, '.fog')
   unless File.file?(fog_file)
     puts "Cannot file fog file at #{fog_file}"
@@ -59,12 +59,11 @@ def token_from_fogfile(provider = "vmpooler")
   end
   require 'yaml'
   contents = YAML.load_file(fog_file)
-  token = nil
-  if provider == "abs"
-    token = contents.dig(:default, :abs_token)
-  else
-    token = contents.dig(:default, :vmpooler_token)
-  end
+  token = if provider == 'abs'
+            contents.dig(:default, :abs_token)
+          else
+            contents.dig(:default, :vmpooler_token)
+          end
   raise "Error: could not obtain #{provider} token from .fog file" if token.nil?
   token
 rescue
