@@ -9,11 +9,13 @@ require_relative '../lib/task_helper'
 def provision(platform, inventory_location)
   include PuppetLitmus::InventoryManipulation
   uri = URI.parse('https://cinext-abs.delivery.puppetlabs.net/api/v2/request')
-  job_id = Process.pid.to_s
-  headers = { 'X-AUTH-TOKEN' => token_from_fogfile, 'Content-Type' => 'application/json' }
+  job_id = "IAC-#{Process.pid.to_s}"
+  headers = { 'X-AUTH-TOKEN' => token_from_fogfile('abs'), 'Content-Type' => 'application/json' }
   payload = { 'resources' => { platform => 1 },
+              'priority' => 2,
               'job' => { 'id' => job_id,
                          'tags' => { 'user' => Etc.getlogin, 'jenkins_build_url' => 'https://puppet_litmus' } } }
+
   http = Net::HTTP.new(uri.host, uri.port)
   http.use_ssl = true
   request = Net::HTTP::Post.new(uri.request_uri, headers)
@@ -64,7 +66,7 @@ def tear_down(node_name, inventory_location)
   end
 
   uri = URI.parse('https://cinext-abs.delivery.puppetlabs.net/api/v2/return')
-  headers = { 'X-AUTH-TOKEN' => token_from_fogfile, 'Content-Type' => 'application/json' }
+  headers = { 'X-AUTH-TOKEN' => token_from_fogfile('abs'), 'Content-Type' => 'application/json' }
   payload = { 'job_id' => job_id,
               'hosts' => [{ 'hostname' => node_name, 'type' => platform, 'engine' => 'vmpooler' }] }
   http = Net::HTTP.new(uri.host, uri.port)
