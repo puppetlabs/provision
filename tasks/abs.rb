@@ -27,14 +27,17 @@ def provision(platform, inventory_location)
 
   # We want to then poll the API until we get a 200 response, indicating the VMs have been provisioned
   timeout = Time.now.to_i + 600 # Let's poll the API for a max of 10 minutes
-  counter = 1
+  sleep_time = 1
 
+  # Progressively increase the sleep time by 1 second. When we hit 10 seconds, start querying every 30 seconds until we
+  # exceed the time out. This is an attempt to strike a balance between quick provisioning and not saturating the ABS
+  # API and network if it's taking longer to provision than usual
   while Time.now.to_i < timeout
+    sleep (sleep_time <= 10) ? sleep_time : 30 # rubocop:disable Lint/ParenthesesAsGroupedExpression
     reply = http.request(request)
     break if reply.code == '200' # Our host(s) are provisioned
     raise 'ABS API Error: Received a HTTP 404 response' if reply.code == '404' # Our host(s) will never be provisioned
-    sleep 5 * counter # Increase the back off period if the API is repeatedly non-responsive...
-    counter += 1 if counter < 12 # ...but limit the sleep time to 60 seconds
+    sleep_time += 1
   end
 
   raise 'Timeout: unable to get a 200 response in 10 minutes' if reply.code != '200'
