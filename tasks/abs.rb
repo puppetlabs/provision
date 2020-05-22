@@ -21,18 +21,24 @@ def provision(platform, inventory_location)
   request = Net::HTTP::Post.new(uri.request_uri, headers)
   request.body = payload.to_json
 
-  # repeat requests until we get a 200 with a html body
+  # Make an initial request - we should receive a 202 response to indicate the request is being processed
   reply = http.request(request)
   raise "Error: #{reply}: #{reply.message}" unless reply.is_a?(Net::HTTPAccepted) # should be a 202
-  now = Time.now
+
+  # We want to then poll the API until we get a 200 response, indicating the VMs have been provisioned
+  timeout = Time.now.to_i + 600 # Let's poll the API for a max of 10 minutes
   counter = 1
-  loop do
-    next if Time.now < now + counter
+
+  while Time.now.to_i < timeout
     reply = http.request(request)
-    break if reply.code == '200' # should be a 200
-    counter += 1
-    raise 'Timeout: unable to get a 200 response in 30 seconds' if counter > 30
+    break if reply.code == '200' # Our host(s) are provisioned
+    raise 'ABS API Error: Received a HTTP 404 response' if reply.code == '404' # Our host(s) will never be provisioned
+    sleep 5 * counter # Increase the back off period if the API is repeatedly non-responsive...
+    counter += 1 if counter < 12 # ...but limit the sleep time to 60 seconds
   end
+
+  raise 'Timeout: unable to get a 200 response in 10 minutes' if reply.code != '200'
+
   data = JSON.parse(reply.body)
 
   hostname = data.first['hostname']
