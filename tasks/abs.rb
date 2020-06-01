@@ -9,12 +9,24 @@ require_relative '../lib/task_helper'
 def provision(platform, inventory_location)
   include PuppetLitmus::InventoryManipulation
   uri = URI.parse('https://cinext-abs.delivery.puppetlabs.net/api/v2/request')
-  job_id = "IAC-#{Process.pid}"
+  if ENV['CI'] == 'true' && ENV['TRAVIS'] == 'true'
+    job_id = "IAC travis #{ENV['TRAVIS_BUILD_ID']}"
+    jenkins_build_url = ENV['TRAVIS_JOB_WEB_URL']
+  elsif ENV['CI'] == 'True' && ENV['APPVEYOR'] == 'True'
+    job_id = "IAC appveyor #{ENV['APPVEYOR_BUILD_ID']}"
+    jenkins_build_url = "https://ci.appveyor.com/project/#{ENV['APPVEYOR_REPO_NAME']}/build/job/#{ENV['APPVEYOR_JOB_ID']}"
+  elsif ENV['GITHUB_ACTIONS'] == 'true'
+    job_id = "IAC gh action #{ENV['GITHUB_RUN_ID']}"
+    jenkins_build_url = "https://github.com/#{ENV['GITHUB_REPOSITORY']}/actions/runs/#{ENV['GITHUB_RUN_ID']}"
+  else
+    job_id = "IAC task PID #{Process.pid}"
+    jenkins_build_url = 'https://litmus_manual'
+  end
   headers = { 'X-AUTH-TOKEN' => token_from_fogfile('abs'), 'Content-Type' => 'application/json' }
   payload = { 'resources' => { platform => 1 },
               'priority' => 2,
               'job' => { 'id' => job_id,
-                         'tags' => { 'user' => Etc.getlogin, 'jenkins_build_url' => 'https://puppet_litmus' } } }
+                         'tags' => { 'user' => Etc.getlogin, 'jenkins_build_url' => jenkins_build_url } } }
 
   http = Net::HTTP.new(uri.host, uri.port)
   http.use_ssl = true
