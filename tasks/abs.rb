@@ -9,19 +9,18 @@ require_relative '../lib/task_helper'
 def provision(platform, inventory_location)
   include PuppetLitmus::InventoryManipulation
   uri = URI.parse('https://cinext-abs.delivery.puppetlabs.net/api/v2/request')
-  if ENV['CI'] == 'true' && ENV['TRAVIS'] == 'true'
-    job_id = "IAC travis #{ENV['TRAVIS_BUILD_ID']}"
-    jenkins_build_url = ENV['TRAVIS_JOB_WEB_URL']
-  elsif ENV['CI'] == 'True' && ENV['APPVEYOR'] == 'True'
-    job_id = "IAC appveyor #{ENV['APPVEYOR_BUILD_ID']}"
-    jenkins_build_url = "https://ci.appveyor.com/project/#{ENV['APPVEYOR_REPO_NAME']}/build/job/#{ENV['APPVEYOR_JOB_ID']}"
-  elsif ENV['GITHUB_ACTIONS'] == 'true'
-    job_id = "IAC gh action #{ENV['GITHUB_RUN_ID']}"
-    jenkins_build_url = "https://github.com/#{ENV['GITHUB_REPOSITORY']}/actions/runs/#{ENV['GITHUB_RUN_ID']}"
-  else
-    job_id = "IAC task PID #{Process.pid}"
-    jenkins_build_url = 'https://litmus_manual'
-  end
+  jenkins_build_url = if ENV['CI'] == 'true' && ENV['TRAVIS'] == 'true'
+                        ENV['TRAVIS_JOB_WEB_URL']
+                      elsif ENV['CI'] == 'True' && ENV['APPVEYOR'] == 'True'
+                        "https://ci.appveyor.com/project/#{ENV['APPVEYOR_REPO_NAME']}/build/job/#{ENV['APPVEYOR_JOB_ID']}"
+                      elsif ENV['GITHUB_ACTIONS'] == 'true'
+                        "https://github.com/#{ENV['GITHUB_REPOSITORY']}/actions/runs/#{ENV['GITHUB_RUN_ID']}"
+                      else
+                        'https://litmus_manual'
+                      end
+  # Job ID must be unique
+  job_id = "IAC task PID #{Process.pid}"
+
   headers = { 'X-AUTH-TOKEN' => token_from_fogfile('abs'), 'Content-Type' => 'application/json' }
   payload = { 'resources' => { platform => 1 },
               'priority' => 2,
@@ -35,6 +34,7 @@ def provision(platform, inventory_location)
 
   # Make an initial request - we should receive a 202 response to indicate the request is being processed
   reply = http.request(request)
+  puts "Received: #{reply.code} #{reply.message} - from ABS"
   raise "Error: #{reply}: #{reply.message}" unless reply.is_a?(Net::HTTPAccepted) # should be a 202
 
   # We want to then poll the API until we get a 200 response, indicating the VMs have been provisioned
@@ -47,6 +47,7 @@ def provision(platform, inventory_location)
   while Time.now.to_i < timeout
     sleep (sleep_time <= 10) ? sleep_time : 30 # rubocop:disable Lint/ParenthesesAsGroupedExpression
     reply = http.request(request)
+    puts "Received: #{reply.code} #{reply.message} - from ABS"
     break if reply.code == '200' # Our host(s) are provisioned
     raise 'ABS API Error: Received a HTTP 404 response' if reply.code == '404' # Our host(s) will never be provisioned
     sleep_time += 1
