@@ -191,7 +191,7 @@ This leads to errors when anything tries to execute `puppet` commands on the tes
 To add the Puppet agent binary path to the *secure_path* please run the `provision::fix_secure_path` Bolt task:
 
 ```
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::fix_secure_path path=/opt/pupperlabs/bin -i inventory.yaml -t ssh_nodes
+$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::fix_secure_path path=/opt/puppetlabs/bin -i inventory.yaml -t ssh_nodes
 
 Started on 127.0.0.1:2222...
 Finished on 127.0.0.1:2222:
