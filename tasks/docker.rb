@@ -15,7 +15,7 @@ def install_ssh_components(platform, version, container)
     run_local_command("docker exec #{container} dnf clean all")
     run_local_command("docker exec #{container} dnf install -y sudo openssh-server openssh-clients")
     run_local_command("docker exec #{container} ssh-keygen -A")
-  when %r{centos}, %r{^el-}, %r{eos}, %r{oracle}, %r{redhat}, %r{scientific}
+  when %r{centos}, %r{^el-}, %r{eos}, %r{oracle}, %r{redhat}, %r{scientific}, %r{amazonlinux}
     if version == '6'
       # sometimes the redhat 6 variant containers like to eat their rpmdb, leading to
       # issues with "rpmdb: unable to join the environment" errors
@@ -60,8 +60,8 @@ def fix_ssh(platform, container)
   case platform
   when %r{debian}, %r{ubuntu}
     run_local_command("docker exec #{container} service ssh restart")
-  when %r{centos}, %r{^el-}, %r{eos}, %r{fedora}, %r{oracle}, %r{redhat}, %r{scientific}
-    if container !~ %r{7|8}
+  when %r{centos}, %r{^el-}, %r{eos}, %r{fedora}, %r{oracle}, %r{redhat}, %r{scientific}, %r{amazonlinux}
+    if container !~ %r{7|8|2}
       run_local_command("docker exec #{container} service sshd restart")
     else
       run_local_command("docker exec -d #{container} /usr/sbin/sshd -D")
