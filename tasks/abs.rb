@@ -22,8 +22,9 @@ def provision(platform, inventory_location)
   job_id = "IAC task PID #{Process.pid}"
 
   headers = { 'X-AUTH-TOKEN' => token_from_fogfile('abs'), 'Content-Type' => 'application/json' }
+  priority = (ENV['CI']) ? 1 : 2
   payload = { 'resources' => { platform => 1 },
-              'priority' => 2,
+              'priority' => priority,
               'job' => { 'id' => job_id,
                          'tags' => { 'user' => Etc.getlogin, 'jenkins_build_url' => jenkins_build_url } } }
 
