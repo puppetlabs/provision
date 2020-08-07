@@ -19,7 +19,7 @@ def provision(platform, inventory_location)
                         'https://litmus_manual'
                       end
   # Job ID must be unique
-  job_id = "IAC task PID #{Process.pid}"
+  job_id = "iac-task-pid-#{Process.pid}"
 
   headers = { 'X-AUTH-TOKEN' => token_from_fogfile('abs'), 'Content-Type' => 'application/json' }
   priority = (ENV['CI']) ? 1 : 2
