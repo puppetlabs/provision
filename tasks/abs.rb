@@ -19,7 +19,7 @@ def provision(platform, inventory_location)
                         'https://litmus_manual'
                       end
   # Job ID must be unique
-  job_id = "IAC task PID #{Process.pid}"
+  job_id = "iac-task-pid-#{Process.pid}"
 
   headers = { 'X-AUTH-TOKEN' => token_from_fogfile('abs'), 'Content-Type' => 'application/json' }
   priority = (ENV['CI']) ? 1 : 2
@@ -35,7 +35,7 @@ def provision(platform, inventory_location)
 
   # Make an initial request - we should receive a 202 response to indicate the request is being processed
   reply = http.request(request)
-  puts "Received: #{reply.code} #{reply.message} - from ABS"
+  puts "#{Time.now.strftime('%Y/%m/%d %H:%M:%S')}: Received: #{reply.code} #{reply.message} from ABS"
   raise "Error: #{reply}: #{reply.message}" unless reply.is_a?(Net::HTTPAccepted) # should be a 202
 
   # We want to then poll the API until we get a 200 response, indicating the VMs have been provisioned
@@ -48,7 +48,7 @@ def provision(platform, inventory_location)
   while Time.now.to_i < timeout
     sleep (sleep_time <= 10) ? sleep_time : 30 # rubocop:disable Lint/ParenthesesAsGroupedExpression
     reply = http.request(request)
-    puts "Received: #{reply.code} #{reply.message} - from ABS"
+    puts "#{Time.now.strftime('%Y/%m/%d %H:%M:%S')}: Received #{reply.code} #{reply.message} from ABS"
     break if reply.code == '200' # Our host(s) are provisioned
     raise 'ABS API Error: Received a HTTP 404 response' if reply.code == '404' # Our host(s) will never be provisioned
     sleep_time += 1
