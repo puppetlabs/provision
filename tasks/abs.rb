@@ -6,7 +6,7 @@ require 'puppet_litmus'
 require 'etc'
 require_relative '../lib/task_helper'
 
-def provision(platform, inventory_location)
+def provision(platform, inventory_location, vars)
   include PuppetLitmus::InventoryManipulation
   uri = URI.parse('https://cinext-abs.delivery.puppetlabs.net/api/v2/request')
   jenkins_build_url = if ENV['CI'] == 'true' && ENV['TRAVIS'] == 'true'
@@ -70,6 +70,10 @@ def provision(platform, inventory_location)
              'facts' => { 'provisioner' => 'abs', 'platform' => platform, 'job_id' => job_id } }
     group_name = 'winrm_nodes'
   end
+  unless vars.nil?
+    var_hash = YAML.safe_load(vars)
+    node['vars'] = var_hash
+  end
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   inventory_hash = get_inventory_hash(inventory_full_path)
   add_node_to_group(inventory_hash, node, group_name)
@@ -112,6 +116,7 @@ platform = params['platform']
 action = params['action']
 node_name = params['node_name']
 inventory_location = sanitise_inventory_location(params['inventory'])
+vars = params['vars']
 raise 'specify a node_name when tearing down' if action == 'tear_down' && node_name.nil?
 raise 'specify a platform when provisioning' if action == 'provision' && platform.nil?
 unless node_name.nil? ^ platform.nil?
@@ -126,7 +131,7 @@ unless node_name.nil? ^ platform.nil?
 end
 
 begin
-  result = provision(platform, inventory_location) if action == 'provision'
+  result = provision(platform, inventory_location, vars) if action == 'provision'
   result = tear_down(node_name, inventory_location) if action == 'tear_down'
   puts result.to_json
   exit 0
