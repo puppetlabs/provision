@@ -63,7 +63,7 @@ VF
 end
 
 def get_vagrant_dir(platform, vagrant_dirs, i = 0)
-  platform_dir = "#{platform}-#{i}"
+  platform_dir = "#{platform}-#{i}".gsub(%r{[\/\\]}, '-') # Strip slashes
   if vagrant_dirs.include?(platform_dir)
     platform_dir = get_vagrant_dir(platform, vagrant_dirs, i + 1)
   end
