@@ -8,7 +8,7 @@ require_relative '../lib/task_helper'
 
 def provision(platform, inventory_location, vars)
   include PuppetLitmus::InventoryManipulation
-  uri = URI.parse('https://cinext-abs.delivery.puppetlabs.net/api/v2/request')
+  uri = URI.parse('https://abs-prod.k8s.infracore.puppet.net/api/v2/request')
   jenkins_build_url = if ENV['CI'] == 'true' && ENV['TRAVIS'] == 'true'
                         ENV['TRAVIS_JOB_WEB_URL']
                       elsif ENV['CI'] == 'True' && ENV['APPVEYOR'] == 'True'
@@ -92,7 +92,7 @@ def tear_down(node_name, inventory_location)
     job_id = facts['job_id']
   end
 
-  uri = URI.parse('https://cinext-abs.delivery.puppetlabs.net/api/v2/return')
+  uri = URI.parse('https://abs-prod.k8s.infracore.puppet.net/api/v2/return')
   headers = { 'X-AUTH-TOKEN' => token_from_fogfile('abs'), 'Content-Type' => 'application/json' }
   payload = { 'job_id' => job_id,
               'hosts' => [{ 'hostname' => node_name, 'type' => platform, 'engine' => 'vmpooler' }] }
