@@ -35,7 +35,9 @@ def provision(platform, inventory_location, vars)
 
   # Make an initial request - we should receive a 202 response to indicate the request is being processed
   reply = http.request(request)
-  puts "#{Time.now.strftime('%Y/%m/%d %H:%M:%S')}: Received: #{reply.code} #{reply.message} from ABS"
+  # Use this 'puts' only for debugging purposes
+  # Do not use this in production mode because puppet_litmus will parse the STDOUT to extract the results
+  # puts "#{Time.now.strftime('%Y/%m/%d %H:%M:%S')}: Received: #{reply.code} #{reply.message} from ABS"
   raise "Error: #{reply}: #{reply.message}" unless reply.is_a?(Net::HTTPAccepted) # should be a 202
 
   # We want to then poll the API until we get a 200 response, indicating the VMs have been provisioned
@@ -48,7 +50,9 @@ def provision(platform, inventory_location, vars)
   while Time.now.to_i < timeout
     sleep (sleep_time <= 10) ? sleep_time : 30 # rubocop:disable Lint/ParenthesesAsGroupedExpression
     reply = http.request(request)
-    puts "#{Time.now.strftime('%Y/%m/%d %H:%M:%S')}: Received #{reply.code} #{reply.message} from ABS"
+    # Use this 'puts' only for debugging purposes
+    # Do not use this in production mode because puppet_litmus will parse the STDOUT to extract the results
+    # puts "#{Time.now.strftime('%Y/%m/%d %H:%M:%S')}: Received #{reply.code} #{reply.message} from ABS"
     break if reply.code == '200' # Our host(s) are provisioned
     raise 'ABS API Error: Received a HTTP 404 response' if reply.code == '404' # Our host(s) will never be provisioned
     sleep_time += 1
@@ -59,6 +63,7 @@ def provision(platform, inventory_location, vars)
   data = JSON.parse(reply.body)
 
   hostname = data.first['hostname']
+
   if platform_uses_ssh(platform)
     node = { 'uri' => hostname,
              'config' => { 'transport' => 'ssh', 'ssh' => { 'user' => 'root', 'password' => 'Qu@lity!', 'host-key-check' => false } },
