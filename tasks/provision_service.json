@@ -1,0 +1,27 @@
+{
+  "puppet_task_version": 1,
+  "supports_noop": false,
+  "description": "Provision/Tear down a list of machines using the provisioning service",
+  "parameters": {
+    "action": {
+      "description": "Action to perform, tear_down or provision",
+      "type": "Enum[provision, tear_down]",
+      "default": "provision"
+    },
+    "platform": {
+      "description": "Needed by litmus",
+      "type": "Optional[String[1]]"
+    },
+    "inventory": {
+      "description": "Location of the inventory file",
+      "type": "Optional[String[1]]"
+    },
+    "vars": {
+      "description": "The address of the provisioning service",
+      "type": "Optional[String[1]]"
+    }
+  },
+  "files": [
+    "provision/lib/task_helper.rb"
+  ]
+}
