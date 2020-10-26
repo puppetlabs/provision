@@ -12,6 +12,10 @@
       "description": "Needed by litmus",
       "type": "Optional[String[1]]"
     },
+    "node_name": {
+      "description": "Needed by litmus",
+      "type": "Optional[String[1]]"
+    },
     "inventory": {
       "description": "Location of the inventory file",
       "type": "Optional[String[1]]"
