@@ -11,14 +11,14 @@ def default_uri
   URI.parse('https://facade-main-6f3kfepqcq-ew.a.run.app/v1/provision')
 end
 
-def platform_to_cloud_request_parameters(platform, _job_url)
+def platform_to_cloud_request_parameters(platform, cloud, region, zone)
   params = case platform
            when String
-             { cloud: 'gcp', images: [platform] }
+             { cloud: cloud, region: region, zone: zone, images: [platform] }
            when Array
-             { cloud: 'gcp', images: platform }
+             { cloud: cloud, region: region, zone: zone, images: platform }
            else
-             platform[:cloud] = 'gcp' if platform[:cloud].nil?
+             platform[:cloud] = cloud unless cloud.nil?
              platform[:images] = [platform[:images]] if platform[:images].is_a?(String)
              platform
            end
@@ -60,6 +60,9 @@ def provision(platform, inventory_location, vars)
 
   job_url = ENV['GITHUB_URL']
   uri = ENV['SERVICE_URL']
+  cloud = ENV['CLOUD']
+  region = ENV['REGION']
+  zone = ENV['ZONE']
   uri = default_uri if uri.nil?
   if job_url.nil?
     data = JSON.parse(vars.tr(';', ','))
@@ -67,7 +70,7 @@ def provision(platform, inventory_location, vars)
   end
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
 
-  params = platform_to_cloud_request_parameters(platform, job_url)
+  params = platform_to_cloud_request_parameters(platform, cloud, region, zone)
   response = invoke_cloud_request(params, uri, job_url, 'post')
   if File.file?(inventory_full_path)
     inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
