@@ -8,7 +8,7 @@ require_relative '../lib/task_helper'
 include PuppetLitmus::InventoryManipulation
 
 def default_uri
-  URI.parse('https://facade-release-6f3kfepqcq-ew.a.run.app/v1/provision')
+  'https://facade-release-6f3kfepqcq-ew.a.run.app/v1/provision'
 end
 
 def platform_to_cloud_request_parameters(platform, cloud, region, zone)
@@ -66,11 +66,10 @@ def provision(platform, inventory_location, vars)
   # Call the provision service with the information necessary and write the inventory file locally
 
   job_url = ENV['GITHUB_URL'] || "https://api.github.com/repos/#{ENV['GITHUB_REPOSITORY']}/actions/runs/#{ENV['GITHUB_RUN_ID']}"
-  uri = ENV['SERVICE_URL']
+  uri = URI.parse(ENV['SERVICE_URL'] || default_uri)
   cloud = ENV['CLOUD']
   region = ENV['REGION']
   zone = ENV['ZONE']
-  uri = default_uri if uri.nil?
   if job_url.nil?
     data = JSON.parse(vars.tr(';', ','))
     job_url = data['job_url']
@@ -102,8 +101,7 @@ end
 
 def tear_down(platform, inventory_location, _vars)
   # remove all provisioned resources
-  uri = ENV['SERVICE_URL']
-  uri = default_uri if uri.nil?
+  uri = URI.parse(ENV['SERVICE_URL'] || default_uri)
 
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   # rubocop:disable Style/GuardClause
