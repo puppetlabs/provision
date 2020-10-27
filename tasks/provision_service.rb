@@ -37,7 +37,7 @@ def invoke_cloud_request(params, uri, job_url, verb)
     request = Net::HTTP::Delete.new(uri)
     request.body = { uuid: params }.to_json
   else
-    raise StandardError 'Unknown verb'
+    raise StandardError "Unknown verb: '#{verb}'"
   end
 
   File.open('request.json', 'wb') do |f|
