@@ -8,7 +8,7 @@ require_relative '../lib/task_helper'
 include PuppetLitmus::InventoryManipulation
 
 def default_uri
-  URI.parse('https://facade-main-6f3kfepqcq-ew.a.run.app/v1/provision')
+  URI.parse('https://facade-release-6f3kfepqcq-ew.a.run.app/v1/provision')
 end
 
 def platform_to_cloud_request_parameters(platform, cloud, region, zone)
@@ -52,7 +52,14 @@ def invoke_cloud_request(params, uri, job_url, verb)
   response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
     http.request(request)
   end
-  response.body
+  # rubocop:disable Style/GuardClause
+  if response.code == '200'
+    return response.body
+  else
+    puts "ERROR CODE: #{response.code} - BODY: #{response.body}"
+    exit 1
+  end
+  # rubocop:enable Style/GuardClause
 end
 
 def provision(platform, inventory_location, vars)
