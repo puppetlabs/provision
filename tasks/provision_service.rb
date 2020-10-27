@@ -58,7 +58,7 @@ end
 def provision(platform, inventory_location, vars)
   # Call the provision service with the information necessary and write the inventory file locally
 
-  job_url = ENV['GITHUB_URL']
+  job_url = ENV['GITHUB_URL'] || "https://api.github.com/repos/#{ENV['GITHUB_REPOSITORY']}/actions/runs/#{ENV['GITHUB_RUN_ID'}]"
   uri = ENV['SERVICE_URL']
   cloud = ENV['CLOUD']
   region = ENV['REGION']
