@@ -13,6 +13,7 @@ Simple tasks to provision and tear_down containers / instances and virtual machi
     * [Docker](#docker)
     * [Vagrant](#vagrant)
     * [Vmpooler](#vmpooler)
+    * [Provision Service](#provision_service)
 4. [Limitations - OS compatibility, etc.](#limitations)
 5. [Development - Guide for contributing to the module](#development)
 
@@ -212,6 +213,35 @@ Finished on localhost:
   }
 Successful on 1 node: localhost
 Ran on 1 node in 4.52 seconds
+```
+
+### Provision_service
+
+The provision service task is meant to be used from a Github Action workflow.
+
+Example usage:
+Using the following provision.yaml file:
+
+```
+test_serv:
+  provisioner: provision::provision_service
+  params:
+    cloud: gcp
+    region: europe-west1
+    zone: europe-west1-d
+  images: ['centos-7-v20200618', 'windows-server-2016-dc-v20200813']
+```
+
+In the provision step you can invoke bundle exec rake 'litmus:provision_list[test_serv]' and this will ensure the creation of two VMs in GCP.
+
+Manual invokation of the provision service task from a workflow can be done using:
+```
+bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::provision_service --nodes localhost  action=provision platform=centos-7-v20200813 inventory=/Users/tp/workspace/git/provision
+```
+Or using Litmus:
+
+```
+bundle exec rake 'litmus:provision[provision::provision_service, centos-7-v20200813]'
 ```
 
 #### Synced Folders
