@@ -46,7 +46,7 @@ def invoke_cloud_request(params, uri, job_url, verb)
 
   req_options = {
     use_ssl: uri.scheme == 'https',
-    read_timeout: 500,
+    read_timeout: 60 * 5, # timeout reads after 5 minutes - that's longer than the backend service would keep the request open
   }
 
   response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
