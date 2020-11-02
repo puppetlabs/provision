@@ -120,12 +120,7 @@ def provision(image, inventory_location, vars)
                               else
                                 ''
                               end
-  creation_command = %W[
-    docker run -d -it --privileged
-    #{deb_family_systemd_volume} --tmpfs /tmp:exec
-    -p #{front_facing_port}:22
-    --name #{full_container_name} #{image}
-  ].join(' ')
+  creation_command = "docker run -d -it --privileged #{deb_family_systemd_volume} --tmpfs /tmp:exec -p #{front_facing_port}:22 --name #{full_container_name} #{image}"
   run_local_command(creation_command).strip
   install_ssh_components(distro, version, full_container_name)
   fix_ssh(distro, version, full_container_name)
