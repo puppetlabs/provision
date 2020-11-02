@@ -15,7 +15,7 @@ def install_ssh_components(distro, version, container)
     run_local_command("docker exec #{container} dnf clean all")
     run_local_command("docker exec #{container} dnf install -y sudo openssh-server openssh-clients")
     run_local_command("docker exec #{container} ssh-keygen -A")
-  when %r{centos}, %r{^el-}, %r{eos}, %r{oracle}, %r{redhat}, %r{scientific}, %r{amazonlinux}
+  when %r{centos}, %r{^el-}, %r{eos}, %r{oracle}, %r{redhat}, %r{scientific}, %r{amzn}
     if version == '6'
       # sometimes the redhat 6 variant containers like to eat their rpmdb, leading to
       # issues with "rpmdb: unable to join the environment" errors
@@ -60,7 +60,7 @@ def fix_ssh(distro, version, container)
   case distro
   when %r{debian}, %r{ubuntu}
     run_local_command("docker exec #{container} service ssh restart")
-  when %r{centos}, %r{^el-}, %r{eos}, %r{fedora}, %r{oracle}, %r{redhat}, %r{scientific}, %r{amazonlinux}
+  when %r{centos}, %r{^el-}, %r{eos}, %r{fedora}, %r{oracle}, %r{redhat}, %r{scientific}, %r{amzn}
     # Current RedHat/CentOs 7 packs an old version of pam, which are missing a
     # crucial patch when running unprivileged containers.  See:
     # https://bugzilla.redhat.com/show_bug.cgi?id=1728777
