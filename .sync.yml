@@ -15,3 +15,7 @@ Rakefile:
   changelog_project: provision
 spec/spec_helper.rb:
   coverage_report: true
+.gitpod.Dockerfile:
+  unmanaged: false
+.gitpod.yml:
+  unmanaged: false
