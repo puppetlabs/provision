@@ -121,12 +121,18 @@ action = params['action']
 vars = params['vars']
 node_name = params['node_name']
 inventory_location = sanitise_inventory_location(params['inventory'])
-raise 'specify a node_name when tearing down' if action == 'tear_down' && node_name.nil?
-raise 'specify a platform when provisioning' if action == 'provision' && platform.nil?
 
 begin
-  result = provision(platform, inventory_location, vars) if action == 'provision'
-  result = tear_down(node_name, inventory_location, vars) if action == 'tear_down'
+  case action
+  when 'provision'
+    raise 'specify a platform when provisioning' if platform.nil?
+    result = provision(platform, inventory_location, vars)
+  when 'tear_down'
+    raise 'specify a node_name when tearing down' if node_name.nil?
+    result = tear_down(node_name, inventory_location, vars)
+  else
+    result = { _error: { kind: 'provision_service/argument_error', msg: "Unknown action '#{action}'" } }
+  end
   puts result.to_json
   exit 0
 rescue => e
