@@ -29,7 +29,7 @@ end
 def invoke_cloud_request(params, uri, job_url, verb)
   case verb.downcase
   when 'post'
-    request = Net::HTTP::Post.new(uri, 'Content-Type' => 'application/json')
+    request = Net::HTTP::Post.new(uri, { 'Accept' => 'application/json', 'Content-Type' => 'application/json' })
     machines = []
     machines << params
     request.body = { url: job_url, VMs: machines }.to_json
@@ -56,7 +56,14 @@ def invoke_cloud_request(params, uri, job_url, verb)
   if response.code == '200'
     return response.body
   else
-    puts "ERROR CODE: #{response.code} - BODY: #{response.body}"
+    begin
+      body = JSON.parse(response.body)
+      body_json = true
+    rescue JSON::ParserError
+      body = response.body
+      body_json = false
+    end
+    puts({ _error: { kind: 'provision_service/service_error', msg: 'provision service returned an error', code: response.code, body: body, body_json: body_json } }.to_json)
     exit 1
   end
   # rubocop:enable Style/GuardClause
@@ -121,15 +128,21 @@ action = params['action']
 vars = params['vars']
 node_name = params['node_name']
 inventory_location = sanitise_inventory_location(params['inventory'])
-raise 'specify a node_name when tearing down' if action == 'tear_down' && node_name.nil?
-raise 'specify a platform when provisioning' if action == 'provision' && platform.nil?
 
 begin
-  result = provision(platform, inventory_location, vars) if action == 'provision'
-  result = tear_down(node_name, inventory_location, vars) if action == 'tear_down'
+  case action
+  when 'provision'
+    raise 'specify a platform when provisioning' if platform.nil?
+    result = provision(platform, inventory_location, vars)
+  when 'tear_down'
+    raise 'specify a node_name when tearing down' if node_name.nil?
+    result = tear_down(node_name, inventory_location, vars)
+  else
+    result = { _error: { kind: 'provision_service/argument_error', msg: "Unknown action '#{action}'" } }
+  end
   puts result.to_json
   exit 0
 rescue => e
-  puts({ _error: { kind: 'facter_task/failure', msg: e.message } }.to_json)
+  puts({ _error: { kind: 'provision_service/failure', msg: e.message } }.to_json)
   exit 1
 end
