@@ -107,7 +107,7 @@ def provision(platform, inventory_location, vars)
   {
     status: 'ok',
     node_name: platform,
-    target_names: response_hash['groups'].each { |g| g['targets'] }.map { |t| t['uri'] }.flatten.uniq,
+    target_names: response_hash['groups']&.each { |g| g['targets'] }&.map { |t| t['uri'] }&.flatten&.uniq,
   }
 end
 
