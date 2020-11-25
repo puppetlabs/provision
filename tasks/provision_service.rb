@@ -85,9 +85,9 @@ def provision(platform, inventory_location, vars)
 
   params = platform_to_cloud_request_parameters(platform, cloud, region, zone)
   response = invoke_cloud_request(params, uri, job_url, 'post')
+  response_hash = YAML.safe_load(response)
   if File.file?(inventory_full_path)
     inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
-    response_hash = YAML.safe_load(response)
 
     inventory_hash['groups'].each do |g|
       response_hash['groups'].each do |bg|
@@ -103,7 +103,12 @@ def provision(platform, inventory_location, vars)
       f.write(response)
     end
   end
-  { status: 'ok', node_name: platform }
+
+  {
+    status: 'ok',
+    node_name: platform,
+    target_names: response_hash['groups'].each { |g| g['targets'] }.map { |t| t['uri'] }.flatten.uniq,
+  }
 end
 
 def tear_down(platform, inventory_location, _vars)
@@ -143,6 +148,6 @@ begin
   puts result.to_json
   exit 0
 rescue => e
-  puts({ _error: { kind: 'provision_service/failure', msg: e.message } }.to_json)
+  puts({ _error: { kind: 'provision_service/failure', msg: e.message, details: { backtrace: e.backtrace } } }.to_json)
   exit 1
 end
