@@ -56,7 +56,14 @@ def invoke_cloud_request(params, uri, job_url, verb)
   if response.code == '200'
     return response.body
   else
-    puts "ERROR CODE: #{response.code} - BODY: #{response.body[...1000]}..."
+    begin
+      body = JSON.parse(response.body)
+      body_json = true
+    rescue JSON::ParserError
+      body = response.body
+      body_json = false
+    end
+    puts({ _error: { kind: 'provision_service/service_error', msg: 'provision service returned an error', code: response.code, body: body, body_json: body_json } }.to_json)
     exit 1
   end
   # rubocop:enable Style/GuardClause
