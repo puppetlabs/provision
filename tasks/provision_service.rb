@@ -29,7 +29,7 @@ end
 def invoke_cloud_request(params, uri, job_url, verb)
   case verb.downcase
   when 'post'
-    request = Net::HTTP::Post.new(uri, 'Content-Type' => 'application/json')
+    request = Net::HTTP::Post.new(uri, { 'Accept' => 'application/json', 'Content-Type' => 'application/json' })
     machines = []
     machines << params
     request.body = { url: job_url, VMs: machines }.to_json
