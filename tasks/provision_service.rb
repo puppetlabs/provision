@@ -56,7 +56,7 @@ def invoke_cloud_request(params, uri, job_url, verb)
   if response.code == '200'
     return response.body
   else
-    puts "ERROR CODE: #{response.code} - BODY: #{response.body}"
+    puts "ERROR CODE: #{response.code} - BODY: #{response.body[...1000]}..."
     exit 1
   end
   # rubocop:enable Style/GuardClause
