@@ -114,6 +114,8 @@ def provision(image, inventory_location, vars)
   os_release_facts = get_image_os_release_facts(image)
   distro = os_release_facts['ID']
   version = os_release_facts['VERSION_ID']
+  hostname = 'localhost'
+  group_name = 'ssh_nodes'
   warn '!!! Using private port forwarding!!!'
   front_facing_port = 2222
   (front_facing_port..2230).each do |i|
@@ -130,11 +132,6 @@ def provision(image, inventory_location, vars)
                               else
                                 ''
                               end
-  creation_command = "docker run -d -it --privileged #{deb_family_systemd_volume} --tmpfs /tmp:exec -p #{front_facing_port}:22 --name #{full_container_name} #{image}"
-  run_local_command(creation_command).strip
-  install_ssh_components(distro, version, full_container_name)
-  fix_ssh(distro, version, full_container_name)
-  hostname = 'localhost'
   node = {
     'uri' => "#{hostname}:#{front_facing_port}",
     'config' => {
@@ -151,8 +148,14 @@ def provision(image, inventory_location, vars)
   unless vars.nil?
     var_hash = YAML.safe_load(vars)
     node['vars'] = var_hash
+    docker_run_opts = var_hash['docker_run_opts'].flatten.join(' ') unless var_hash['docker_run_opts'].nil?
   end
-  group_name = 'ssh_nodes'
+  creation_command = "docker run -d -it --privileged #{deb_family_systemd_volume} --tmpfs /tmp:exec -p #{front_facing_port}:22 --name #{full_container_name} "
+  creation_command += "#{docker_run_opts} " unless docker_run_opts.nil?
+  creation_command += image
+  run_local_command(creation_command).strip
+  install_ssh_components(distro, version, full_container_name)
+  fix_ssh(distro, version, full_container_name)
   add_node_to_group(inventory_hash, node, group_name)
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
   { status: 'ok', node_name: "#{hostname}:#{front_facing_port}", node: node }
