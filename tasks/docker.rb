@@ -1,4 +1,6 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
+
 require 'json'
 require 'yaml'
 require 'puppet_litmus'
@@ -29,8 +31,8 @@ def install_ssh_components(distro, version, container)
       run_local_command("docker exec #{container} yum install -y sudo openssh-server openssh-clients")
     end
     ssh_folder = run_local_command("docker exec #{container} ls /etc/ssh/")
-    run_local_command("docker exec #{container} ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N \"\"") unless ssh_folder =~ %r{ssh_host_rsa_key}
-    run_local_command("docker exec #{container} ssh-keygen -t dsa -f /etc/ssh/ssh_host_dsa_key -N \"\"") unless ssh_folder =~ %r{ssh_host_dsa_key}
+    run_local_command("docker exec #{container} ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N \"\"") unless ssh_folder.match?(%r{ssh_host_rsa_key})
+    run_local_command("docker exec #{container} ssh-keygen -t dsa -f /etc/ssh/ssh_host_dsa_key -N \"\"") unless ssh_folder.match?(%r{ssh_host_dsa_key})
   when %r{opensuse}, %r{sles}
     run_local_command("docker exec #{container} zypper -n in openssh")
     run_local_command("docker exec #{container} ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key")

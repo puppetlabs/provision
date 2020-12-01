@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 def sanitise_inventory_location(location)
   # Inventory location is an optional task parameter. If not specified use the current directory
   location.nil? ? Dir.pwd : location
