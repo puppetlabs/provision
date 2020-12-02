@@ -1,4 +1,6 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
+
 require 'puppet_litmus'
 require_relative '../lib/task_helper'
 

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'task_helper'
 
 describe 'Utility Functions' do
