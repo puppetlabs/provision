@@ -21,7 +21,7 @@ Simple tasks to provision and tear_down containers / instances and virtual machi
 
 Bolt tasks allowing a user to provision and tear down systems. It also maintains a Bolt inventory file.
 Provisioners so far:
-   
+
 * ABS (AlwaysBeScheduling)
 * Docker
 * Vagrant
@@ -99,7 +99,7 @@ $ cat ~/.fog
 ##### Setting up a new macine
 
 ```
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::abs --nodes localhost action=provision platform=ubuntu-1604-x86_64 inventory=/Users/tp/workspace/git/provision
+$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::abs --targets localhost action=provision platform=ubuntu-1604-x86_64 inventory=/Users/tp/workspace/git/provision
 
 Started on localhost...
 Finished on localhost:
@@ -114,7 +114,7 @@ Ran on 1 node in 1.44 seconds
 ##### Tearing down a finished machine
 
 ```
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::abs --nodes localhost  action=tear_down inventory=/Users/tp/workspace/git/provision node_name=yh6f4djvz7o3te6.delivery.puppetlabs.net
+$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::abs --targets localhost  action=tear_down inventory=/Users/tp/workspace/git/provision node_name=yh6f4djvz7o3te6.delivery.puppetlabs.net
 
 Started on localhost...
 Finished on localhost:
@@ -133,7 +133,7 @@ Given an docker image name it will spin up that container and setup external ssh
 provision
 
 ```
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --nodes localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/provision
+$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --targets localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/provision
 
 Started on localhost...
 Finished on localhost:
@@ -145,10 +145,16 @@ Successful on 1 node: localhost
 Ran on 1 node in 33.96 seconds
 ```
 
+Provision allows for passing additional command line arguments to the docker run when specifying `vars['docker_run_opts']` as an array of arguments.
+
+```
+$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --targets localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/provision vars='{ "docker_run_opts": ["-p 8086:8086", "-p 3000:3000"]}'
+```
+
 tear_down
 
 ```
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --nodes localhost  action=tear_down inventory=/Users/tp/workspace/git/provision node_name=localhost:2222
+$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --targets localhost  action=tear_down inventory=/Users/tp/workspace/git/provision node_name=localhost:2222
 
 Started on localhost...
 Finished on localhost:
@@ -172,7 +178,7 @@ Tested with vagrant images:
 provision
 
 ```
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vagrant --nodes localhost  action=provision platform=ubuntu/xenial64 inventory=/Users/tp/workspace/git/provision
+$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vagrant --targets localhost  action=provision platform=ubuntu/xenial64 inventory=/Users/tp/workspace/git/provision
 
 Started on localhost...
 Finished on localhost:
@@ -203,7 +209,7 @@ Ran on 1 target in 0.84 sec
 
 tear_down
 ```
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vagrant --nodes localhost  action=tear_down inventory=/Users/tp/workspace/git/provision node_name=127.0.0.1:2222
+$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vagrant --targets localhost  action=tear_down inventory=/Users/tp/workspace/git/provision node_name=127.0.0.1:2222
 
 Started on localhost...
 Finished on localhost:
@@ -236,7 +242,7 @@ In the provision step you can invoke bundle exec rake 'litmus:provision_list[tes
 
 Manual invokation of the provision service task from a workflow can be done using:
 ```
-bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::provision_service --nodes localhost  action=provision platform=centos-7-v20200813 inventory=/Users/tp/workspace/git/provision
+bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::provision_service --targets localhost  action=provision platform=centos-7-v20200813 inventory=/Users/tp/workspace/git/provision
 ```
 Or using Litmus:
 
@@ -271,7 +277,7 @@ provision
 
 ```
 PS> $env:LITMUS_HYPERV_VSWITCH = 'internal_nat'
-PS> bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vagrant --nodes localhost  action=provision platform=centos/7 inventory=/Users/tp/workspace/git/provision hyperv_smb_username=tp hyperv_smb_password=notMyrealPassword
+PS> bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vagrant --targets localhost  action=provision platform=centos/7 inventory=/Users/tp/workspace/git/provision hyperv_smb_username=tp hyperv_smb_password=notMyrealPassword
 
 Started on localhost...
 Finished on localhost:
@@ -299,7 +305,7 @@ export VMPOOLER_HOSTNAME=vcloud.delivery.puppetlabs.net
 provision
 
 ```
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vmpooler --nodes localhost  action=provision platform=ubuntu-1604-x86_64 inventory=/Users/tp/workspace/git/provision
+$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vmpooler --targets localhost  action=provision platform=ubuntu-1604-x86_64 inventory=/Users/tp/workspace/git/provision
 
 Started on localhost...
 Finished on localhost:
@@ -314,7 +320,7 @@ Ran on 1 node in 1.46 seconds
 tear_down
 
 ```
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vmpooler --nodes localhost  action=tear_down inventory=/Users/tp/workspace/git/provision node_name=gffzr8c3gipetkp.delivery.puppetlabs.net
+$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vmpooler --targets localhost  action=tear_down inventory=/Users/tp/workspace/git/provision node_name=gffzr8c3gipetkp.delivery.puppetlabs.net
 Started on localhost...
 Finished on localhost:
   Removed gffzr8c3gipetkp.delivery.puppetlabs.net
@@ -345,5 +351,5 @@ Testing/development/debugging it is better to use ruby directly, you will need t
 
 Testing using bolt, the second step
 ```
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --nodes localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/provision
+$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --targets localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/provision
 ```
