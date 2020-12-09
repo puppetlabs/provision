@@ -29,14 +29,21 @@ end
 
 # curl -X POST https://facade-validation-6f3kfepqcq-ew.a.run.app/v1/provision --data @test_machines.json
 def invoke_cloud_request(params, uri, job_url, verb)
+  headers =  {
+    'Accept' => 'application/json',
+    'Content-Type' => 'application/json',
+  }
+  headers['X-Honeycomb-Trace'] = ENV['HTTP_X_HONEYCOMB_TRACE'] if ENV['HTTP_X_HONEYCOMB_TRACE'] # legacy variable
+  headers['X-Honeycomb-Trace'] = ENV['HONEYCOMB_TRACE'] if ENV['HONEYCOMB_TRACE']
+
   case verb.downcase
   when 'post'
-    request = Net::HTTP::Post.new(uri, { 'Accept' => 'application/json', 'Content-Type' => 'application/json' })
+    request = Net::HTTP::Post.new(uri, headers)
     machines = []
     machines << params
     request.body = { url: job_url, VMs: machines }.to_json
   when 'delete'
-    request = Net::HTTP::Delete.new(uri)
+    request = Net::HTTP::Delete.new(uri, headers)
     request.body = { uuid: params }.to_json
   else
     raise StandardError "Unknown verb: '#{verb}'"
