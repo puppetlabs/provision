@@ -105,6 +105,12 @@ def tear_down(node_name, inventory_location)
     job_id = facts['job_id']
   end
 
+  targets_to_remove = []
+  inventory_hash['groups'].each do |group|
+    group['targets'].each do |node|
+      targets_to_remove.push(node['uri']) if node['facts']['job_id'] == job_id
+    end
+  end
   uri = URI.parse('https://abs-prod.k8s.infracore.puppet.net/api/v2/return')
   headers = { 'X-AUTH-TOKEN' => token_from_fogfile('abs'), 'Content-Type' => 'application/json' }
   payload = { 'job_id' => job_id,
@@ -117,9 +123,10 @@ def tear_down(node_name, inventory_location)
   reply = http.request(request)
   raise "Error: #{reply}: #{reply.message}" unless reply.code == '200'
 
-  remove_node(inventory_hash, node_name)
-
-  puts "Removed #{node_name}"
+  targets_to_remove.each do |target|
+    remove_node(inventory_hash, target)
+    puts "Removed #{target}"
+  end
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
   { status: 'ok' }
 end
