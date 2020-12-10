@@ -17,8 +17,8 @@
       "type": "Optional[String[1]]"
     },
     "platform": {
-      "description": "Platform to provision, eg ubuntu-1604-x86_64",
-      "type": "Optional[String[1]]"
+      "description": "Provision a single platform or a Hash of platforms specifying the number of instances. eg 'ubuntu-1604-x86_64 or '{ \"centos-7-x86_64\":1, \"centos-6-x86_64\":2 }'",
+      "type": "Optional[Variant[String[1],Hash]]"
     },
     "vars": {
       "description": "key/value pairs to add to the vars section",
