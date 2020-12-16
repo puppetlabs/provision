@@ -70,7 +70,7 @@ def fix_ssh(distro, version, container)
       run_local_command("docker exec #{container} sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd")
     end
 
-    if version !~ %r{7|8|2}
+    if !%r{7|8|2}.match?(version)
       run_local_command("docker exec #{container} service sshd restart")
     else
       run_local_command("docker exec #{container} /usr/sbin/sshd")

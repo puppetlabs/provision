@@ -61,9 +61,8 @@ def invoke_cloud_request(params, uri, job_url, verb)
   response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
     http.request(request)
   end
-  # rubocop:disable Style/GuardClause
   if response.code == '200'
-    return response.body
+    response.body
   else
     begin
       body = JSON.parse(response.body)
@@ -131,7 +130,7 @@ def tear_down(platform, inventory_location, _vars)
     facts = facts_from_node(inventory_hash, platform)
     job_id = facts['uuid']
     response = invoke_cloud_request(job_id, uri, '', 'delete')
-    return response.to_json
+    response.to_json
   end
   # rubocop:enable Style/GuardClause
 end
