@@ -125,10 +125,9 @@ def tear_down(node_name, inventory_location)
 
   targets_to_remove.each do |target|
     remove_node(inventory_hash, target)
-    puts "Removed #{target}"
   end
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
-  { status: 'ok' }
+  { status: 'ok', removed: targets_to_remove }
 end
 
 params = JSON.parse(STDIN.read)
