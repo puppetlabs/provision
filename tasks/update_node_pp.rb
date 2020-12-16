@@ -4,8 +4,8 @@
 require 'json'
 require 'open3'
 require 'puppet'
-# see https://github.com/DavidS/dasz-configuration/blob/master/manifests/nodes/backup.dasz.at.pp
-# see https://github.com/DavidS/dasz-configuration/blob/master/manifests/site.pp
+# see https://github.com/DavidS/dasz-configuration/blob/main/manifests/nodes/backup.dasz.at.pp
+# see https://github.com/DavidS/dasz-configuration/blob/main/manifests/site.pp
 def update_file(manifest, target_node)
   path = '/etc/puppetlabs/code/environments/production/manifests/nodes'
   _stdout, stderr, status = Open3.capture3("mkdir -p #{path}")
