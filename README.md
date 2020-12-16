@@ -35,7 +35,7 @@ Bolt has to be installed to run the tasks. Each provisioner has its own requirem
 
 #### Running the tasks as part of puppet_litmus
 
-Please follow the documentation here https://github.com/puppetlabs/puppet_litmus/wiki/Converting-a-module-to-use-Litmus#fixturesyml
+Please follow the documentation here: https://puppetlabs.github.io/litmus/
 
 #### Running the module stand-alone call the tasks/plans directly
 
