@@ -1,4 +1,3 @@
-
 # Provision
 
 Simple tasks to provision and tear_down containers / instances and virtual machines.
@@ -31,11 +30,11 @@ Provisioners so far:
 
 ### Setup Requirements
 
-Bolt has to be installed to run the tasks. Each provisioner has its own requirements. From having Docker to installed or access to private infrastructure. 
+Bolt has to be installed to run the tasks. Each provisioner has its own requirements. From having Docker to installed or access to private infrastructure.
 
 #### Running the tasks as part of puppet_litmus
 
-Please follow the documentation here https://github.com/puppetlabs/puppet_litmus/wiki/Converting-a-module-to-use-Litmus#fixturesyml
+Please follow the documentation here: https://puppetlabs.github.io/litmus/
 
 #### Running the module stand-alone call the tasks/plans directly
 
@@ -45,15 +44,15 @@ For provisioning to work you will need to have a number of other modules availab
 cat $HOME/.puppetlabs/bolt/Puppetfile
 mod 'puppetlabs-puppet_agent'
 mod 'puppetlabs-facts'
-mod 'puppetlabs-puppet_conf'                  
+mod 'puppetlabs-puppet_conf'
 ```
 
 ## Usage
 
 There is a basic workflow for the provision tasks.
 
-* provision - creates / initiates a platform and edits a bolt inventory file. 
-* tear_down - creates / initiates a system / container and edits a bolt inventory file. 
+* provision - creates / initiates a platform and edits a bolt inventory file.
+* tear_down - creates / initiates a system / container and edits a bolt inventory file.
 
 For extended functionality please look at the wiki https://github.com/puppetlabs/provision/wiki
 
@@ -96,7 +95,7 @@ $ cat ~/.fog
 
 #### Running the Commands
 
-##### Setting up a new macine
+##### Setting up a new machine
 
 ```
 $ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::abs --targets localhost action=provision platform=ubuntu-1604-x86_64 inventory=/Users/tp/workspace/git/provision
@@ -128,7 +127,7 @@ Ran on 1 node in 1.54 seconds
 
 ### Docker
 
-Given an docker image name it will spin up that container and setup external ssh on that platform. For helpful docker tips look [here](https://github.com/puppetlabs/litmus_image/blob/master/README.md) 
+Given an docker image name it will spin up that container and setup external ssh on that platform. For helpful docker tips look [here](https://github.com/puppetlabs/litmus_image/blob/master/README.md)
 
 provision
 
@@ -192,7 +191,7 @@ Ran on 1 node in 51.98 seconds
 
 sudo secure_path fix
 
-As some Vagrant boxes do not allow ssh root logins, the **vagrant** user is used to login and *sudo* is used to execute privileged commands as root user. 
+As some Vagrant boxes do not allow ssh root logins, the **vagrant** user is used to login and *sudo* is used to execute privileged commands as root user.
 By default the Puppet agent installation does not change the systems' sudo *secure_path* configuration.
 This leads to errors when anything tries to execute `puppet` commands on the test system.
 To add the Puppet agent binary path to the *secure_path* please run the `provision::fix_secure_path` Bolt task:
@@ -240,7 +239,7 @@ test_serv:
 
 In the provision step you can invoke bundle exec rake 'litmus:provision_list[test_serv]' and this will ensure the creation of two VMs in GCP.
 
-Manual invokation of the provision service task from a workflow can be done using:
+Manual invocation of the provision service task from a workflow can be done using:
 ```
 bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::provision_service --targets localhost  action=provision platform=centos-7-v20200813 inventory=/Users/tp/workspace/git/provision
 ```
@@ -263,7 +262,7 @@ When provisioning, a few additional parameters need to be passed:
 
 - `hyperv_vswitch`, which specifies the Hyper-V Virtual Switch to assign the VM.
   If you do not specify one the [`Default Switch`](https://searchenterprisedesktop.techtarget.com/blog/Windows-Enterprise-Desktop/Default-Switch-Makes-Hyper-V-Networking-Dead-Simple) will be used.
-- `hyperv_smb_username` and `hyperv_smb_password`, which ensure the synced folder works correctly (only neccessary is `enable_synced_folder` is `true`).
+- `hyperv_smb_username` and `hyperv_smb_password`, which ensure the synced folder works correctly (only necessary is `enable_synced_folder` is `true`).
   If these parameters are omitted when provisioning on Windows and using synced folders Vagrant will try to prompt for input and the task will hang indefinitely until it finally times out.
   The context in which a Bolt task is run does not allow for mid-task input.
 
@@ -293,9 +292,9 @@ Using the `tear_down` task is the same as on Linux or MacOS.
 
 ### Vmpooler
 
-*Warning* this is currently setup to work with puppet's internal infrasture, its behaviour can be modified below.
+*Warning* this is currently setup to work with puppet's internal infrastructure, its behaviour can be modified below.
 It will utilise a $home/.fog file. Have a look here https://confluence.puppetlabs.com/display/SRE/Generating+and+using+vmpooler+tokens
-Check http://vcloud.delivery.puppetlabs.net/vm/ for the list of availible platforms. 
+Check http://vcloud.delivery.puppetlabs.net/vm/ for the list of available platforms.
 Environment variables, can modify its behaviour:
 VMPOOLER_HOSTNAME, will change the default hostname used to connect to the vmpooler instance.
 ```
@@ -333,21 +332,21 @@ Ran on 1 node in 1.45 seconds
 
 ## Limitations
 
-* The docker task only supports linux
-* The docker task uses port forwarding, not internal ip addresses. This is because of limitations when running on the mac.
+* The docker task only supports Linux
+* The docker task uses port forwarding, not internal IP addresses. This is because of limitations when running on the mac.
 
 
 ## Development
 
-Testing/development/debugging it is better to use ruby directly, you will need to pass the json parameters. Depending on how you are running (using a puppet file or as part of a puppet_litmus). The dependcies of provision will need to be availible. See the setup section above.
+Testing/development/debugging it is better to use ruby directly, you will need to pass the JSON parameters. Depending on how you are running (using a puppet file or as part of a puppet_litmus). The dependencies of provision will need to be available. See the setup section above.
 
 ```
 # powershell
  echo '{ "platform": "ubuntu-1604-x86_64", "action": "provision", "inventory": "c:\\workspace\\puppetlabs-motd\\" }' | bundle exec ruby .\spec\fixtures\modules\provision\tasks\vmpooler.rb
 # bash / zshell ...
- echo '{ "platform": "ubuntu-1604-x86_64", "action": "provision", "inventory": "/home/tp/workspace/puppetlabs-motd/" }' | bundle exec ruby spec/fixtures/modules/provision/tasks/vmpooler.rb 
+ echo '{ "platform": "ubuntu-1604-x86_64", "action": "provision", "inventory": "/home/tp/workspace/puppetlabs-motd/" }' | bundle exec ruby spec/fixtures/modules/provision/tasks/vmpooler.rb
 ```
- 
+
 
 Testing using bolt, the second step
 ```
