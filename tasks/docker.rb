@@ -31,8 +31,8 @@ def install_ssh_components(distro, version, container)
       run_local_command("docker exec #{container} yum install -y sudo openssh-server openssh-clients")
     end
     ssh_folder = run_local_command("docker exec #{container} ls /etc/ssh/")
-    run_local_command("docker exec #{container} ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N \"\"") unless ssh_folder.match?(%r{ssh_host_rsa_key})
-    run_local_command("docker exec #{container} ssh-keygen -t dsa -f /etc/ssh/ssh_host_dsa_key -N \"\"") unless ssh_folder.match?(%r{ssh_host_dsa_key})
+    run_local_command("docker exec #{container} ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N \"\"") unless ssh_folder.include?(%r{ssh_host_rsa_key})
+    run_local_command("docker exec #{container} ssh-keygen -t dsa -f /etc/ssh/ssh_host_dsa_key -N \"\"") unless ssh_folder.include?(%r{ssh_host_dsa_key})
   when %r{opensuse}, %r{sles}
     run_local_command("docker exec #{container} zypper -n in openssh")
     run_local_command("docker exec #{container} ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key")
@@ -66,11 +66,11 @@ def fix_ssh(distro, version, container)
     # Current RedHat/CentOs 7 packs an old version of pam, which are missing a
     # crucial patch when running unprivileged containers.  See:
     # https://bugzilla.redhat.com/show_bug.cgi?id=1728777
-    if distro =~ %r{redhat|centos} && version =~ %r{7}
+    if distro =~ %r{redhat|centos} && version =~ %r{^7}
       run_local_command("docker exec #{container} sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd")
     end
 
-    if version !~ %r{7|8|2}
+    if !%r{^(7|8|2)}.match?(version)
       run_local_command("docker exec #{container} service sshd restart")
     else
       run_local_command("docker exec #{container} /usr/sbin/sshd")

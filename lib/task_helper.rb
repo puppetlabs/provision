@@ -45,7 +45,7 @@ def on_windows?
   # would use Puppet.features.microsoft_windows?, but this method can be
   # used to determine the behavior of the underlying system without
   # requiring features to be initialized and without side effect.
-  !!File::ALT_SEPARATOR # rubocop:disable Style/DoubleNegation
+  !!File::ALT_SEPARATOR
 end
 
 def platform_uses_ssh(platform)
