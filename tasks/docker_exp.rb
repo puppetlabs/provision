@@ -13,13 +13,17 @@ def provision(docker_platform, inventory_location, vars)
   include PuppetLitmus::InventoryManipulation
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   inventory_hash = get_inventory_hash(inventory_full_path)
+  unless vars.nil?
+    var_hash = YAML.safe_load(vars)
+    docker_run_opts = var_hash['docker_run_opts'].flatten.join(' ') unless var_hash['docker_run_opts'].nil?
+  end
 
   deb_family_systemd_volume = if (docker_platform =~ %r{debian|ubuntu}) && (docker_platform !~ %r{debian8|ubuntu14})
                                 '--volume /sys/fs/cgroup:/sys/fs/cgroup:ro'
                               else
                                 ''
                               end
-  creation_command = "docker run -d -it #{deb_family_systemd_volume} --privileged #{docker_platform}"
+  creation_command = "docker run -d -it #{deb_family_systemd_volume} --privileged #{docker_run_opts} #{docker_platform}"
   container_id = run_local_command(creation_command).strip[0..11]
   fix_missing_tty_error_message(container_id) unless platform_is_windows?(docker_platform)
   node = { 'uri' => container_id,
