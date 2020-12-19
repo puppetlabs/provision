@@ -9,7 +9,7 @@ require_relative '../lib/task_helper'
 # TODO: detect what shell to use
 @shell_command = 'bash -lc'
 
-def provision(docker_platform, inventory_location, append_cli, vars)
+def provision(docker_platform, inventory_location, vars)
   include PuppetLitmus::InventoryManipulation
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   inventory_hash = get_inventory_hash(inventory_full_path)
@@ -19,7 +19,7 @@ def provision(docker_platform, inventory_location, append_cli, vars)
                               else
                                 ''
                               end
-  creation_command = "docker run -d -it #{deb_family_systemd_volume} --privileged #{append_cli} #{docker_platform}"
+  creation_command = "docker run -d -it #{deb_family_systemd_volume} --privileged #{docker_platform}"
   container_id = run_local_command(creation_command).strip[0..11]
   fix_missing_tty_error_message(container_id) unless platform_is_windows?(docker_platform)
   node = { 'uri' => container_id,
@@ -51,7 +51,6 @@ end
 
 params = JSON.parse(STDIN.read)
 action = params['action']
-append_cli = params['append_cli']
 inventory_location = sanitise_inventory_location(params['inventory'])
 node_name = params['node_name']
 platform = params['platform']
@@ -70,7 +69,7 @@ unless node_name.nil? ^ platform.nil?
 end
 
 begin
-  result = provision(platform, inventory_location, append_cli, vars) if action == 'provision'
+  result = provision(platform, inventory_location, vars) if action == 'provision'
   result = tear_down(node_name, inventory_location) if action == 'tear_down'
   puts result.to_json
   exit 0
