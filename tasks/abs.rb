@@ -25,11 +25,17 @@ def provision(platform, inventory_location, vars)
 
   headers = { 'X-AUTH-TOKEN' => token_from_fogfile('abs'), 'Content-Type' => 'application/json' }
   priority = (ENV['CI']) ? 1 : 2
-  payload = { 'resources' => { platform => 1 },
-              'priority' => priority,
-              'job' => { 'id' => job_id,
-                         'tags' => { 'user' => Etc.getlogin, 'jenkins_build_url' => jenkins_build_url } } }
-
+  payload = if platform.class == String
+              { 'resources' => { platform => 1 },
+                'priority' => priority,
+                'job' => { 'id' => job_id,
+                           'tags' => { 'user' => Etc.getlogin, 'jenkins_build_url' => jenkins_build_url } } }
+            else
+              { 'resources' => platform,
+                'priority' => priority,
+                'job' => { 'id' => job_id,
+                           'tags' => { 'user' => Etc.getlogin, 'jenkins_build_url' => jenkins_build_url } } }
+            end
   http = Net::HTTP.new(uri.host, uri.port)
   http.use_ssl = true
   request = Net::HTTP::Post.new(uri.request_uri, headers)
@@ -62,30 +68,30 @@ def provision(platform, inventory_location, vars)
 
   raise 'Timeout: unable to get a 200 response in 10 minutes' if reply.code != '200'
 
-  data = JSON.parse(reply.body)
-
-  hostname = data.first['hostname']
-
-  if platform_uses_ssh(platform)
-    node = { 'uri' => hostname,
-             'config' => { 'transport' => 'ssh', 'ssh' => { 'user' => 'root', 'password' => 'Qu@lity!', 'host-key-check' => false } },
-             'facts' => { 'provisioner' => 'abs', 'platform' => platform, 'job_id' => job_id } }
-    group_name = 'ssh_nodes'
-  else
-    node = { 'uri' => hostname,
-             'config' => { 'transport' => 'winrm', 'winrm' => { 'user' => 'Administrator', 'password' => 'Qu@lity!', 'ssl' => false } },
-             'facts' => { 'provisioner' => 'abs', 'platform' => platform, 'job_id' => job_id } }
-    group_name = 'winrm_nodes'
-  end
-  unless vars.nil?
-    var_hash = YAML.safe_load(vars)
-    node['vars'] = var_hash
-  end
   inventory_full_path = File.join(inventory_location, 'inventory.yaml')
   inventory_hash = get_inventory_hash(inventory_full_path)
-  add_node_to_group(inventory_hash, node, group_name)
+  data = JSON.parse(reply.body)
+  data.each do |host|
+    if platform_uses_ssh(host['type'])
+      node = { 'uri' => host['hostname'],
+               'config' => { 'transport' => 'ssh', 'ssh' => { 'user' => 'root', 'password' => 'Qu@lity!', 'host-key-check' => false } },
+               'facts' => { 'provisioner' => 'abs', 'platform' => host['type'], 'job_id' => job_id } }
+      group_name = 'ssh_nodes'
+    else
+      node = { 'uri' => host['hostname'],
+               'config' => { 'transport' => 'winrm', 'winrm' => { 'user' => 'Administrator', 'password' => 'Qu@lity!', 'ssl' => false } },
+               'facts' => { 'provisioner' => 'abs', 'platform' => host['type'], 'job_id' => job_id } }
+      group_name = 'winrm_nodes'
+    end
+    unless vars.nil?
+      var_hash = YAML.safe_load(vars)
+      node['vars'] = var_hash
+    end
+    add_node_to_group(inventory_hash, node, group_name)
+  end
+
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
-  { status: 'ok', node_name: hostname, node: node }
+  { status: 'ok', nodes: data.length }
 end
 
 def tear_down(node_name, inventory_location)
@@ -99,6 +105,12 @@ def tear_down(node_name, inventory_location)
     job_id = facts['job_id']
   end
 
+  targets_to_remove = []
+  inventory_hash['groups'].each do |group|
+    group['targets'].each do |node|
+      targets_to_remove.push(node['uri']) if node['facts']['job_id'] == job_id
+    end
+  end
   uri = URI.parse('https://abs-prod.k8s.infracore.puppet.net/api/v2/return')
   headers = { 'X-AUTH-TOKEN' => token_from_fogfile('abs'), 'Content-Type' => 'application/json' }
   payload = { 'job_id' => job_id,
@@ -111,11 +123,11 @@ def tear_down(node_name, inventory_location)
   reply = http.request(request)
   raise "Error: #{reply}: #{reply.message}" unless reply.code == '200'
 
-  remove_node(inventory_hash, node_name)
-
-  puts "Removed #{node_name}"
+  targets_to_remove.each do |target|
+    remove_node(inventory_hash, target)
+  end
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
-  { status: 'ok' }
+  { status: 'ok', removed: targets_to_remove }
 end
 
 params = JSON.parse(STDIN.read)
