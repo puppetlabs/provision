@@ -21,7 +21,7 @@ end
 
 def supports_windows_platform?
   # Relies on the winrm-config command added in 2.2.0:
-  # https://github.com/hashicorp/vagrant/blob/master/CHANGELOG.md#220-october-16-2018
+  # https://github.com/hashicorp/vagrant/blob/main/CHANGELOG.md#220-october-16-2018
   vagrant_version >= Gem::Version.new('2.2.0')
 end
 
