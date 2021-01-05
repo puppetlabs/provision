@@ -98,10 +98,8 @@ def provision(platform, inventory_location, vars)
   unless vars.nil?
     var_hash = YAML.safe_load(vars)
     response_hash['groups'].each do |bg|
-      bg['targets'].each do |trgt|
-        trgt['uri'].each do |ur|
-          ur['vars'] = var_hash
-        end
+      bg['targets'].each do |trgts|
+        trgts['vars'] = var_hash
       end
     end
   end
