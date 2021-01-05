@@ -119,7 +119,7 @@ def provision(platform, inventory_location, vars)
     File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
   else
     File.open('inventory.yaml', 'wb') do |f|
-      f.write(response_hash)
+      f.write(YAML.dump(response_hash))
     end
   end
 
