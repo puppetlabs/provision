@@ -94,9 +94,18 @@ def provision(platform, inventory_location, vars)
   params = platform_to_cloud_request_parameters(platform, cloud, region, zone)
   response = invoke_cloud_request(params, uri, job_url, 'post')
   response_hash = YAML.safe_load(response)
+
+  unless vars.nil?
+    var_hash = YAML.safe_load(vars)
+    response_hash['groups'].each do |bg|
+      bg['targets'].each do |trgts|
+        trgts['vars'] = var_hash
+      end
+    end
+  end
+
   if File.file?(inventory_full_path)
     inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
-
     inventory_hash['groups'].each do |g|
       response_hash['groups'].each do |bg|
         if g['name'] == bg['name']
@@ -108,7 +117,7 @@ def provision(platform, inventory_location, vars)
     File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
   else
     File.open('inventory.yaml', 'wb') do |f|
-      f.write(response)
+      f.write(YAML.dump(response_hash))
     end
   end
 
