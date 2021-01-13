@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ -z ${PT_version+x} ]; then
-  PE_RELEASE=2019.3
+  PE_RELEASE=2019.8
 
 else
   PE_RELEASE=$PT_version
@@ -27,7 +27,7 @@ if [[ $? -ne 0 ]];then
 fi
 
 cd ${PE_FILE_NAME}
-DISABLE_ANALYTICS=1 ./puppet-enterprise-installer
+DISABLE_ANALYTICS=1 ./puppet-enterprise-installer -y -c ./conf.d/pe.conf
 if [[ $? -ne 0 ]];then
  echo “Error: Failed to install Puppet Enterprise. Please check the logs and call Bryan.x ”
  exit 2
