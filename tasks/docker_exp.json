@@ -8,10 +8,6 @@
       "type": "Enum[provision, tear_down]",
       "default": "provision"
     },
-    "append_cli": {
-      "description": "Append to the run command",
-      "type": "Optional[String[1]]"
-    },
     "inventory": {
       "description": "Location of the inventory file",
       "type": "Optional[String[1]]"
