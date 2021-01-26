@@ -43,7 +43,7 @@ jobs:
       stage: deploy
 branches:
   only:
-    - main
+    - master
     - /^v\d/
 notifications:
   email: false
