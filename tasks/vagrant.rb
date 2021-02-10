@@ -115,7 +115,7 @@ def provision(platform, inventory_location, enable_synced_folder, provider, cpus
   end
 
   include PuppetLitmus
-  inventory_full_path = File.join(inventory_location, 'inventory.yaml')
+  inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
   inventory_hash = get_inventory_hash(inventory_full_path)
   vagrant_dirs = Dir.glob("#{File.join(inventory_location, '.vagrant')}/*/").map { |d| File.basename(d) }
   @vagrant_env = File.expand_path(File.join(inventory_location, '.vagrant', get_vagrant_dir(platform, vagrant_dirs)))
@@ -181,7 +181,7 @@ end
 def tear_down(node_name, inventory_location)
   include PuppetLitmus
   command = 'vagrant destroy -f'
-  inventory_full_path = File.join(inventory_location, 'inventory.yaml')
+  inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
   if File.file?(inventory_full_path)
     inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
     vagrant_env = facts_from_node(inventory_hash, node_name)['vagrant_env']

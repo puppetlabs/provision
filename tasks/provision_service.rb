@@ -89,7 +89,7 @@ def provision(platform, inventory_location, vars)
     data = JSON.parse(vars.tr(';', ','))
     job_url = data['job_url']
   end
-  inventory_full_path = File.join(inventory_location, 'inventory.yaml')
+  inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
 
   params = platform_to_cloud_request_parameters(platform, cloud, region, zone)
   response = invoke_cloud_request(params, uri, job_url, 'post')
@@ -113,10 +113,10 @@ def provision(platform, inventory_location, vars)
         end
       end
     end
-
     File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
   else
-    File.open('inventory.yaml', 'wb') do |f|
+    FileUtils.mkdir_p(File.join(Dir.pwd, '/spec/fixtures'))
+    File.open(inventory_full_path, 'wb') do |f|
       f.write(YAML.dump(response_hash))
     end
   end
@@ -132,7 +132,7 @@ def tear_down(platform, inventory_location, _vars)
   # remove all provisioned resources
   uri = URI.parse(ENV['SERVICE_URL'] || default_uri)
 
-  inventory_full_path = File.join(inventory_location, 'inventory.yaml')
+  inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
   # rubocop:disable Style/GuardClause
   if File.file?(inventory_full_path)
     inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)

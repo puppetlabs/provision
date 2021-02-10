@@ -11,7 +11,7 @@ require_relative '../lib/task_helper'
 
 def provision(docker_platform, inventory_location, vars)
   include PuppetLitmus::InventoryManipulation
-  inventory_full_path = File.join(inventory_location, 'inventory.yaml')
+  inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
   inventory_hash = get_inventory_hash(inventory_full_path)
   unless vars.nil?
     var_hash = YAML.safe_load(vars)
@@ -41,7 +41,7 @@ end
 
 def tear_down(node_name, inventory_location)
   include PuppetLitmus::InventoryManipulation
-  inventory_full_path = File.join(inventory_location, 'inventory.yaml')
+  inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
   raise "Unable to find '#{inventory_full_path}'" unless File.file?(inventory_full_path)
   inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
   node_facts = facts_from_node(inventory_hash, node_name)
