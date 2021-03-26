@@ -1,6 +1,19 @@
 {
   "puppet_task_version": 1,
   "supports_noop": false,
-  "description": "install puppetserver",
-  "parameters": {}
+  "description": "install puppetserver community edition",
+  "parameters": {
+    "collection": {
+      "description": "The name of the node",
+      "type": "Optional[String[1]]"
+    },
+    "platform": {
+      "description": "The name of the node",
+      "type": "Optional[String[1]]"
+    },
+    "retry": {
+      "description": "The number of retries in case of network connectivity failures",
+      "type": "Optional[Integer]"
+    }
+  }
 }
