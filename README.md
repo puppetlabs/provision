@@ -11,7 +11,6 @@ Simple tasks to provision and tear_down containers / instances and virtual machi
     * [ABS](#abs)
     * [Docker](#docker)
     * [Vagrant](#vagrant)
-    * [Vmpooler](#vmpooler)
     * [Provision Service](#provision_service)
 4. [Limitations - OS compatibility, etc.](#limitations)
 5. [Development - Guide for contributing to the module](#development)
@@ -24,7 +23,6 @@ Provisioners so far:
 * ABS (AlwaysBeScheduling)
 * Docker
 * Vagrant
-* Vmpooler (internal to puppet)
 
 ## Setup
 
@@ -290,46 +288,6 @@ Ran on 1 node in 51.98 seconds
 
 Using the `tear_down` task is the same as on Linux or MacOS.
 
-### Vmpooler
-
-*Warning* this is currently setup to work with puppet's internal infrastructure, its behaviour can be modified below.
-It will utilise a $home/.fog file. Have a look here https://confluence.puppetlabs.com/display/SRE/Generating+and+using+vmpooler+tokens
-Check http://vcloud.delivery.puppetlabs.net/vm/ for the list of available platforms.
-Environment variables, can modify its behaviour:
-VMPOOLER_HOSTNAME, will change the default hostname used to connect to the vmpooler instance.
-```
-export VMPOOLER_HOSTNAME=vcloud.delivery.puppetlabs.net
-```
-
-provision
-
-```
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vmpooler --targets localhost  action=provision platform=ubuntu-1604-x86_64 inventory=/Users/tp/workspace/git/provision
-
-Started on localhost...
-Finished on localhost:
-  {
-    "status": "ok",
-    "node_name": "gffzr8c3gipetkp.delivery.puppetlabs.net"
-  }
-Successful on 1 node: localhost
-Ran on 1 node in 1.46 seconds
-```
-
-tear_down
-
-```
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vmpooler --targets localhost  action=tear_down inventory=/Users/tp/workspace/git/provision node_name=gffzr8c3gipetkp.delivery.puppetlabs.net
-Started on localhost...
-Finished on localhost:
-  Removed gffzr8c3gipetkp.delivery.puppetlabs.net
-  {"status":"ok"}
-  {
-  }
-Successful on 1 node: localhost
-Ran on 1 node in 1.45 seconds
-```
-
 ## Limitations
 
 * The docker task only supports Linux
@@ -342,9 +300,9 @@ Testing/development/debugging it is better to use ruby directly, you will need t
 
 ```
 # powershell
- echo '{ "platform": "ubuntu-1604-x86_64", "action": "provision", "inventory": "c:\\workspace\\puppetlabs-motd\\" }' | bundle exec ruby .\spec\fixtures\modules\provision\tasks\vmpooler.rb
+ echo '{ "platform": "ubuntu-1604-x86_64", "action": "provision", "inventory": "c:\\workspace\\puppetlabs-motd\\" }' | bundle exec ruby .\spec\fixtures\modules\provision\tasks\abs.rb
 # bash / zshell ...
- echo '{ "platform": "ubuntu-1604-x86_64", "action": "provision", "inventory": "/home/tp/workspace/puppetlabs-motd/" }' | bundle exec ruby spec/fixtures/modules/provision/tasks/vmpooler.rb
+ echo '{ "platform": "ubuntu-1604-x86_64", "action": "provision", "inventory": "/home/tp/workspace/puppetlabs-motd/" }' | bundle exec ruby spec/fixtures/modules/provision/tasks/abs.rb
 ```
 
 
