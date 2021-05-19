@@ -6,6 +6,7 @@ require 'net/http'
 require 'yaml'
 require 'puppet_litmus'
 require 'etc'
+require 'date'
 require_relative '../lib/task_helper'
 
 def provision(platform, inventory_location, vars)
@@ -21,7 +22,7 @@ def provision(platform, inventory_location, vars)
                         'https://litmus_manual'
                       end
   # Job ID must be unique
-  job_id = "iac-task-pid-#{Process.pid}"
+  job_id = "iac-task-pid-#{Process.pid}-#{DateTime.now.strftime('%Q')}"
 
   headers = { 'X-AUTH-TOKEN' => token_from_fogfile('abs'), 'Content-Type' => 'application/json' }
   priority = (ENV['CI']) ? 1 : 2
