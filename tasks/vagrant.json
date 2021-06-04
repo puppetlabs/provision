@@ -50,6 +50,10 @@
       "description": "Whether to use the vagrant synced folder for the provisioned machine",
       "type": "Optional[Boolean]",
       "default": false
+    },
+    "box_url": {
+      "description": "Path to the Vagrant Box URL",
+      "type": "Optional[String[1]]"
     }
   },
   "files": [
