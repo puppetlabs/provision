@@ -54,6 +54,10 @@
     "box_url": {
       "description": "Path to the Vagrant Box URL",
       "type": "Optional[String[1]]"
+    },
+    "password": {
+      "description": "Password to use for Vagrant boxes without the default Vagrant insecure key",
+      "type": "Optional[String[1]]"
     }
   },
   "files": [
