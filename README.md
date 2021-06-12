@@ -218,6 +218,27 @@ Successful on 1 node: localhost
 Ran on 1 node in 4.52 seconds
 ```
 
+#### Additional Vagrant options
+
+##### Box URL
+
+If you need to use a local/private Vagrant box requiring you to specify a URL to access, you can pass a URL by setting the `VAGRANT_BOX_URL` environment variable. If you put `%BOX%` in the URL it will be replaced with the name of the box/image. You can also set the variable by setting the `params` hash in `provision.yaml`.
+
+In `provision.yaml`:
+
+```yaml
+vagrant_boxes:
+  provisioner: vagrant
+  images:
+  - mybox1
+  params:
+    vagrant_box_url: 'https://boxes.example.com/box/%BOX%.json'
+```
+
+##### Password
+
+If you use a custom Vagrant box which requires the use of a password instead of the standard Vagrant keypair then you can set it in the `VAGRANT_PASSWORD` environment variable, or in the `provision.yaml` params hash with the `vagrant_password` key.
+
 ### Provision_service
 
 The provision service task is meant to be used from a Github Action workflow.
