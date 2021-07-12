@@ -86,7 +86,9 @@ def configure_remoting(platform, remoting_config_path, password)
     case platform
     when %r{debian.*|ubuntu.*}
       restart_command = 'service ssh restart'
-    when %r{centos.*}
+    when %r{sles-11.*|(centos|redhat|oracle)-[56].*}
+      restart_command = 'service sshd restart'
+    when %r{centos.*|redhat.*|oracle.*|sles.*}
       restart_command = 'systemctl restart sshd.service'
     else
       raise ArgumentError, "Unsupported Platform: '#{platform}'"
