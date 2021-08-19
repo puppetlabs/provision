@@ -75,12 +75,12 @@ def provision(platform, inventory_location, vars)
   data.each do |host|
     if platform_uses_ssh(host['type'])
       node = { 'uri' => host['hostname'],
-               'config' => { 'transport' => 'ssh', 'ssh' => { 'user' => 'root', 'password' => 'Qu@lity!', 'host-key-check' => false } },
+               'config' => { 'transport' => 'ssh', 'ssh' => { 'user' => ENV['ABS_USER'], 'password' => ENV['ABS_PASSWORD'], 'host-key-check' => false } },
                'facts' => { 'provisioner' => 'abs', 'platform' => host['type'], 'job_id' => job_id } }
       group_name = 'ssh_nodes'
     else
       node = { 'uri' => host['hostname'],
-               'config' => { 'transport' => 'winrm', 'winrm' => { 'user' => 'Administrator', 'password' => 'Qu@lity!', 'ssl' => false } },
+               'config' => { 'transport' => 'winrm', 'winrm' => { 'user' => ENV['ABS_WIN_USER'], 'password' => ENV['ABS_PASSWORD'], 'ssl' => false } },
                'facts' => { 'provisioner' => 'abs', 'platform' => host['type'], 'job_id' => job_id } }
       group_name = 'winrm_nodes'
     end
