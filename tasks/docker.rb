@@ -62,7 +62,7 @@ def fix_ssh(distro, version, container)
   case distro
   when %r{debian}, %r{ubuntu}
     run_local_command("docker exec #{container} service ssh restart")
-  when %r{centos}, %r{^el-}, %r{eos}, %r{fedora}, %r{ol}, %r{redhat}, %r{scientific}, %r{amzn}
+  when %r{centos}, %r{^el-}, %r{eos}, %r{fedora}, %r{ol}, %r{redhat}, %r{scientific}, %r{amzn}, %r{rocky}, %r{almalinux}
     # Current RedHat/CentOs 7 packs an old version of pam, which are missing a
     # crucial patch when running unprivileged containers.  See:
     # https://bugzilla.redhat.com/show_bug.cgi?id=1728777
