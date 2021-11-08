@@ -75,8 +75,13 @@ def provision(platform, inventory_location, vars)
   data.each do |host|
     if platform_uses_ssh(host['type'])
       node = { 'uri' => host['hostname'],
-               'config' => { 'transport' => 'ssh', 'ssh' => { 'user' => ENV['ABS_USER'], 'password' => ENV['ABS_PASSWORD'], 'host-key-check' => false } },
+               'config' => { 'transport' => 'ssh', 'ssh' => { 'user' => ENV['ABS_USER'], 'host-key-check' => false } },
                'facts' => { 'provisioner' => 'abs', 'platform' => host['type'], 'job_id' => job_id } }
+      if !ENV['ABS_SSH_PRIVATE_KEY'].empty?
+        node['config']['ssh']['private-key'] = ENV['ABS_SSH_PRIVATE_KEY']
+      else
+        node['config']['ssh']['password'] = ENV['ABS_PASSWORD']
+      end
       group_name = 'ssh_nodes'
     else
       node = { 'uri' => host['hostname'],
