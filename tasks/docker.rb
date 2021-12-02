@@ -107,6 +107,48 @@ def get_image_os_release_facts(image)
   os_release_facts
 end
 
+# We check for a local port open by binding a raw socket to it
+# If the socket can successfully bind, then the port is open
+def local_port_open?(port)
+  require 'socket'
+  require 'timeout'
+  Timeout.timeout(1) do
+    begin
+      socket = Socket.new(Socket::Constants::AF_INET,
+                          Socket::Constants::SOCK_STREAM,
+                          0)
+      socket.bind(Socket.pack_sockaddr_in(port, '0.0.0.0'))
+      true
+    rescue Errno::EADDRINUSE, Errno::ECONNREFUSED
+      false
+    ensure
+      socket.close
+    end
+  end
+rescue Timeout::Error
+  false
+end
+
+# These defaults are arbitrary but outside the well-known range
+def random_ssh_forwarding_port(start_port = 52_222, end_port = 52_999)
+  raise 'start_port must be less than end_port' if start_port >= end_port
+
+  # This stops us from potentially allocating an invalid port
+  raise 'Could not find an open port to use for SSH forwarding' if end_port > 65_535
+
+  port = rand(start_port..end_port)
+  return port if local_port_open?(port)
+
+  # Try again but bump up the port ranges
+  # Since we thrown an exception above if the end port is > 65535,
+  # there is a hard limit to the amount of times we can retry depending
+  # on the start port and the diff between the end port and the start port.
+  port_diff = end_port - start_port
+  new_start_port = start_port + port_diff + 1
+  new_end_port = end_port + port_diff + 1
+  random_ssh_forwarding_port(new_start_port, new_end_port)
+end
+
 def provision(image, inventory_location, vars)
   include PuppetLitmus::InventoryManipulation
   inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
@@ -117,15 +159,7 @@ def provision(image, inventory_location, vars)
   hostname = 'localhost'
   group_name = 'ssh_nodes'
   warn '!!! Using private port forwarding!!!'
-  front_facing_port = 2222
-  (front_facing_port..2230).each do |i|
-    front_facing_port = i
-    ports = "#{front_facing_port}->22"
-    list_command = 'docker container ls -a'
-    stdout = run_local_command(list_command)
-    break unless stdout.include?(ports)
-    raise 'All front facing ports are in use.' if front_facing_port == 2230
-  end
+  front_facing_port = random_ssh_forwarding_port
   full_container_name = "#{image.gsub(%r{[\/:\.]}, '_')}-#{front_facing_port}"
   deb_family_systemd_volume = if (image =~ %r{debian|ubuntu}) && (image !~ %r{debian8|ubuntu14})
                                 '--volume /sys/fs/cgroup:/sys/fs/cgroup:ro'
