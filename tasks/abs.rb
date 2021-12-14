@@ -77,7 +77,7 @@ def provision(platform, inventory_location, vars)
       node = { 'uri' => host['hostname'],
                'config' => { 'transport' => 'ssh', 'ssh' => { 'user' => ENV['ABS_USER'], 'host-key-check' => false } },
                'facts' => { 'provisioner' => 'abs', 'platform' => host['type'], 'job_id' => job_id } }
-      if !ENV['ABS_SSH_PRIVATE_KEY'].empty?
+      if !ENV['ABS_SSH_PRIVATE_KEY'].nil? && !ENV['ABS_SSH_PRIVATE_KEY'].empty?
         node['config']['ssh']['private-key'] = ENV['ABS_SSH_PRIVATE_KEY']
       else
         node['config']['ssh']['password'] = ENV['ABS_PASSWORD']
