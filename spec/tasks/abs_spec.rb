@@ -36,6 +36,13 @@ describe 'provision::abs' do
 
   include_context('with_tmpdir')
 
+  def with_env(env_vars)
+    env_vars.each { |k, v| ENV[k] = v }
+    yield
+  ensure
+    env_vars.each { |k, _v| ENV.delete(k) }
+  end
+
   before(:each) do
     FileUtils.mkdir_p(inventory_dir)
   end
@@ -93,6 +100,15 @@ describe 'provision::abs' do
       expect(ssh_targets.first.dig('facts', 'platform')).to eq('redhat-8-x86_64')
     end
 
+    it 'targets a different abs host' do
+      stub_request(:post, 'https://abs-spec.k8s.infracore.puppet.net/api/v2/request')
+        .to_return({ status: 202 }, { status: 200, body: response_body.to_json })
+
+      with_env('ABS_SUBDOMAIN' => 'abs-spec') do
+        expect(abs.task(params)).to eq({ status: 'ok', nodes: 1 })
+      end
+    end
+
     it 'provision with an existing inventory file' do
       pending(<<~EOS)
         XXX: (#187) It looks like there's an error hidden here in the way
@@ -138,13 +154,23 @@ describe 'provision::abs' do
       File.write(inventory_file, inventory_yaml)
     end
 
-    it 'tear_down a node' do
+    it 'tears down a node' do
       expect(abs).to receive(:token_from_fogfile).and_return('fog-token')
       stub_request(:post, 'https://abs-prod.k8s.infracore.puppet.net/api/v2/return')
         .to_return(status: 200)
 
       expect(abs.task(params)).to eq({ status: 'ok', removed: [ 'foo-bar.test' ] })
       expect(YAML.load_file(inventory_file)).to eq(YAML.safe_load(empty_inventory_yaml))
+    end
+
+    it 'targets a different abs host' do
+      expect(abs).to receive(:token_from_fogfile).and_return('fog-token')
+      stub_request(:post, 'https://abs-spec.k8s.infracore.puppet.net/api/v2/return')
+        .to_return(status: 200)
+
+      with_env('ABS_SUBDOMAIN' => 'abs-spec') do
+        expect(abs.task(params)).to eq({ status: 'ok', removed: [ 'foo-bar.test'] })
+      end
     end
 
     it 'raises an error if abs returns error response'
