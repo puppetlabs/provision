@@ -13,8 +13,18 @@ require_relative '../lib/task_helper'
 class ABSProvision
   include PuppetLitmus::InventoryManipulation
 
+  # Enforces a k8s.infracore.puppet.net domain, but allows selection of prod,
+  # stage, etc hostname from the environment variable +ABS_SUBDOMAIN+ so that
+  # CI can test vms from staging.
+  #
+  # Defaults to abs-prod.k8s.infracore.puppet.net.
+  def abs_host
+    subdomain = ENV['ABS_SUBDOMAIN'] || 'abs-prod'
+    "#{subdomain}.k8s.infracore.puppet.net"
+  end
+
   def provision(platform, inventory_location, vars)
-    uri = URI.parse('https://abs-prod.k8s.infracore.puppet.net/api/v2/request')
+    uri = URI.parse("https://#{abs_host}/api/v2/request")
     jenkins_build_url = if ENV['CI'] == 'true' && ENV['TRAVIS'] == 'true'
                           ENV['TRAVIS_JOB_WEB_URL']
                         elsif ENV['CI'] == 'True' && ENV['APPVEYOR'] == 'True'
@@ -118,7 +128,7 @@ class ABSProvision
         targets_to_remove.push(node['uri']) if node['facts']['job_id'] == job_id
       end
     end
-    uri = URI.parse('https://abs-prod.k8s.infracore.puppet.net/api/v2/return')
+    uri = URI.parse("https://#{abs_host}/api/v2/return")
     headers = { 'X-AUTH-TOKEN' => token_from_fogfile('abs'), 'Content-Type' => 'application/json' }
     payload = { 'job_id' => job_id,
                 'hosts' => [{ 'hostname' => node_name, 'type' => platform, 'engine' => 'vmpooler' }] }
