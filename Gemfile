@@ -10,6 +10,7 @@ group :development do
   gem "puppet-module-win-default-r#{minor_version}",   require: false, platforms: %i[mswin mingw x64_mingw]
   gem "puppet-module-win-dev-r#{minor_version}",       require: false, platforms: %i[mswin mingw x64_mingw]
   gem 'github_changelog_generator',                    require: false if Gem::Version.new(RUBY_VERSION.dup) >= Gem::Version.new('2.5.0')
+  gem 'webmock'
 end
 
 # Evaluate Gemfile.local and ~/.gemfile if they exist
