@@ -7,8 +7,7 @@ end
 
 def get_inventory_hash(inventory_full_path)
   if File.file?(inventory_full_path)
-    require 'puppet_litmus/inventory_manipulation'
-    PuppetLitmus::InventoryManipulation.inventory_hash_from_inventory_file(inventory_full_path)
+    inventory_hash_from_inventory_file(inventory_full_path)
   else
     { 'version' => 2, 'groups' => [{ 'name' => 'docker_nodes', 'targets' => [] }, { 'name' => 'ssh_nodes', 'targets' => [] }, { 'name' => 'winrm_nodes', 'targets' => [] }] }
   end

@@ -110,13 +110,6 @@ describe 'provision::abs' do
     end
 
     it 'provision with an existing inventory file' do
-      pending(<<~EOS)
-        XXX: (#187) It looks like there's an error hidden here in the way
-        lib/task_helper.rb get_inventory_hash() attempts to call
-        PuppetLitmus::InventoryManipulation.inventory_hash_from_inventory_file()
-        as though it were a class method.
-      EOS
-
       stub_request(:post, 'https://abs-prod.k8s.infracore.puppet.net/api/v2/request')
         .to_return({ status: 202 }, { status: 200, body: response_body.to_json })
 
