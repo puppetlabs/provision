@@ -28,7 +28,7 @@ def platform_to_cloud_request_parameters(platform, cloud, region, zone)
 end
 
 # curl -X POST https://facade-validation-6f3kfepqcq-ew.a.run.app/v1/provision --data @test_machines.json
-def invoke_cloud_request(params, uri, job_url, verb)
+def invoke_cloud_request(params, uri, job_url, verb, retry_attempts)
   headers =  {
     'Accept' => 'application/json',
     'Content-Type' => 'application/json',
@@ -67,6 +67,18 @@ def invoke_cloud_request(params, uri, job_url, verb)
   response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
     http.request(request)
   end
+
+  # If the response fails, retry the request - defults to 5 attempts
+  if response.code == '500'
+    retry_attempts.times do |i|
+      puts "Retrying #{i + 1} of 3 times"
+      response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
+        http.request(request)
+      end
+      break unless response.code == '500'
+    end
+  end
+
   if response.code == '200'
     response.body
   else
@@ -83,7 +95,7 @@ def invoke_cloud_request(params, uri, job_url, verb)
   # rubocop:enable Style/GuardClause
 end
 
-def provision(platform, inventory_location, vars)
+def provision(platform, inventory_location, vars, retry_attempts)
   # Call the provision service with the information necessary and write the inventory file locally
 
   if ENV['GITHUB_RUN_ID']
@@ -102,7 +114,7 @@ def provision(platform, inventory_location, vars)
   inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
 
   params = platform_to_cloud_request_parameters(platform, cloud, region, zone)
-  response = invoke_cloud_request(params, uri, job_url, 'post')
+  response = invoke_cloud_request(params, uri, job_url, 'post', retry_attempts)
   response_hash = YAML.safe_load(response)
 
   unless vars.nil?
@@ -138,7 +150,7 @@ def provision(platform, inventory_location, vars)
   }
 end
 
-def tear_down(platform, inventory_location, _vars)
+def tear_down(platform, inventory_location, _vars, retry_attempts)
   # remove all provisioned resources
   uri = URI.parse(ENV['SERVICE_URL'] || default_uri)
 
@@ -148,7 +160,7 @@ def tear_down(platform, inventory_location, _vars)
     inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
     facts = facts_from_node(inventory_hash, platform)
     job_id = facts['uuid']
-    response = invoke_cloud_request(job_id, uri, '', 'delete')
+    response = invoke_cloud_request(job_id, uri, '', 'delete', retry_attempts)
     response.to_json
   end
   # rubocop:enable Style/GuardClause
@@ -159,16 +171,17 @@ platform = params['platform']
 action = params['action']
 vars = params['vars']
 node_name = params['node_name']
+retry_attempts = params['retry_attempts']
 inventory_location = sanitise_inventory_location(params['inventory'])
 
 begin
   case action
   when 'provision'
     raise 'specify a platform when provisioning' if platform.nil?
-    result = provision(platform, inventory_location, vars)
+    result = provision(platform, inventory_location, vars, retry_attempts)
   when 'tear_down'
     raise 'specify a node_name when tearing down' if node_name.nil?
-    result = tear_down(node_name, inventory_location, vars)
+    result = tear_down(node_name, inventory_location, vars, retry_attempts)
   else
     result = { _error: { kind: 'provision_service/argument_error', msg: "Unknown action '#{action}'" } }
   end
