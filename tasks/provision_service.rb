@@ -62,21 +62,11 @@ def invoke_cloud_request(params, uri, job_url, verb, retry_attempts)
   req_options = {
     use_ssl: uri.scheme == 'https',
     read_timeout: 60 * 5, # timeout reads after 5 minutes - that's longer than the backend service would keep the request open
+    max_retries: retry_attempts, # retry up to 5 times before throwing an error
   }
 
   response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
     http.request(request)
-  end
-
-  # If the response fails, retry the request - defults to 5 attempts
-  if response.code == '500'
-    retry_attempts.times do |i|
-      puts "Retrying #{i + 1} of 3 times"
-      response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
-        http.request(request)
-      end
-      break unless response.code == '500'
-    end
   end
 
   if response.code == '200'
