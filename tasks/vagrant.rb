@@ -88,7 +88,7 @@ def configure_remoting(platform, remoting_config_path, password)
       restart_command = 'service ssh restart'
     when %r{sles-11.*|(centos|redhat|oracle)-[56].*}
       restart_command = 'service sshd restart'
-    when %r{centos.*|redhat.*|oracle.*|sles.*}
+    when %r{centos.*|redhat.*|oracle.*|sles.*|almalinux.*}
       restart_command = 'systemctl restart sshd.service'
     else
       raise ArgumentError, "Unsupported Platform: '#{platform}'"
