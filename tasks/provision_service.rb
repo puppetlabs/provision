@@ -68,7 +68,6 @@ def invoke_cloud_request(params, uri, job_url, verb, retry_attempts)
   response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
     http.request(request)
   end
-
   if response.code == '200'
     response.body
   else

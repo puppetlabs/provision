@@ -26,8 +26,8 @@
     },
     "retry_attempts": {
       "description": "The number of times to retry the provisioning if it fails",
-      "type": "Optional[Integer[1,]]",
-      "default": "5"
+      "type": "Optional[Integer[1]]",
+      "default": 5
     }
   },
   "files": [
