@@ -1,7 +1,7 @@
 fixtures:
   repositories:
-    "facts": "git://github.com/puppetlabs/puppetlabs-facts.git"
-    "puppet_agent": "git://github.com/puppetlabs/puppetlabs-puppet_agent.git"
-    "puppet_conf": "git://github.com/puppetlabs/puppetlabs-puppet_conf.git"
+    "facts": "https://github.com/puppetlabs/puppetlabs-facts.git"
+    "puppet_agent": "https://github.com/puppetlabs/puppetlabs-puppet_agent.git"
+    "puppet_conf": "https://github.com/puppetlabs/puppetlabs-puppet_conf.git"
   symlinks:
     "provision": "#{source_dir}"
