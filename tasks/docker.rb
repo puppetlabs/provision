@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require 'uri'
 require 'yaml'
 require 'puppet_litmus'
 require_relative '../lib/task_helper'
@@ -152,7 +153,16 @@ def provision(image, inventory_location, vars)
   os_release_facts = get_image_os_release_facts(image)
   distro = os_release_facts['ID']
   version = os_release_facts['VERSION_ID']
-  hostname = 'localhost'
+
+  hostname = (ENV['DOCKER_HOST'].nil? || ENV['DOCKER_HOST'].empty?) ? 'localhost' : URI.parse(ENV['DOCKER_HOST']).host || ENV['DOCKER_HOST']
+  begin
+    # Use the current docker context to determine the docker hostname
+    docker_context = JSON.parse(run_local_command('docker context inspect'))[0]
+    hostname = URI.parse(docker_context['Endpoints']['docker']['Host']).host || hostname
+  rescue RuntimeError
+    # old clients may not support docker context
+  end
+
   group_name = 'ssh_nodes'
   warn '!!! Using private port forwarding!!!'
   front_facing_port = random_ssh_forwarding_port
