@@ -34,6 +34,8 @@ class ABSProvision
                         else
                           'https://litmus_manual'
                         end
+    poll_duration = ENV['POLL_ABS_TIMEOUT_SECONDS'] || 600
+
     # Job ID must be unique
     job_id = "iac-task-pid-#{Process.pid}-#{DateTime.now.strftime('%Q')}"
 
@@ -63,7 +65,7 @@ class ABSProvision
     raise "Error: #{reply}: #{reply.message}" unless reply.is_a?(Net::HTTPAccepted) # should be a 202
 
     # We want to then poll the API until we get a 200 response, indicating the VMs have been provisioned
-    timeout = Time.now.to_i + 600 # Let's poll the API for a max of 10 minutes
+    timeout = Time.now.to_i + poll_duration.to_i # Let's poll the API for a max of poll_duration seconds
     sleep_time = 1
 
     # Progressively increase the sleep time by 1 second. When we hit 10 seconds, start querying every 30 seconds until we
@@ -80,7 +82,7 @@ class ABSProvision
       sleep_time += 1
     end
 
-    raise 'Timeout: unable to get a 200 response in 10 minutes' if reply.code != '200'
+    raise "Timeout: unable to get a 200 response in #{poll_duration} seconds" if reply.code != '200'
 
     inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
     inventory_hash = get_inventory_hash(inventory_full_path)
