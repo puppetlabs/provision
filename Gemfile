@@ -2,6 +2,7 @@ source ENV['GEM_SOURCE'] || 'https://rubygems.org'
 
 gem 'bolt'
 gem 'puppet_litmus'
+
 ruby_version_segments = Gem::Version.new(RUBY_VERSION.dup).segments
 minor_version = ruby_version_segments[0..1].join('.')
 group :development do
@@ -12,6 +13,7 @@ group :development do
   gem 'github_changelog_generator',                    require: false if Gem::Version.new(RUBY_VERSION.dup) >= Gem::Version.new('2.5.0')
   gem 'io-event', '0.4.0' # later versions require Ruby 3
   gem 'webmock'
+  gem 'concurrent-ruby', '= 1.1.10',         require: false
 end
 
 # Evaluate Gemfile.local and ~/.gemfile if they exist
