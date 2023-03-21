@@ -161,11 +161,7 @@ def provision(image, inventory_location, vars)
   warn '!!! Using private port forwarding!!!'
   front_facing_port = random_ssh_forwarding_port
   full_container_name = "#{image.gsub(%r{[\/:\.]}, '_')}-#{front_facing_port}"
-  deb_family_systemd_volume = if (image =~ %r{debian|ubuntu}) && (image !~ %r{debian8|ubuntu14})
-                                '--volume /sys/fs/cgroup:/sys/fs/cgroup:ro'
-                              else
-                                ''
-                              end
+
   node = {
     'uri' => "#{hostname}:#{front_facing_port}",
     'config' => {
@@ -184,7 +180,15 @@ def provision(image, inventory_location, vars)
     node['vars'] = var_hash
     docker_run_opts = var_hash['docker_run_opts'].flatten.join(' ') unless var_hash['docker_run_opts'].nil?
   end
-  creation_command = "docker run -d -it --privileged #{deb_family_systemd_volume} --tmpfs /tmp:exec -p #{front_facing_port}:22 --name #{full_container_name} "
+
+  unless docker_run_opts.nil?
+    docker_run_opts += ' --volume /sys/fs/cgroup:/sys/fs/cgroup:rw' if (image =~ %r{debian|ubuntu}) \
+    && (docker_run_opts !~ %r{--volume /sys/fs/cgroup:/sys/fs/cgroup})
+    docker_run_opts += ' --cgroupns=host' if (image =~ %r{debian|ubuntu}) \
+    && (docker_run_opts !~ %r{--cgroupns})
+  end
+
+  creation_command = "docker run -d -it --privileged --tmpfs /tmp:exec -p #{front_facing_port}:22 --name #{full_container_name} "
   creation_command += "#{docker_run_opts} " unless docker_run_opts.nil?
   creation_command += image
   run_local_command(creation_command).strip
