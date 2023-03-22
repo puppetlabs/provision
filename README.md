@@ -144,6 +144,17 @@ Ran on 1 node in 33.96 seconds
 
 Provision allows for passing additional command line arguments to the docker run when specifying `vars['docker_run_opts']` as an array of arguments.
 
+When running Debian or Ubuntu containers, the following flags will be added to the $docker_run_opts by default.
+```
+--volume /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host
+```
+
+These defaults can be overriden by passing the flags with different values i.e.
+
+```
+--volume /sys/fs/cgroup:/sys/fs/cgroup:ro --cgroupns=private
+```
+
 ```
 $ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --targets localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/provision vars='{ "docker_run_opts": ["-p 8086:8086", "-p 3000:3000"]}'
 ```

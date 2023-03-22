@@ -175,18 +175,17 @@ def provision(image, inventory_location, vars)
       'os-release' => os_release_facts,
     },
   }
+  docker_run_opts = ''
   unless vars.nil?
     var_hash = YAML.safe_load(vars)
     node['vars'] = var_hash
     docker_run_opts = var_hash['docker_run_opts'].flatten.join(' ') unless var_hash['docker_run_opts'].nil?
   end
 
-  unless docker_run_opts.nil?
-    docker_run_opts += ' --volume /sys/fs/cgroup:/sys/fs/cgroup:rw' if (image =~ %r{debian|ubuntu}) \
-    && (docker_run_opts !~ %r{--volume /sys/fs/cgroup:/sys/fs/cgroup})
-    docker_run_opts += ' --cgroupns=host' if (image =~ %r{debian|ubuntu}) \
-    && (docker_run_opts !~ %r{--cgroupns})
-  end
+  docker_run_opts += ' --volume /sys/fs/cgroup:/sys/fs/cgroup:rw' if (image =~ %r{debian|ubuntu}) \
+  && (docker_run_opts !~ %r{--volume /sys/fs/cgroup:/sys/fs/cgroup})
+  docker_run_opts += ' --cgroupns=host' if (image =~ %r{debian|ubuntu}) \
+  && (docker_run_opts !~ %r{--cgroupns})
 
   creation_command = "docker run -d -it --privileged --tmpfs /tmp:exec -p #{front_facing_port}:22 --name #{full_container_name} "
   creation_command += "#{docker_run_opts} " unless docker_run_opts.nil?

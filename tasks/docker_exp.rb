@@ -13,16 +13,17 @@ def provision(docker_platform, inventory_location, vars)
   include PuppetLitmus::InventoryManipulation
   inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
   inventory_hash = get_inventory_hash(inventory_full_path)
+
+  docker_run_opts = ''
   unless vars.nil?
     var_hash = YAML.safe_load(vars)
     docker_run_opts = var_hash['docker_run_opts'].flatten.join(' ') unless var_hash['docker_run_opts'].nil?
   end
-  unless docker_run_opts.nil?
-    docker_run_opts += ' --volume /sys/fs/cgroup:/sys/fs/cgroup:rw' if (docker_platform =~ %r{debian|ubuntu}) \
-    && (docker_run_opts !~ %r{--volume /sys/fs/cgroup:/sys/fs/cgroup})
-    docker_run_opts += ' --cgroupns=host' if (docker_platform =~ %r{debian|ubuntu}) \
-    && (docker_run_opts !~ %r{--cgroupns})
-  end
+
+  docker_run_opts += ' --volume /sys/fs/cgroup:/sys/fs/cgroup:rw' if (docker_platform =~ %r{debian|ubuntu}) \
+  && (docker_run_opts !~ %r{--volume /sys/fs/cgroup:/sys/fs/cgroup})
+  docker_run_opts += ' --cgroupns=host' if (docker_platform =~ %r{debian|ubuntu}) \
+  && (docker_run_opts !~ %r{--cgroupns})
 
   creation_command = "docker run -d -it --privileged #{docker_run_opts} #{docker_platform}"
   container_id = run_local_command(creation_command).strip[0..11]
@@ -34,6 +35,7 @@ def provision(docker_platform, inventory_location, vars)
     var_hash = YAML.safe_load(vars)
     node['vars'] = var_hash
   end
+
   group_name = 'docker_nodes'
   add_node_to_group(inventory_hash, node, group_name)
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
