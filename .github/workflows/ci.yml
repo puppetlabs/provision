@@ -15,7 +15,7 @@ jobs:
           - '2.5'
           - '2.7'
     name: "spec (ruby ${{ matrix.ruby_version }})"
-    uses: "puppetlabs/cat-github-actions/.github/workflows/gem_ci.yml@main"
+    uses: "puppetlabs/cat-github-actions/.github/workflows/gem_ci.yml@maint-default_to_puppet_7.24"
     secrets: "inherit"
     with:
       ruby_version: ${{ matrix.ruby_version }}
