@@ -47,7 +47,7 @@ config.vm.provider "#{provider}" do |v|
     #{"v.cpus = #{cpus}" unless cpus.nil?}
     #{"v.memory = #{memory}" unless memory.nil?}
   end
-PCB
+    PCB
   end
   box_url_config = if box_url
                      "config.vm.box_url = '#{box_url.gsub('%BOX%', platform)}'"
@@ -64,7 +64,7 @@ Vagrant.configure(\"2\") do |config|
   #{synced_folder}
   #{provider_config_block}
 end
-VF
+  VF
   File.open(file_path, 'w') do |f|
     f.write(vf)
   end
