@@ -81,7 +81,6 @@ def invoke_cloud_request(params, uri, job_url, verb, retry_attempts)
     puts({ _error: { kind: 'provision_service/service_error', msg: 'provision service returned an error', code: response.code, body: body, body_json: body_json } }.to_json)
     exit 1
   end
-  # rubocop:enable Style/GuardClause
 end
 
 def provision(platform, inventory_location, vars, retry_attempts)
