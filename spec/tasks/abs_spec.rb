@@ -82,7 +82,7 @@ describe 'provision::abs' do
     let(:response_body) do
       [
         {
-          'type'     => 'redhat-8-x86_64',
+          'type' => 'redhat-8-x86_64',
           'hostname' => 'foo-bar.test',
         },
       ]

@@ -173,8 +173,8 @@ def provision(platform, inventory_location, enable_synced_folder, provider, cpus
     node = {
       'uri' => node_name,
       'config' => {
-        'transport'   => 'winrm',
-        'winrm'       => {
+        'transport' => 'winrm',
+        'winrm' => {
           'user' => remote_config['user'],
           'password' => remote_config['password'],
           'ssl' => remote_config['uses_ssl'],
