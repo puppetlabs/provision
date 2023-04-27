@@ -5,7 +5,7 @@ require 'webmock/rspec'
 require_relative '../../tasks/abs.rb'
 require 'yaml'
 
-RSpec.shared_context('with_tmpdir') do
+RSpec.shared_context('with tmpdir') do
   let(:tmpdir) { @tmpdir } # rubocop:disable RSpec/InstanceVariable
 
   around(:each) do |example|
@@ -34,7 +34,7 @@ describe 'provision::abs' do
     YAML
   end
 
-  include_context('with_tmpdir')
+  include_context('with tmpdir')
 
   def with_env(env_vars)
     env_vars.each { |k, v| ENV[k] = v }
@@ -71,7 +71,7 @@ describe 'provision::abs' do
     it 'raises an error if both node_name and platform are given'
   end
 
-  context 'provision' do
+  context 'when provisioning' do
     let(:params) do
       {
         action: 'provision',
@@ -121,7 +121,7 @@ describe 'provision::abs' do
     it 'raises an error if abs returns error response'
   end
 
-  context 'teardown' do
+  context 'when tearing down' do
     let(:params) do
       {
         action: 'tear_down',
