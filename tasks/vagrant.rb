@@ -71,10 +71,10 @@ def generate_vagrantfile(file_path, platform, enable_synced_folder, provider, cp
   end
 end
 
-def get_vagrant_dir(platform, vagrant_dirs, i = 0)
+def get_vagrant_dir(platform, vagrant_dirs, int = 0)
   platform_dir = "#{platform}-#{i}".gsub(%r{[\/\\]}, '-') # Strip slashes
   if vagrant_dirs.include?(platform_dir)
-    platform_dir = get_vagrant_dir(platform, vagrant_dirs, i + 1)
+    platform_dir = get_vagrant_dir(platform, vagrant_dirs, int + 1)
   end
   platform_dir
 end
