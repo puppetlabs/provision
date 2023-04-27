@@ -47,7 +47,7 @@ describe 'provision::abs' do
     FileUtils.mkdir_p(inventory_dir)
   end
 
-  context '.run' do
+  describe '.run' do
     it 'handles JSON parameters from stdin' do
       json_input = '{"action":"foo","platform":"bar"}'
       expect($stdin).to receive(:read).and_return(json_input)
