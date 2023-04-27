@@ -11,6 +11,7 @@ require_relative '../lib/task_helper'
 
 def vagrant_version
   return @vagrant_version if defined?(@vagrant_version)
+
   @vagrant_version = begin
     command = 'vagrant --version'
     output = run_local_command(command)
@@ -123,6 +124,7 @@ def provision(platform, inventory_location, enable_synced_folder, provider, cpus
   if platform_is_windows?(platform) && !supports_windows_platform?
     raise "To provision a Windows VM with this task you must have vagrant 2.2.0 or later installed; vagrant seems to be installed at v#{vagrant_version}"
   end
+
   if provider.nil?
     provider = on_windows? ? 'hyperv' : 'virtualbox'
   end
@@ -228,6 +230,7 @@ box_url             = params['box_url'].nil? ? ENV['VAGRANT_BOX_URL'] : params['
 password            = params['password'].nil? ? ENV['VAGRANT_PASSWORD'] : params['password']
 raise 'specify a node_name when tearing down' if action == 'tear_down' && node_name.nil?
 raise 'specify a platform when provisioning' if action == 'provision' && platform.nil?
+
 unless node_name.nil? ^ platform.nil?
   case action
   when 'tear_down'

@@ -167,9 +167,11 @@ begin
   case action
   when 'provision'
     raise 'specify a platform when provisioning' if platform.nil?
+
     result = provision(platform, inventory_location, vars, retry_attempts)
   when 'tear_down'
     raise 'specify a node_name when tearing down' if node_name.nil?
+
     result = tear_down(node_name, inventory_location, vars, retry_attempts)
   else
     result = { _error: { kind: 'provision_service/argument_error', msg: "Unknown action '#{action}'" } }

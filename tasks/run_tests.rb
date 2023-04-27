@@ -14,6 +14,7 @@ def run_tests(sut, test_path)
   env = options[:env].nil? ? {} : options[:env]
   stdout, stderr, status = Open3.capture3(env, test)
   raise "status: 'not ok'\n stdout: #{stdout}\n stderr: #{stderr}" unless status.to_i.zero?
+
   { status: 'ok', result: stdout }
 end
 

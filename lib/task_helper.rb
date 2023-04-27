@@ -18,6 +18,7 @@ def run_local_command(command, wd = Dir.pwd)
   stdout, stderr, status = Open3.capture3(command, chdir: wd)
   error_message = "Attempted to run\ncommand:'#{command}'\nstdout:#{stdout}\nstderr:#{stderr}"
   raise error_message unless status.to_i.zero?
+
   stdout
 end
 
@@ -63,6 +64,7 @@ def token_from_fogfile(provider = 'abs')
   token = contents.dig(:default, :abs_token)
 
   raise "Error: could not obtain #{provider} token from .fog file" if token.nil?
+
   token
 rescue
   puts 'Failed to get token from .fog file'

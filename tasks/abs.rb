@@ -79,6 +79,7 @@ class ABSProvision
       # puts "#{Time.now.strftime('%Y/%m/%d %H:%M:%S')}: Received #{reply.code} #{reply.message} from ABS"
       break if reply.code == '200' # Our host(s) are provisioned
       raise 'ABS API Error: Received a HTTP 404 response' if reply.code == '404' # Our host(s) will never be provisioned
+
       sleep_time += 1
     end
 
@@ -163,6 +164,7 @@ class ABSProvision
 
     raise 'specify a node_name when tearing down' if action == 'tear_down' && node_name.nil?
     raise 'specify a platform when provisioning' if action == 'provision' && platform.nil?
+
     unless node_name.nil? ^ platform.nil?
       case action
       when 'tear_down'
