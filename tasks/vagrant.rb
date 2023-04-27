@@ -43,11 +43,11 @@ def generate_vagrantfile(file_path, platform, enable_synced_folder, provider, cp
     if provider.nil?
       provider = on_windows? ? 'hyperv' : 'virtualbox'
     end
-    provider_config_block = <<-PCB
-config.vm.provider "#{provider}" do |v|
-    #{"v.cpus = #{cpus}" unless cpus.nil?}
-    #{"v.memory = #{memory}" unless memory.nil?}
-  end
+    provider_config_block = <<~PCB
+      config.vm.provider "#{provider}" do |v|
+          #{"v.cpus = #{cpus}" unless cpus.nil?}
+          #{"v.memory = #{memory}" unless memory.nil?}
+        end
     PCB
   end
   box_url_config = if box_url
@@ -55,16 +55,16 @@ config.vm.provider "#{provider}" do |v|
                    else
                      ''
                    end
-  vf = <<-VF
-Vagrant.configure(\"2\") do |config|
-  config.vm.box = '#{platform}'
-  config.vm.boot_timeout = 600
-  config.ssh.insert_key = false
-  #{box_url_config}
-  #{network}
-  #{synced_folder}
-  #{provider_config_block}
-end
+  vf = <<~VF
+    Vagrant.configure(\"2\") do |config|
+      config.vm.box = '#{platform}'
+      config.vm.boot_timeout = 600
+      config.ssh.insert_key = false
+      #{box_url_config}
+      #{network}
+      #{synced_folder}
+      #{provider_config_block}
+    end
   VF
   File.open(file_path, 'w') do |f|
     f.write(vf)
