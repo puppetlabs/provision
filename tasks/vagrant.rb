@@ -201,13 +201,13 @@ def tear_down(node_name, inventory_location)
     remove_node(inventory_hash, node_name)
     FileUtils.rm_r(vagrant_env)
   end
-  $stderr.puts "Removed #{node_name}"
+  warn "Removed #{node_name}"
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
   { status: 'ok' }
 end
 
 params = JSON.parse($stdin.read)
-$stderr.puts params
+warn params
 platform = params['platform']
 action = params['action']
 node_name = params['node_name']
