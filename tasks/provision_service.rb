@@ -14,17 +14,16 @@ def default_uri
 end
 
 def platform_to_cloud_request_parameters(platform, cloud, region, zone)
-  params = case platform
-           when String
-             { cloud: cloud, region: region, zone: zone, images: [platform] }
-           when Array
-             { cloud: cloud, region: region, zone: zone, images: platform }
-           else
-             platform[:cloud] = cloud unless cloud.nil?
-             platform[:images] = [platform[:images]] if platform[:images].is_a?(String)
-             platform
-           end
-  params
+  case platform
+  when String
+    { cloud: cloud, region: region, zone: zone, images: [platform] }
+  when Array
+    { cloud: cloud, region: region, zone: zone, images: platform }
+  else
+    platform[:cloud] = cloud unless cloud.nil?
+    platform[:images] = [platform[:images]] if platform[:images].is_a?(String)
+    platform
+  end
 end
 
 # curl -X POST https://facade-validation-6f3kfepqcq-ew.a.run.app/v1/provision --data @test_machines.json
