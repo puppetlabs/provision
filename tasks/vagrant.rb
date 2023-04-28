@@ -243,7 +243,7 @@ begin
   result = tear_down(node_name, inventory_location) if action == 'tear_down'
   puts result.to_json
   exit 0
-rescue => e
+rescue StandardError => e
   puts({ _error: { kind: 'provision/vagrant_failure', msg: e.message } }.to_json)
   exit 1
 end

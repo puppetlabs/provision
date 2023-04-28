@@ -95,7 +95,7 @@ def get_image_os_release_facts(image)
       value = JSON.parse(value) unless value[0] != '"'
       os_release_facts[key] = value
     end
-  rescue
+  rescue StandardError
     # fall through to parsing the id and version from the image if it doesn't have `/etc/os-release`
     id, version_id = image.split(':')
     id = id.sub(%r{/}, '_')
@@ -234,7 +234,7 @@ begin
   result = tear_down(node_name, inventory_location) if action == 'tear_down'
   puts result.to_json
   exit 0
-rescue => e
+rescue StandardError => e
   puts({ _error: { kind: 'provision/docker_failure', msg: e.message, backtrace: e.backtrace } }.to_json)
   exit 1
 end

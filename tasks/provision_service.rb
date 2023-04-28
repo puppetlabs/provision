@@ -174,7 +174,7 @@ begin
   end
   puts result.to_json
   exit 0
-rescue => e
+rescue StandardError => e
   puts({ _error: { kind: 'provision_service/failure', msg: e.message, details: { backtrace: e.backtrace } } }.to_json)
   exit 1
 end

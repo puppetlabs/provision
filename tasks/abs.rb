@@ -181,7 +181,7 @@ class ABSProvision
       result = runner.task(**params)
       puts result.to_json
       exit 0
-    rescue => e
+    rescue StandardError => e
       puts({ _error: { kind: 'provision/abs_failure', msg: e.message } }.to_json)
       exit 1
     end

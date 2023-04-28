@@ -66,7 +66,7 @@ def token_from_fogfile(provider = 'abs')
   raise "Error: could not obtain #{provider} token from .fog file" if token.nil?
 
   token
-rescue
+rescue StandardError
   puts 'Failed to get token from .fog file'
 end
 

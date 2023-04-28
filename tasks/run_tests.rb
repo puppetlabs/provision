@@ -29,7 +29,7 @@ begin
   result = run_tests(sut, test_path)
   puts result.to_json
   exit 0
-rescue => e
+rescue StandardError => e
   puts({ _error: { kind: 'run_tests/failure', msg: e.message } }.to_json)
   exit 1
 end
