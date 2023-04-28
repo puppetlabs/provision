@@ -1,0 +1,35 @@
+name: "Module Release"
+
+on:
+  workflow_call:
+
+jobs:
+  release:
+    name: "Release"
+    runs-on: "ubuntu-latest"
+    if: github.repository_owner == 'puppetlabs'
+
+    steps:
+
+      - name: "Checkout"
+        uses: "actions/checkout@v3"
+        with:
+          ref: "${{ github.ref }}"
+          clean: true
+          fetch-depth: 0
+
+      - name: "Get version"
+        id: "get_version"
+        run: |
+          echo "version=$(jq --raw-output .version metadata.json)" >> $GITHUB_OUTPUT
+
+      - name: "PDK build"
+        uses: "docker://puppet/pdk:nightly"
+        with:
+          args: "build"
+
+      - name: "Create release"
+        run: |
+          gh release create v${{ steps.get_version.outputs.version }} --title v${{ steps.get_version.outputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
