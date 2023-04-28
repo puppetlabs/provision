@@ -159,7 +159,7 @@ class ABSProvision
 
   def self.run
     params = JSON.parse($stdin.read)
-    params.transform_keys! { |k| k.to_sym }
+    params.transform_keys!(&:to_sym)
     action, node_name, platform = params.values_at(:action, :node_name, :platform)
 
     raise 'specify a node_name when tearing down' if action == 'tear_down' && node_name.nil?
