@@ -76,14 +76,14 @@ describe 'provision::abs' do
       {
         action: 'provision',
         platform: 'redhat-8-x86_64',
-        inventory: tmpdir,
+        inventory: tmpdir
       }
     end
     let(:response_body) do
       [
         {
           'type' => 'redhat-8-x86_64',
-          'hostname' => 'foo-bar.test',
+          'hostname' => 'foo-bar.test'
         },
       ]
     end
@@ -126,7 +126,7 @@ describe 'provision::abs' do
       {
         action: 'tear_down',
         node_name: 'foo-bar.test',
-        inventory: tmpdir,
+        inventory: tmpdir
       }
     end
     let(:inventory_yaml) do
@@ -137,7 +137,7 @@ describe 'provision::abs' do
         'uri' => 'foo-bar.test',
         'facts' => {
           'platform' => 'redhat-8-x86_64',
-          'job_id' => 'a-job-id',
+          'job_id' => 'a-job-id'
         }
       }
       empty.to_yaml

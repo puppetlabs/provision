@@ -95,7 +95,7 @@ def configure_remoting(platform, remoting_config_path, password)
       port: remoting_config['port'],
       keys: remoting_config['identityfile'],
       password: password,
-      verbose: :debug,
+      verbose: :debug
     }.reject { |_k, v| v.nil? }
     Net::SSH.start(
       remoting_config['hostname'],
@@ -150,15 +150,15 @@ def provision(platform, inventory_location, enable_synced_folder, provider, cpus
           'host' => remote_config['hostname'],
           'host-key-check' => remote_config['stricthostkeychecking'],
           'port' => remote_config['port'],
-          'run-as' => 'root',
-        },
+          'run-as' => 'root'
+        }
       },
       'facts' => {
         'provisioner' => 'vagrant',
         'platform' => platform,
         'id' => vm_id,
-        'vagrant_env' => @vagrant_env,
-      },
+        'vagrant_env' => @vagrant_env
+      }
     }
     node['config']['ssh']['private-key'] = remote_config['identityfile'][0] if remote_config['identityfile']
     node['config']['ssh']['password'] = password if password
@@ -173,15 +173,15 @@ def provision(platform, inventory_location, enable_synced_folder, provider, cpus
         'winrm' => {
           'user' => remote_config['user'],
           'password' => remote_config['password'],
-          'ssl' => remote_config['uses_ssl'],
-        },
+          'ssl' => remote_config['uses_ssl']
+        }
       },
       'facts' => {
         'provisioner' => 'vagrant',
         'platform' => platform,
         'id' => vm_id,
-        'vagrant_env' => @vagrant_env,
-      },
+        'vagrant_env' => @vagrant_env
+      }
     }
     group_name = 'winrm_nodes'
   end

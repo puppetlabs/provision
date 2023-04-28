@@ -162,14 +162,14 @@ def provision(image, inventory_location, vars)
     'uri' => "#{hostname}:#{front_facing_port}",
     'config' => {
       'transport' => 'ssh',
-      'ssh' => { 'user' => 'root', 'password' => 'root', 'port' => front_facing_port, 'host-key-check' => false },
+      'ssh' => { 'user' => 'root', 'password' => 'root', 'port' => front_facing_port, 'host-key-check' => false }
     },
     'facts' => {
       'provisioner' => 'docker',
       'container_name' => full_container_name,
       'platform' => image,
-      'os-release' => os_release_facts,
-    },
+      'os-release' => os_release_facts
+    }
   }
   docker_run_opts = ''
   unless vars.nil?

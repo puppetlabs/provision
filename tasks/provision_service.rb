@@ -30,7 +30,7 @@ end
 def invoke_cloud_request(params, uri, job_url, verb, retry_attempts)
   headers =  {
     'Accept' => 'application/json',
-    'Content-Type' => 'application/json',
+    'Content-Type' => 'application/json'
   }
   headers['X-Honeycomb-Trace'] = ENV['HTTP_X_HONEYCOMB_TRACE'] if ENV['HTTP_X_HONEYCOMB_TRACE'] # legacy variable
   headers['X-Honeycomb-Trace'] = ENV['HONEYCOMB_TRACE'] if ENV['HONEYCOMB_TRACE']
@@ -61,7 +61,7 @@ def invoke_cloud_request(params, uri, job_url, verb, retry_attempts)
   req_options = {
     use_ssl: uri.scheme == 'https',
     read_timeout: 60 * 5, # timeout reads after 5 minutes - that's longer than the backend service would keep the request open
-    max_retries: retry_attempts, # retry up to 5 times before throwing an error
+    max_retries: retry_attempts # retry up to 5 times before throwing an error
   }
 
   response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
@@ -131,7 +131,7 @@ def provision(platform, inventory_location, vars, retry_attempts)
   {
     status: 'ok',
     node_name: platform,
-    target_names: response_hash['groups']&.each { |g| g['targets'] }&.map { |t| t['uri'] }&.flatten&.uniq,
+    target_names: response_hash['groups']&.each { |g| g['targets'] }&.map { |t| t['uri'] }&.flatten&.uniq
   }
 end
 

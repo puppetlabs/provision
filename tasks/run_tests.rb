@@ -8,8 +8,8 @@ def run_tests(sut, test_path)
   test = "bundle exec rspec #{test_path} --format progress"
   options = {
     env: {
-      'TARGET_HOST' => sut,
-    },
+      'TARGET_HOST' => sut
+    }
   }
   env = options[:env].nil? ? {} : options[:env]
   stdout, stderr, status = Open3.capture3(env, test)
