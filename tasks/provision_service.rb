@@ -118,9 +118,7 @@ def provision(platform, inventory_location, vars, retry_attempts)
     inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
     inventory_hash['groups'].each do |g|
       response_hash['groups'].each do |bg|
-        if g['name'] == bg['name']
-          g['targets'] = g['targets'] + bg['targets']
-        end
+        g['targets'] = g['targets'] + bg['targets'] if g['name'] == bg['name']
       end
     end
     File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }

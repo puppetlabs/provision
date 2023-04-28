@@ -66,9 +66,7 @@ def fix_ssh(distro, version, container)
     # Current RedHat/CentOs 7 packs an old version of pam, which are missing a
     # crucial patch when running unprivileged containers.  See:
     # https://bugzilla.redhat.com/show_bug.cgi?id=1728777
-    if distro =~ %r{redhat|centos} && version =~ %r{^7}
-      run_local_command("docker exec #{container} sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd")
-    end
+    run_local_command("docker exec #{container} sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd") if distro =~ %r{redhat|centos} && version =~ %r{^7}
 
     if !%r{^(7|8|2)}.match?(version)
       run_local_command("docker exec #{container} service sshd restart")

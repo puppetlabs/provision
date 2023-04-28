@@ -27,9 +27,7 @@ def supports_windows_platform?
 end
 
 def generate_vagrantfile(file_path, platform, enable_synced_folder, provider, cpus, memory, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password, box_url)
-  unless enable_synced_folder
-    synced_folder = 'config.vm.synced_folder ".", "/vagrant", disabled: true'
-  end
+  synced_folder = 'config.vm.synced_folder ".", "/vagrant", disabled: true' unless enable_synced_folder
   if on_windows?
     # Even though this is the default value in the metadata it isn't sent along if tthe parameter is unspecified for some reason.
     network = "config.vm.network 'public_network', bridge: '#{hyperv_vswitch.nil? ? 'Default Switch' : hyperv_vswitch}'"
@@ -73,9 +71,7 @@ end
 
 def get_vagrant_dir(platform, vagrant_dirs, int = 0)
   platform_dir = "#{platform}-#{i}".gsub(%r{[\/\\]}, '-') # Strip slashes
-  if vagrant_dirs.include?(platform_dir)
-    platform_dir = get_vagrant_dir(platform, vagrant_dirs, int + 1)
-  end
+  platform_dir = get_vagrant_dir(platform, vagrant_dirs, int + 1) if vagrant_dirs.include?(platform_dir)
   platform_dir
 end
 
