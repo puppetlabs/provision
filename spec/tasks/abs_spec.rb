@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 require 'webmock/rspec'
-require_relative '../../tasks/abs.rb'
+require_relative '../../tasks/abs'
 require 'yaml'
 
 RSpec.shared_context('with tmpdir') do
