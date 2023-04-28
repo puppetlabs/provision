@@ -113,17 +113,15 @@ def local_port_open?(port)
   require 'socket'
   require 'timeout'
   Timeout.timeout(1) do
-    begin
-      socket = Socket.new(Socket::Constants::AF_INET,
-                          Socket::Constants::SOCK_STREAM,
-                          0)
-      socket.bind(Socket.pack_sockaddr_in(port, '0.0.0.0'))
-      true
-    rescue Errno::EADDRINUSE, Errno::ECONNREFUSED
-      false
-    ensure
-      socket.close
-    end
+    socket = Socket.new(Socket::Constants::AF_INET,
+                        Socket::Constants::SOCK_STREAM,
+                        0)
+    socket.bind(Socket.pack_sockaddr_in(port, '0.0.0.0'))
+    true
+  rescue Errno::EADDRINUSE, Errno::ECONNREFUSED
+    false
+  ensure
+    socket.close
   end
 rescue Timeout::Error
   false
@@ -183,9 +181,9 @@ def provision(image, inventory_location, vars)
   end
 
   docker_run_opts += ' --volume /sys/fs/cgroup:/sys/fs/cgroup:rw' if (image =~ %r{debian|ubuntu}) \
-  && (docker_run_opts !~ %r{--volume /sys/fs/cgroup:/sys/fs/cgroup})
+  && !docker_run_opts.include('--volume /sys/fs/cgroup:/sys/fs/cgroup')
   docker_run_opts += ' --cgroupns=host' if (image =~ %r{debian|ubuntu}) \
-  && (docker_run_opts !~ %r{--cgroupns})
+  && !docker_run_opts.include('--cgroupns')
 
   creation_command = "docker run -d -it --privileged --tmpfs /tmp:exec -p #{front_facing_port}:22 --name #{full_container_name} "
   creation_command += "#{docker_run_opts} " unless docker_run_opts.nil?

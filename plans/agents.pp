@@ -6,7 +6,6 @@ plan provision::agents(
   $agents = get_targets('*').filter |$n| { $n.vars['role'] != 'pe' }
   $windows_agents = get_targets('*').filter |$n| { $n.vars['role'] == 'agent_windows' }
 
-
   # install agents
   run_task('puppet_agent::install', $agents)
   # set the server 
