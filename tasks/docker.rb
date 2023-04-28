@@ -156,7 +156,7 @@ def provision(image, inventory_location, vars)
   group_name = 'ssh_nodes'
   warn '!!! Using private port forwarding!!!'
   front_facing_port = random_ssh_forwarding_port
-  full_container_name = "#{image.gsub(%r{[\/:\.]}, '_')}-#{front_facing_port}"
+  full_container_name = "#{image.gsub(%r{[/:.]}, '_')}-#{front_facing_port}"
 
   node = {
     'uri' => "#{hostname}:#{front_facing_port}",
