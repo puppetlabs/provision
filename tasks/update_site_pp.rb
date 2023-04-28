@@ -15,7 +15,7 @@ def update_file(manifest)
   'site.pp updated'
 end
 
-params = JSON.parse(STDIN.read)
+params = JSON.parse($stdin.read)
 manifest = params['manifest']
 
 begin

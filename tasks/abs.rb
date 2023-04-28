@@ -158,7 +158,7 @@ class ABSProvision
   end
 
   def self.run
-    params = JSON.parse(STDIN.read)
+    params = JSON.parse($stdin.read)
     params.transform_keys! { |k| k.to_sym }
     action, node_name, platform = params.values_at(:action, :node_name, :platform)
 

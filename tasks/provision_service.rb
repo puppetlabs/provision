@@ -154,7 +154,7 @@ def tear_down(platform, inventory_location, _vars, retry_attempts)
   # rubocop:enable Style/GuardClause
 end
 
-params = JSON.parse(STDIN.read)
+params = JSON.parse($stdin.read)
 platform = params['platform']
 action = params['action']
 vars = params['vars']

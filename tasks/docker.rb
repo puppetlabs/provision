@@ -211,7 +211,7 @@ def tear_down(node_name, inventory_location)
   { status: 'ok' }
 end
 
-params = JSON.parse(STDIN.read)
+params = JSON.parse($stdin.read)
 platform = params['platform']
 action = params['action']
 node_name = params['node_name']

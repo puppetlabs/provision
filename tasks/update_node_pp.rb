@@ -25,7 +25,7 @@ def update_file(manifest, target_node)
   "#{site_path} updated"
 end
 
-params = JSON.parse(STDIN.read)
+params = JSON.parse($stdin.read)
 manifest = params['manifest']
 target_node = params['target_node']
 

@@ -18,7 +18,7 @@ def run_tests(sut, test_path)
   { status: 'ok', result: stdout }
 end
 
-params = JSON.parse(STDIN.read)
+params = JSON.parse($stdin.read)
 sut = params['sut']
 test_path = if params['test_path'].nil?
               './spec/acceptance/'
