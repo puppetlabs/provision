@@ -21,9 +21,9 @@ def provision(docker_platform, inventory_location, vars)
   end
 
   docker_run_opts += ' --volume /sys/fs/cgroup:/sys/fs/cgroup:rw' if (docker_platform =~ %r{debian|ubuntu}) \
-  && (docker_run_opts !~ %r{--volume /sys/fs/cgroup:/sys/fs/cgroup})
+  && !docker_run_opts.include('--volume /sys/fs/cgroup:/sys/fs/cgroup')
   docker_run_opts += ' --cgroupns=host' if (docker_platform =~ %r{debian|ubuntu}) \
-  && (docker_run_opts !~ %r{--cgroupns})
+  && !docker_run_opts.include('--cgroupns')
 
   creation_command = "docker run -d -it --privileged #{docker_run_opts} #{docker_platform}"
   container_id = run_local_command(creation_command).strip[0..11]

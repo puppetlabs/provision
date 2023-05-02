@@ -6,5 +6,3 @@ plan provision::teardown(
     run_task('provision::abs', 'localhost', action=> 'tear_down', node_name=> $node_name, inventory => './')
   }
 }
-
-

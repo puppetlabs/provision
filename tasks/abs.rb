@@ -40,7 +40,7 @@ class ABSProvision
     job_id = "iac-task-pid-#{Process.pid}-#{DateTime.now.strftime('%Q')}"
 
     headers = { 'X-AUTH-TOKEN' => token_from_fogfile('abs'), 'Content-Type' => 'application/json' }
-    priority = (ENV['CI']) ? 1 : 2
+    priority = ENV['CI'] ? 1 : 2
     payload = if platform.class == String
                 { 'resources' => { platform => 1 },
                   'priority' => priority,
@@ -72,7 +72,7 @@ class ABSProvision
     # exceed the time out. This is an attempt to strike a balance between quick provisioning and not saturating the ABS
     # API and network if it's taking longer to provision than usual
     while Time.now.to_i < timeout
-      sleep (sleep_time <= 10) ? sleep_time : 30 # rubocop:disable Lint/ParenthesesAsGroupedExpression
+      sleep (sleep_time <= 10) ? sleep_time : 30
       reply = http.request(request)
       # Use this 'puts' only for debugging purposes
       # Do not use this in production mode because puppet_litmus will parse the STDOUT to extract the results
