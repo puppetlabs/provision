@@ -162,7 +162,7 @@ if [[ "$osfamily" == "debian" ]]; then
 fi
 
 if [[ "$osfamily" == "redhat" ]]; then
-  run_cmd "curl -o puppet.rpm http://yum.puppetlabs.com/${collection}/${collection}-release-el-${major_version}.noarch.rpm"
+  run_cmd "curl -o puppet.rpm http://yum.puppetlabs.com/${collection}-release-el-${major_version}.noarch.rpm"
   rpm -Uvh puppet.rpm --quiet
   yum install puppetserver -y --quiet
 fi
