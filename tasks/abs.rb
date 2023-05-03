@@ -41,7 +41,7 @@ class ABSProvision
 
     headers = { 'X-AUTH-TOKEN' => token_from_fogfile('abs'), 'Content-Type' => 'application/json' }
     priority = ENV['CI'] ? 1 : 2
-    payload = if platform.class == String
+    payload = if platform.instance_of?(String)
                 { 'resources' => { platform => 1 },
                   'priority' => priority,
                   'job' => { 'id' => job_id,
