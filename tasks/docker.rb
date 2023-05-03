@@ -181,9 +181,9 @@ def provision(image, inventory_location, vars)
   end
 
   docker_run_opts += ' --volume /sys/fs/cgroup:/sys/fs/cgroup:rw' if (image =~ %r{debian|ubuntu}) \
-  && !docker_run_opts.include('--volume /sys/fs/cgroup:/sys/fs/cgroup')
+  && !docker_run_opts.include?('--volume /sys/fs/cgroup:/sys/fs/cgroup')
   docker_run_opts += ' --cgroupns=host' if (image =~ %r{debian|ubuntu}) \
-  && !docker_run_opts.include('--cgroupns')
+  && !docker_run_opts.include?('--cgroupns')
 
   creation_command = "docker run -d -it --privileged --tmpfs /tmp:exec -p #{front_facing_port}:22 --name #{full_container_name} "
   creation_command += "#{docker_run_opts} " unless docker_run_opts.nil?
