@@ -66,9 +66,7 @@ def fix_ssh(distro, version, container)
     # Current RedHat/CentOs 7 packs an old version of pam, which are missing a
     # crucial patch when running unprivileged containers.  See:
     # https://bugzilla.redhat.com/show_bug.cgi?id=1728777
-    if distro =~ %r{redhat|centos} && version =~ %r{^7}
-      run_local_command("docker exec #{container} sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd")
-    end
+    run_local_command("docker exec #{container} sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd") if distro =~ %r{redhat|centos} && version =~ %r{^7}
 
     if !%r{^(7|8|2)}.match?(version)
       run_local_command("docker exec #{container} service sshd restart")
@@ -97,7 +95,7 @@ def get_image_os_release_facts(image)
       value = JSON.parse(value) unless value[0] != '"'
       os_release_facts[key] = value
     end
-  rescue
+  rescue StandardError
     # fall through to parsing the id and version from the image if it doesn't have `/etc/os-release`
     id, version_id = image.split(':')
     id = id.sub(%r{/}, '_')
@@ -158,20 +156,20 @@ def provision(image, inventory_location, vars)
   group_name = 'ssh_nodes'
   warn '!!! Using private port forwarding!!!'
   front_facing_port = random_ssh_forwarding_port
-  full_container_name = "#{image.gsub(%r{[\/:\.]}, '_')}-#{front_facing_port}"
+  full_container_name = "#{image.gsub(%r{[/:.]}, '_')}-#{front_facing_port}"
 
   node = {
     'uri' => "#{hostname}:#{front_facing_port}",
     'config' => {
       'transport' => 'ssh',
-      'ssh' => { 'user' => 'root', 'password' => 'root', 'port' => front_facing_port, 'host-key-check' => false },
+      'ssh' => { 'user' => 'root', 'password' => 'root', 'port' => front_facing_port, 'host-key-check' => false }
     },
     'facts' => {
       'provisioner' => 'docker',
       'container_name' => full_container_name,
       'platform' => image,
-      'os-release' => os_release_facts,
-    },
+      'os-release' => os_release_facts
+    }
   }
   docker_run_opts = ''
   unless vars.nil?
@@ -200,6 +198,7 @@ def tear_down(node_name, inventory_location)
   include PuppetLitmus::InventoryManipulation
   inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
   raise "Unable to find '#{inventory_full_path}'" unless File.file?(inventory_full_path)
+
   inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
   node_facts = facts_from_node(inventory_hash, node_name)
   remove_docker = "docker rm -f #{node_facts['container_name']}"
@@ -210,7 +209,7 @@ def tear_down(node_name, inventory_location)
   { status: 'ok' }
 end
 
-params = JSON.parse(STDIN.read)
+params = JSON.parse($stdin.read)
 platform = params['platform']
 action = params['action']
 node_name = params['node_name']
@@ -218,6 +217,7 @@ inventory_location = sanitise_inventory_location(params['inventory'])
 vars = params['vars']
 raise 'specify a node_name when tearing down' if action == 'tear_down' && node_name.nil?
 raise 'specify a platform when provisioning' if action == 'provision' && platform.nil?
+
 unless node_name.nil? ^ platform.nil?
   case action
   when 'tear_down'
@@ -234,7 +234,7 @@ begin
   result = tear_down(node_name, inventory_location) if action == 'tear_down'
   puts result.to_json
   exit 0
-rescue => e
+rescue StandardError => e
   puts({ _error: { kind: 'provision/docker_failure', msg: e.message, backtrace: e.backtrace } }.to_json)
   exit 1
 end

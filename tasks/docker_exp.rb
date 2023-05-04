@@ -46,6 +46,7 @@ def tear_down(node_name, inventory_location)
   include PuppetLitmus::InventoryManipulation
   inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
   raise "Unable to find '#{inventory_full_path}'" unless File.file?(inventory_full_path)
+
   inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
   node_facts = facts_from_node(inventory_hash, node_name)
   remove_docker = "docker rm -f #{node_facts['container_id']}"
@@ -56,7 +57,7 @@ def tear_down(node_name, inventory_location)
   { status: 'ok' }
 end
 
-params = JSON.parse(STDIN.read)
+params = JSON.parse($stdin.read)
 action = params['action']
 inventory_location = sanitise_inventory_location(params['inventory'])
 node_name = params['node_name']
@@ -64,6 +65,7 @@ platform = params['platform']
 vars = params['vars']
 raise 'specify a node_name when tearing down' if action == 'tear_down' && node_name.nil?
 raise 'specify a platform when provisioning' if action == 'provision' && platform.nil?
+
 unless node_name.nil? ^ platform.nil?
   case action
   when 'tear_down'
@@ -80,7 +82,7 @@ begin
   result = tear_down(node_name, inventory_location) if action == 'tear_down'
   puts result.to_json
   exit 0
-rescue => e
+rescue StandardError => e
   puts({ _error: { kind: 'provision/docker_exp_failure', msg: e.message } }.to_json)
   exit 1
 end

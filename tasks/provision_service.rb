@@ -14,24 +14,23 @@ def default_uri
 end
 
 def platform_to_cloud_request_parameters(platform, cloud, region, zone)
-  params = case platform
-           when String
-             { cloud: cloud, region: region, zone: zone, images: [platform] }
-           when Array
-             { cloud: cloud, region: region, zone: zone, images: platform }
-           else
-             platform[:cloud] = cloud unless cloud.nil?
-             platform[:images] = [platform[:images]] if platform[:images].is_a?(String)
-             platform
-           end
-  params
+  case platform
+  when String
+    { cloud: cloud, region: region, zone: zone, images: [platform] }
+  when Array
+    { cloud: cloud, region: region, zone: zone, images: platform }
+  else
+    platform[:cloud] = cloud unless cloud.nil?
+    platform[:images] = [platform[:images]] if platform[:images].is_a?(String)
+    platform
+  end
 end
 
 # curl -X POST https://facade-validation-6f3kfepqcq-ew.a.run.app/v1/provision --data @test_machines.json
 def invoke_cloud_request(params, uri, job_url, verb, retry_attempts)
   headers =  {
     'Accept' => 'application/json',
-    'Content-Type' => 'application/json',
+    'Content-Type' => 'application/json'
   }
   headers['X-Honeycomb-Trace'] = ENV['HTTP_X_HONEYCOMB_TRACE'] if ENV['HTTP_X_HONEYCOMB_TRACE'] # legacy variable
   headers['X-Honeycomb-Trace'] = ENV['HONEYCOMB_TRACE'] if ENV['HONEYCOMB_TRACE']
@@ -62,7 +61,7 @@ def invoke_cloud_request(params, uri, job_url, verb, retry_attempts)
   req_options = {
     use_ssl: uri.scheme == 'https',
     read_timeout: 60 * 5, # timeout reads after 5 minutes - that's longer than the backend service would keep the request open
-    max_retries: retry_attempts, # retry up to 5 times before throwing an error
+    max_retries: retry_attempts # retry up to 5 times before throwing an error
   }
 
   response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
@@ -81,7 +80,6 @@ def invoke_cloud_request(params, uri, job_url, verb, retry_attempts)
     puts({ _error: { kind: 'provision_service/service_error', msg: 'provision service returned an error', code: response.code, body: body, body_json: body_json } }.to_json)
     exit 1
   end
-  # rubocop:enable Style/GuardClause
 end
 
 def provision(platform, inventory_location, vars, retry_attempts)
@@ -119,9 +117,7 @@ def provision(platform, inventory_location, vars, retry_attempts)
     inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
     inventory_hash['groups'].each do |g|
       response_hash['groups'].each do |bg|
-        if g['name'] == bg['name']
-          g['targets'] = g['targets'] + bg['targets']
-        end
+        g['targets'] = g['targets'] + bg['targets'] if g['name'] == bg['name']
       end
     end
     File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
@@ -135,7 +131,7 @@ def provision(platform, inventory_location, vars, retry_attempts)
   {
     status: 'ok',
     node_name: platform,
-    target_names: response_hash['groups']&.each { |g| g['targets'] }&.map { |t| t['uri'] }&.flatten&.uniq,
+    target_names: response_hash['groups']&.each { |g| g['targets'] }&.map { |t| t['uri'] }&.flatten&.uniq
   }
 end
 
@@ -155,7 +151,7 @@ def tear_down(platform, inventory_location, _vars, retry_attempts)
   # rubocop:enable Style/GuardClause
 end
 
-params = JSON.parse(STDIN.read)
+params = JSON.parse($stdin.read)
 platform = params['platform']
 action = params['action']
 vars = params['vars']
@@ -167,16 +163,18 @@ begin
   case action
   when 'provision'
     raise 'specify a platform when provisioning' if platform.nil?
+
     result = provision(platform, inventory_location, vars, retry_attempts)
   when 'tear_down'
     raise 'specify a node_name when tearing down' if node_name.nil?
+
     result = tear_down(node_name, inventory_location, vars, retry_attempts)
   else
     result = { _error: { kind: 'provision_service/argument_error', msg: "Unknown action '#{action}'" } }
   end
   puts result.to_json
   exit 0
-rescue => e
+rescue StandardError => e
   puts({ _error: { kind: 'provision_service/failure', msg: e.message, details: { backtrace: e.backtrace } } }.to_json)
   exit 1
 end

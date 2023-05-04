@@ -2,10 +2,10 @@
 
 require 'spec_helper'
 require 'webmock/rspec'
-require_relative '../../tasks/abs.rb'
+require_relative '../../tasks/abs'
 require 'yaml'
 
-RSpec.shared_context('with_tmpdir') do
+RSpec.shared_context('with tmpdir') do
   let(:tmpdir) { @tmpdir } # rubocop:disable RSpec/InstanceVariable
 
   around(:each) do |example|
@@ -34,7 +34,7 @@ describe 'provision::abs' do
     YAML
   end
 
-  include_context('with_tmpdir')
+  include_context('with tmpdir')
 
   def with_env(env_vars)
     env_vars.each { |k, v| ENV[k] = v }
@@ -47,7 +47,7 @@ describe 'provision::abs' do
     FileUtils.mkdir_p(inventory_dir)
   end
 
-  context '.run' do
+  describe '.run' do
     it 'handles JSON parameters from stdin' do
       json_input = '{"action":"foo","platform":"bar"}'
       expect($stdin).to receive(:read).and_return(json_input)
@@ -71,19 +71,19 @@ describe 'provision::abs' do
     it 'raises an error if both node_name and platform are given'
   end
 
-  context 'provision' do
+  context 'when provisioning' do
     let(:params) do
       {
         action: 'provision',
         platform: 'redhat-8-x86_64',
-        inventory: tmpdir,
+        inventory: tmpdir
       }
     end
     let(:response_body) do
       [
         {
-          'type'     => 'redhat-8-x86_64',
-          'hostname' => 'foo-bar.test',
+          'type' => 'redhat-8-x86_64',
+          'hostname' => 'foo-bar.test'
         },
       ]
     end
@@ -92,7 +92,7 @@ describe 'provision::abs' do
       stub_request(:post, 'https://abs-prod.k8s.infracore.puppet.net/api/v2/request')
         .to_return({ status: 202 }, { status: 200, body: response_body.to_json })
 
-      expect(abs.task(params)).to eq({ status: 'ok', nodes: 1 })
+      expect(abs.task(**params)).to eq({ status: 'ok', nodes: 1 })
 
       updated_inventory = YAML.load_file(inventory_file)
       ssh_targets = updated_inventory['groups'].find { |g| g['name'] == 'ssh_nodes' }['targets']
@@ -105,7 +105,7 @@ describe 'provision::abs' do
         .to_return({ status: 202 }, { status: 200, body: response_body.to_json })
 
       with_env('ABS_SUBDOMAIN' => 'abs-spec') do
-        expect(abs.task(params)).to eq({ status: 'ok', nodes: 1 })
+        expect(abs.task(**params)).to eq({ status: 'ok', nodes: 1 })
       end
     end
 
@@ -115,18 +115,18 @@ describe 'provision::abs' do
 
       File.write(inventory_file, empty_inventory_yaml)
 
-      expect(abs.task(params)).to eq({ status: 'ok', nodes: 1 })
+      expect(abs.task(**params)).to eq({ status: 'ok', nodes: 1 })
     end
 
     it 'raises an error if abs returns error response'
   end
 
-  context 'teardown' do
+  context 'when tearing down' do
     let(:params) do
       {
         action: 'tear_down',
         node_name: 'foo-bar.test',
-        inventory: tmpdir,
+        inventory: tmpdir
       }
     end
     let(:inventory_yaml) do
@@ -137,7 +137,7 @@ describe 'provision::abs' do
         'uri' => 'foo-bar.test',
         'facts' => {
           'platform' => 'redhat-8-x86_64',
-          'job_id' => 'a-job-id',
+          'job_id' => 'a-job-id'
         }
       }
       empty.to_yaml
@@ -152,7 +152,7 @@ describe 'provision::abs' do
       stub_request(:post, 'https://abs-prod.k8s.infracore.puppet.net/api/v2/return')
         .to_return(status: 200)
 
-      expect(abs.task(params)).to eq({ status: 'ok', removed: [ 'foo-bar.test' ] })
+      expect(abs.task(**params)).to eq({ status: 'ok', removed: ['foo-bar.test'] })
       expect(YAML.load_file(inventory_file)).to eq(YAML.safe_load(empty_inventory_yaml))
     end
 
@@ -162,7 +162,7 @@ describe 'provision::abs' do
         .to_return(status: 200)
 
       with_env('ABS_SUBDOMAIN' => 'abs-spec') do
-        expect(abs.task(params)).to eq({ status: 'ok', removed: [ 'foo-bar.test'] })
+        expect(abs.task(**params)).to eq({ status: 'ok', removed: ['foo-bar.test'] })
       end
     end
 

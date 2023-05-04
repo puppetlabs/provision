@@ -11,6 +11,7 @@ require_relative '../lib/task_helper'
 
 def vagrant_version
   return @vagrant_version if defined?(@vagrant_version)
+
   @vagrant_version = begin
     command = 'vagrant --version'
     output = run_local_command(command)
@@ -26,9 +27,7 @@ def supports_windows_platform?
 end
 
 def generate_vagrantfile(file_path, platform, enable_synced_folder, provider, cpus, memory, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password, box_url)
-  unless enable_synced_folder
-    synced_folder = 'config.vm.synced_folder ".", "/vagrant", disabled: true'
-  end
+  synced_folder = 'config.vm.synced_folder ".", "/vagrant", disabled: true' unless enable_synced_folder
   if on_windows?
     # Even though this is the default value in the metadata it isn't sent along if tthe parameter is unspecified for some reason.
     network = "config.vm.network 'public_network', bridge: '#{hyperv_vswitch.nil? ? 'Default Switch' : hyperv_vswitch}'"
@@ -42,39 +41,37 @@ def generate_vagrantfile(file_path, platform, enable_synced_folder, provider, cp
     if provider.nil?
       provider = on_windows? ? 'hyperv' : 'virtualbox'
     end
-    provider_config_block = <<-PCB
-config.vm.provider "#{provider}" do |v|
-    #{"v.cpus = #{cpus}" unless cpus.nil?}
-    #{"v.memory = #{memory}" unless memory.nil?}
-  end
-PCB
+    provider_config_block = <<~PCB
+      config.vm.provider "#{provider}" do |v|
+          #{"v.cpus = #{cpus}" unless cpus.nil?}
+          #{"v.memory = #{memory}" unless memory.nil?}
+        end
+    PCB
   end
   box_url_config = if box_url
                      "config.vm.box_url = '#{box_url.gsub('%BOX%', platform)}'"
                    else
                      ''
                    end
-  vf = <<-VF
-Vagrant.configure(\"2\") do |config|
-  config.vm.box = '#{platform}'
-  config.vm.boot_timeout = 600
-  config.ssh.insert_key = false
-  #{box_url_config}
-  #{network}
-  #{synced_folder}
-  #{provider_config_block}
-end
-VF
+  vf = <<~VF
+    Vagrant.configure(\"2\") do |config|
+      config.vm.box = '#{platform}'
+      config.vm.boot_timeout = 600
+      config.ssh.insert_key = false
+      #{box_url_config}
+      #{network}
+      #{synced_folder}
+      #{provider_config_block}
+    end
+  VF
   File.open(file_path, 'w') do |f|
     f.write(vf)
   end
 end
 
-def get_vagrant_dir(platform, vagrant_dirs, i = 0)
-  platform_dir = "#{platform}-#{i}".gsub(%r{[\/\\]}, '-') # Strip slashes
-  if vagrant_dirs.include?(platform_dir)
-    platform_dir = get_vagrant_dir(platform, vagrant_dirs, i + 1)
-  end
+def get_vagrant_dir(platform, vagrant_dirs, int = 0)
+  platform_dir = "#{platform}-#{i}".gsub(%r{[/\\]}, '-') # Strip slashes
+  platform_dir = get_vagrant_dir(platform, vagrant_dirs, int + 1) if vagrant_dirs.include?(platform_dir)
   platform_dir
 end
 
@@ -98,7 +95,7 @@ def configure_remoting(platform, remoting_config_path, password)
       port: remoting_config['port'],
       keys: remoting_config['identityfile'],
       password: password,
-      verbose: :debug,
+      verbose: :debug
     }.reject { |_k, v| v.nil? }
     Net::SSH.start(
       remoting_config['hostname'],
@@ -123,6 +120,7 @@ def provision(platform, inventory_location, enable_synced_folder, provider, cpus
   if platform_is_windows?(platform) && !supports_windows_platform?
     raise "To provision a Windows VM with this task you must have vagrant 2.2.0 or later installed; vagrant seems to be installed at v#{vagrant_version}"
   end
+
   if provider.nil?
     provider = on_windows? ? 'hyperv' : 'virtualbox'
   end
@@ -152,15 +150,15 @@ def provision(platform, inventory_location, enable_synced_folder, provider, cpus
           'host' => remote_config['hostname'],
           'host-key-check' => remote_config['stricthostkeychecking'],
           'port' => remote_config['port'],
-          'run-as' => 'root',
-        },
+          'run-as' => 'root'
+        }
       },
       'facts' => {
         'provisioner' => 'vagrant',
         'platform' => platform,
         'id' => vm_id,
-        'vagrant_env' => @vagrant_env,
-      },
+        'vagrant_env' => @vagrant_env
+      }
     }
     node['config']['ssh']['private-key'] = remote_config['identityfile'][0] if remote_config['identityfile']
     node['config']['ssh']['password'] = password if password
@@ -171,19 +169,19 @@ def provision(platform, inventory_location, enable_synced_folder, provider, cpus
     node = {
       'uri' => node_name,
       'config' => {
-        'transport'   => 'winrm',
-        'winrm'       => {
+        'transport' => 'winrm',
+        'winrm' => {
           'user' => remote_config['user'],
           'password' => remote_config['password'],
-          'ssl' => remote_config['uses_ssl'],
-        },
+          'ssl' => remote_config['uses_ssl']
+        }
       },
       'facts' => {
         'provisioner' => 'vagrant',
         'platform' => platform,
         'id' => vm_id,
-        'vagrant_env' => @vagrant_env,
-      },
+        'vagrant_env' => @vagrant_env
+      }
     }
     group_name = 'winrm_nodes'
   end
@@ -203,13 +201,13 @@ def tear_down(node_name, inventory_location)
     remove_node(inventory_hash, node_name)
     FileUtils.rm_r(vagrant_env)
   end
-  STDERR.puts "Removed #{node_name}"
+  warn "Removed #{node_name}"
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
   { status: 'ok' }
 end
 
-params = JSON.parse(STDIN.read)
-STDERR.puts params
+params = JSON.parse($stdin.read)
+warn params
 platform = params['platform']
 action = params['action']
 node_name = params['node_name']
@@ -228,6 +226,7 @@ box_url             = params['box_url'].nil? ? ENV['VAGRANT_BOX_URL'] : params['
 password            = params['password'].nil? ? ENV['VAGRANT_PASSWORD'] : params['password']
 raise 'specify a node_name when tearing down' if action == 'tear_down' && node_name.nil?
 raise 'specify a platform when provisioning' if action == 'provision' && platform.nil?
+
 unless node_name.nil? ^ platform.nil?
   case action
   when 'tear_down'
@@ -244,7 +243,7 @@ begin
   result = tear_down(node_name, inventory_location) if action == 'tear_down'
   puts result.to_json
   exit 0
-rescue => e
+rescue StandardError => e
   puts({ _error: { kind: 'provision/vagrant_failure', msg: e.message } }.to_json)
   exit 1
 end

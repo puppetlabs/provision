@@ -3,7 +3,7 @@
 require 'task_helper'
 
 describe 'Utility Functions' do
-  context '.platform_is_windows?' do
+  describe '.platform_is_windows?' do
     it 'correctly identifies Windows platforms' do
       expect(platform_is_windows?('somewinorg/blah-windows-2019')).to be_truthy
       expect(platform_is_windows?('somewinorg/blah-WinDows-2019')).to be_truthy

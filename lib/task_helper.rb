@@ -13,11 +13,12 @@ def get_inventory_hash(inventory_full_path)
   end
 end
 
-def run_local_command(command, wd = Dir.pwd)
+def run_local_command(command, dir = Dir.pwd)
   require 'open3'
-  stdout, stderr, status = Open3.capture3(command, chdir: wd)
+  stdout, stderr, status = Open3.capture3(command, chdir: dir)
   error_message = "Attempted to run\ncommand:'#{command}'\nstdout:#{stdout}\nstderr:#{stderr}"
   raise error_message unless status.to_i.zero?
+
   stdout
 end
 
@@ -33,7 +34,7 @@ def platform_is_windows?(platform)
   # (bare_win_with_demlimiter) win-2008
   # (plain_windows)            webserserver-windows-2008
   # (bare_win_with_demlimiter) webserver-win-2008
-  windows_regex = %r{(?<plain_windows>windows)|(?<bare_win_with_demlimiter>(?:^|[\/:\-\\;])win(?:[\/:\-\\;]|$))}i
+  windows_regex = %r{(?<plain_windows>windows)|(?<bare_win_with_demlimiter>(?:^|[/:\-\\;])win(?:[/:\-\\;]|$))}i
   platform =~ windows_regex
 end
 
@@ -63,8 +64,9 @@ def token_from_fogfile(provider = 'abs')
   token = contents.dig(:default, :abs_token)
 
   raise "Error: could not obtain #{provider} token from .fog file" if token.nil?
+
   token
-rescue
+rescue StandardError
   puts 'Failed to get token from .fog file'
 end
 

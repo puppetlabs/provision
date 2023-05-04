@@ -41,7 +41,7 @@ class ABSProvision
 
     headers = { 'X-AUTH-TOKEN' => token_from_fogfile('abs'), 'Content-Type' => 'application/json' }
     priority = ENV['CI'] ? 1 : 2
-    payload = if platform.class == String
+    payload = if platform.instance_of?(String)
                 { 'resources' => { platform => 1 },
                   'priority' => priority,
                   'job' => { 'id' => job_id,
@@ -79,6 +79,7 @@ class ABSProvision
       # puts "#{Time.now.strftime('%Y/%m/%d %H:%M:%S')}: Received #{reply.code} #{reply.message} from ABS"
       break if reply.code == '200' # Our host(s) are provisioned
       raise 'ABS API Error: Received a HTTP 404 response' if reply.code == '404' # Our host(s) will never be provisioned
+
       sleep_time += 1
     end
 
@@ -157,12 +158,13 @@ class ABSProvision
   end
 
   def self.run
-    params = JSON.parse(STDIN.read)
-    params.transform_keys! { |k| k.to_sym }
+    params = JSON.parse($stdin.read)
+    params.transform_keys!(&:to_sym)
     action, node_name, platform = params.values_at(:action, :node_name, :platform)
 
     raise 'specify a node_name when tearing down' if action == 'tear_down' && node_name.nil?
     raise 'specify a platform when provisioning' if action == 'provision' && platform.nil?
+
     unless node_name.nil? ^ platform.nil?
       case action
       when 'tear_down'
@@ -179,7 +181,7 @@ class ABSProvision
       result = runner.task(**params)
       puts result.to_json
       exit 0
-    rescue => e
+    rescue StandardError => e
       puts({ _error: { kind: 'provision/abs_failure', msg: e.message } }.to_json)
       exit 1
     end

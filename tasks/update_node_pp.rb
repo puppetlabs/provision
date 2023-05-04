@@ -10,6 +10,7 @@ def update_file(manifest, target_node)
   path = '/etc/puppetlabs/code/environments/production/manifests/nodes'
   _stdout, stderr, status = Open3.capture3("mkdir -p #{path}")
   raise Puppet::Error, _("stderr: ' %{stderr}')" % { stderr: stderr }) if status != 0
+
   site_path = File.join(path, "#{target_node}.pp")
   if File.file?(site_path)
     existing_manifest = File.readlines(site_path)
@@ -24,7 +25,7 @@ def update_file(manifest, target_node)
   "#{site_path} updated"
 end
 
-params = JSON.parse(STDIN.read)
+params = JSON.parse($stdin.read)
 manifest = params['manifest']
 target_node = params['target_node']
 
