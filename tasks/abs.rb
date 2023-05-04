@@ -91,7 +91,7 @@ class ABSProvision
     data.each do |host|
       if platform_uses_ssh(host['type'])
         node = { 'uri' => host['hostname'],
-                 'config' => { 'transport' => 'ssh', 'ssh' => { 'user' => ENV['ABS_USER'], 'host-key-check' => false } },
+                 'config' => { 'transport' => 'ssh', 'ssh' => { 'user' => ENV['ABS_USER'], 'host-key-check' => false, 'connect-timeout' => 120 } },
                  'facts' => { 'provisioner' => 'abs', 'platform' => host['type'], 'job_id' => job_id } }
         if !ENV['ABS_SSH_PRIVATE_KEY'].nil? && !ENV['ABS_SSH_PRIVATE_KEY'].empty?
           node['config']['ssh']['private-key'] = ENV['ABS_SSH_PRIVATE_KEY']
@@ -101,7 +101,7 @@ class ABSProvision
         group_name = 'ssh_nodes'
       else
         node = { 'uri' => host['hostname'],
-                 'config' => { 'transport' => 'winrm', 'winrm' => { 'user' => ENV['ABS_WIN_USER'], 'password' => ENV['ABS_PASSWORD'], 'ssl' => false } },
+                 'config' => { 'transport' => 'winrm', 'winrm' => { 'user' => ENV['ABS_WIN_USER'], 'password' => ENV['ABS_PASSWORD'], 'ssl' => false, 'connect-timeout' => 120 } },
                  'facts' => { 'provisioner' => 'abs', 'platform' => host['type'], 'job_id' => job_id } }
         group_name = 'winrm_nodes'
       end

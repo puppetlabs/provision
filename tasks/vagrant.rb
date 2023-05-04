@@ -150,7 +150,8 @@ def provision(platform, inventory_location, enable_synced_folder, provider, cpus
           'host' => remote_config['hostname'],
           'host-key-check' => remote_config['stricthostkeychecking'],
           'port' => remote_config['port'],
-          'run-as' => 'root'
+          'run-as' => 'root',
+          'connect-timeout' => 120
         }
       },
       'facts' => {
@@ -173,7 +174,8 @@ def provision(platform, inventory_location, enable_synced_folder, provider, cpus
         'winrm' => {
           'user' => remote_config['user'],
           'password' => remote_config['password'],
-          'ssl' => remote_config['uses_ssl']
+          'ssl' => remote_config['uses_ssl'],
+          'connect-timeout' => 120
         }
       },
       'facts' => {
