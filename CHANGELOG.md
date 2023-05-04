@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](http://semver.org).
 
+## [v2.0.0](https://github.com/puppetlabs/provision/tree/v2.0.0) (2023-05-04)
+
+[Full Changelog](https://github.com/puppetlabs/provision/compare/v1.0.0...v2.0.0)
+
+### Changed
+
+- \(CONT-809\) Add Puppet 8 support [\#205](https://github.com/puppetlabs/provision/pull/205) ([GSPatton](https://github.com/GSPatton))
+
 ## [v1.0.0](https://github.com/puppetlabs/provision/tree/v1.0.0) (2023-05-03)
 
 [Full Changelog](https://github.com/puppetlabs/provision/compare/254ad83d7bea85d163c3a6399dc86025af733cd3...v1.0.0)
@@ -35,7 +43,6 @@ All notable changes to this project will be documented in this file. The format 
 - Add vars support to the docker provisioner [\#96](https://github.com/puppetlabs/provision/pull/96) ([rtib](https://github.com/rtib))
 - \(MODULES-10415\) add params for vagrant: provider, cpus & memory [\#91](https://github.com/puppetlabs/provision/pull/91) ([zoojar](https://github.com/zoojar))
 - Clean up SSH setup on docker provisioning [\#77](https://github.com/puppetlabs/provision/pull/77) ([ekohl](https://github.com/ekohl))
-- Support EL8 for Docker provisioning [\#72](https://github.com/puppetlabs/provision/pull/72) ([treydock](https://github.com/treydock))
 
 ### Fixed
 
@@ -92,7 +99,6 @@ All notable changes to this project will be documented in this file. The format 
 - \(MAINT\) Downcase platform for windows regex check [\#90](https://github.com/puppetlabs/provision/pull/90) ([michaeltlombardi](https://github.com/michaeltlombardi))
 - Add vars support to the docker\_exp provisioner [\#80](https://github.com/puppetlabs/provision/pull/80) ([Sharpie](https://github.com/Sharpie))
 - Dont exit when a command returns a non-0 exit code [\#78](https://github.com/puppetlabs/provision/pull/78) ([da-ar](https://github.com/da-ar))
-- \(FM-8344\) Error on exlusive params [\#73](https://github.com/puppetlabs/provision/pull/73) ([michaeltlombardi](https://github.com/michaeltlombardi))
 
 
 
