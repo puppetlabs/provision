@@ -29,7 +29,7 @@ def provision(docker_platform, inventory_location, vars)
   container_id = run_local_command(creation_command).strip[0..11]
   fix_missing_tty_error_message(container_id) unless platform_is_windows?(docker_platform)
   node = { 'uri' => container_id,
-           'config' => { 'transport' => 'docker', 'docker' => { 'shell-command' => @shell_command } },
+           'config' => { 'transport' => 'docker', 'docker' => { 'shell-command' => @shell_command, 'connect-timeout' => 120 } },
            'facts' => { 'provisioner' => 'docker_exp', 'container_id' => container_id, 'platform' => docker_platform } }
   unless vars.nil?
     var_hash = YAML.safe_load(vars)

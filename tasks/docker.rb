@@ -162,7 +162,7 @@ def provision(image, inventory_location, vars)
     'uri' => "#{hostname}:#{front_facing_port}",
     'config' => {
       'transport' => 'ssh',
-      'ssh' => { 'user' => 'root', 'password' => 'root', 'port' => front_facing_port, 'host-key-check' => false }
+      'ssh' => { 'user' => 'root', 'password' => 'root', 'port' => front_facing_port, 'host-key-check' => false, 'connect-timeout' => 120 }
     },
     'facts' => {
       'provisioner' => 'docker',
