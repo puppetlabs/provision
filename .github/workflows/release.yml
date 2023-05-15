@@ -28,8 +28,16 @@ jobs:
         with:
           args: "build"
 
+      - name: "Generate release notes"
+        run: |
+          export GH_HOST=github.com
+          gh extension install chelnak/gh-changelog
+          gh changelog get --latest > OUTPUT.md
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: "Create release"
         run: |
-          gh release create v${{ steps.get_version.outputs.version }} --title v${{ steps.get_version.outputs.version }}
+          gh release create v${{ steps.get_version.outputs.version }} --title v${{ steps.get_version.outputs.version }} -F OUTPUT.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
