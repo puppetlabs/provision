@@ -7,174 +7,190 @@ require 'yaml'
 require 'puppet_litmus'
 require 'etc'
 require_relative '../lib/task_helper'
-include PuppetLitmus::InventoryManipulation
 
-def default_uri
-  'https://facade-release-6f3kfepqcq-ew.a.run.app/v1/provision'
-end
+# Provision and teardown vms through provision service.
+class ProvisionService
+  RETRY_COUNT = 3
 
-def platform_to_cloud_request_parameters(platform, cloud, region, zone)
-  case platform
-  when String
-    { cloud: cloud, region: region, zone: zone, images: [platform] }
-  when Array
-    { cloud: cloud, region: region, zone: zone, images: platform }
-  else
-    platform[:cloud] = cloud unless cloud.nil?
-    platform[:images] = [platform[:images]] if platform[:images].is_a?(String)
-    platform
-  end
-end
+  include PuppetLitmus::InventoryManipulation
 
-# curl -X POST https://facade-validation-6f3kfepqcq-ew.a.run.app/v1/provision --data @test_machines.json
-def invoke_cloud_request(params, uri, job_url, verb, retry_attempts)
-  headers =  {
-    'Accept' => 'application/json',
-    'Content-Type' => 'application/json'
-  }
-  headers['X-Honeycomb-Trace'] = ENV['HTTP_X_HONEYCOMB_TRACE'] if ENV['HTTP_X_HONEYCOMB_TRACE'] # legacy variable
-  headers['X-Honeycomb-Trace'] = ENV['HONEYCOMB_TRACE'] if ENV['HONEYCOMB_TRACE']
-
-  case verb.downcase
-  when 'post'
-    request = Net::HTTP::Post.new(uri, headers)
-    machines = []
-    machines << params
-    request.body = if job_url
-                     { url: job_url, VMs: machines }.to_json
-                   else
-                     { github_token: ENV['GITHUB_TOKEN'], VMs: machines }.to_json
-                   end
-  when 'delete'
-    request = Net::HTTP::Delete.new(uri, headers)
-    request.body = { uuid: params }.to_json
-  else
-    raise StandardError "Unknown verb: '#{verb}'"
+  def default_uri
+    'https://facade-release-6f3kfepqcq-ew.a.run.app/v1/provision'
   end
 
-  if job_url
-    File.open('request.json', 'wb') do |f|
-      f.write(request.body)
+  def platform_to_cloud_request_parameters(platform, cloud, region, zone)
+    case platform
+    when String
+      { cloud: cloud, region: region, zone: zone, images: [platform] }
+    when Array
+      { cloud: cloud, region: region, zone: zone, images: platform }
+    else
+      platform[:cloud] = cloud unless cloud.nil?
+      platform[:images] = [platform[:images]] if platform[:images].is_a?(String)
+      platform
     end
   end
 
-  req_options = {
-    use_ssl: uri.scheme == 'https',
-    read_timeout: 60 * 5, # timeout reads after 5 minutes - that's longer than the backend service would keep the request open
-    max_retries: retry_attempts # retry up to 5 times before throwing an error
-  }
+  # curl -X POST https://facade-validation-6f3kfepqcq-ew.a.run.app/v1/provision --data @test_machines.json
+  def invoke_cloud_request(params, uri, job_url, verb, retry_attempts)
+    headers =  {
+      'Accept' => 'application/json',
+      'Content-Type' => 'application/json'
+    }
 
-  response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
-    http.request(request)
+    case verb.downcase
+    when 'post'
+      request = Net::HTTP::Post.new(uri, headers)
+      machines = []
+      machines << params
+      request.body = if job_url
+                       { url: job_url, VMs: machines }.to_json
+                     else
+                       { github_token: ENV['GITHUB_TOKEN'], VMs: machines }.to_json
+                     end
+    when 'delete'
+      request = Net::HTTP::Delete.new(uri, headers)
+      request.body = { uuid: params }.to_json
+    else
+      raise StandardError "Unknown verb: '#{verb}'"
+    end
+
+    if job_url
+      File.open('request.json', 'wb') do |f|
+        f.write(request.body)
+      end
+    end
+
+    req_options = {
+      use_ssl: uri.scheme == 'https',
+      read_timeout: 60 * 5, # timeout reads after 5 minutes - that's longer than the backend service would keep the request open
+      max_retries: retry_attempts # retry up to 5 times before throwing an error
+    }
+
+    response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
+      http.request(request)
+    end
+    if response.code == '200'
+      response.body
+    else
+      begin
+        body = JSON.parse(response.body)
+        body_json = true
+      rescue JSON::ParserError
+        body = response.body
+        body_json = false
+      end
+      puts({ _error: { kind: 'provision_service/service_error', msg: 'provision service returned an error', code: response.code, body: body, body_json: body_json } }.to_json)
+      exit 1
+    end
   end
-  if response.code == '200'
-    response.body
-  else
+
+  def provision(platform, inventory_location, vars, retry_attempts)
+    # Call the provision service with the information necessary and write the inventory file locally
+
+    if ENV['GITHUB_RUN_ID']
+      job_url = ENV['GITHUB_URL'] || "https://api.github.com/repos/#{ENV['GITHUB_REPOSITORY']}/actions/runs/#{ENV['GITHUB_RUN_ID']}"
+    else
+      puts 'Using GITHUB_TOKEN as no GITHHUB_RUN_ID found'
+    end
+    uri = URI.parse(ENV['SERVICE_URL'] || default_uri)
+    cloud = ENV['CLOUD']
+    region = ENV['REGION']
+    zone = ENV['ZONE']
+    if job_url.nil? && vars
+      data = JSON.parse(vars.tr(';', ','))
+      job_url = data['job_url']
+    end
+    inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
+    currnet_retry_count = 0
     begin
-      body = JSON.parse(response.body)
-      body_json = true
-    rescue JSON::ParserError
-      body = response.body
-      body_json = false
+      params = platform_to_cloud_request_parameters(platform, cloud, region, zone)
+      response = invoke_cloud_request(params, uri, job_url, 'post', retry_attempts)
+      response_hash = YAML.safe_load(response)
+      # Knock the response for validity to make sure return payload is expected.
+      # Have seen multiple occurances of nil:NilClass error where the response code is 200 but return payload is empty
+      raise if response_hash.nil? || response_hash.empty?
+    rescue StandardError => e
+      currnet_retry_count += 1
+      raise e if currnet_retry_count >= RETRY_COUNT
+
+      puts "Failed while provisioning the resource with response :\n #{response_hash}\nHence retrying #{currnet_retry_count} of #{RETRY_COUNT}"
+      retry
     end
-    puts({ _error: { kind: 'provision_service/service_error', msg: 'provision service returned an error', code: response.code, body: body, body_json: body_json } }.to_json)
-    exit 1
-  end
-end
 
-def provision(platform, inventory_location, vars, retry_attempts)
-  # Call the provision service with the information necessary and write the inventory file locally
-
-  if ENV['GITHUB_RUN_ID']
-    job_url = ENV['GITHUB_URL'] || "https://api.github.com/repos/#{ENV['GITHUB_REPOSITORY']}/actions/runs/#{ENV['GITHUB_RUN_ID']}"
-  else
-    puts 'Using GITHUB_TOKEN as no GITHHUB_RUN_ID found'
-  end
-  uri = URI.parse(ENV['SERVICE_URL'] || default_uri)
-  cloud = ENV['CLOUD']
-  region = ENV['REGION']
-  zone = ENV['ZONE']
-  if job_url.nil? && vars
-    data = JSON.parse(vars.tr(';', ','))
-    job_url = data['job_url']
-  end
-  inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
-
-  params = platform_to_cloud_request_parameters(platform, cloud, region, zone)
-  response = invoke_cloud_request(params, uri, job_url, 'post', retry_attempts)
-  response_hash = YAML.safe_load(response)
-
-  unless vars.nil?
-    var_hash = YAML.safe_load(vars)
-    response_hash['groups'].each do |bg|
-      bg['targets'].each do |trgts|
-        trgts['vars'] = var_hash
-      end
-    end
-  end
-
-  if File.file?(inventory_full_path)
-    inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
-    inventory_hash['groups'].each do |g|
+    unless vars.nil?
+      var_hash = YAML.safe_load(vars)
       response_hash['groups'].each do |bg|
-        g['targets'] = g['targets'] + bg['targets'] if g['name'] == bg['name']
+        bg['targets'].each do |trgts|
+          trgts['vars'] = var_hash
+        end
       end
     end
-    File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
-  else
-    FileUtils.mkdir_p(File.join(Dir.pwd, '/spec/fixtures'))
-    File.open(inventory_full_path, 'wb') do |f|
-      f.write(YAML.dump(response_hash))
+
+    if File.file?(inventory_full_path)
+      inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
+      inventory_hash['groups'].each do |g|
+        response_hash['groups'].each do |bg|
+          g['targets'] = g['targets'] + bg['targets'] if g['name'] == bg['name']
+        end
+      end
+      File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
+    else
+      FileUtils.mkdir_p(File.join(Dir.pwd, '/spec/fixtures'))
+      File.open(inventory_full_path, 'wb') do |f|
+        f.write(YAML.dump(response_hash))
+      end
+    end
+
+    {
+      status: 'ok',
+      node_name: platform,
+      target_names: response_hash['groups']&.each { |g| g['targets'] }&.map { |t| t['uri'] }&.flatten&.uniq
+    }
+  end
+
+  def tear_down(platform, inventory_location, _vars, retry_attempts)
+    # remove all provisioned resources
+    uri = URI.parse(ENV['SERVICE_URL'] || default_uri)
+
+    inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
+    # rubocop:disable Style/GuardClause
+    if File.file?(inventory_full_path)
+      inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
+      facts = facts_from_node(inventory_hash, platform)
+      job_id = facts['uuid']
+      response = invoke_cloud_request(job_id, uri, '', 'delete', retry_attempts)
+      response.to_json
+    end
+    # rubocop:enable Style/GuardClause
+  end
+
+  def self.run
+    params = JSON.parse($stdin.read)
+    params.transform_keys!(&:to_sym)
+    action, node_name, platform, vars, retry_attempts, inventory_location = params.values_at(:action, :node_name, :platform, :vars, :retry_attempts, :inventory)
+
+    runner = new
+    begin
+      case action
+      when 'provision'
+        raise 'specify a platform when provisioning' if platform.to_s.empty?
+
+        result = runner.provision(platform, inventory_location, vars, retry_attempts)
+      when 'tear_down'
+        raise 'specify a node_name when tearing down' if node_name.nil?
+
+        result = runner.tear_down(node_name, inventory_location, vars, retry_attempts)
+      else
+        result = { _error: { kind: 'provision_service/argument_error', msg: "Unknown action '#{action}'" } }
+      end
+      puts result.to_json
+      exit 0
+    rescue StandardError => e
+      puts({ _error: { kind: 'provision_service/failure', msg: e.message, details: { backtrace: e.backtrace } } }.to_json)
+      exit 1
     end
   end
-
-  {
-    status: 'ok',
-    node_name: platform,
-    target_names: response_hash['groups']&.each { |g| g['targets'] }&.map { |t| t['uri'] }&.flatten&.uniq
-  }
 end
 
-def tear_down(platform, inventory_location, _vars, retry_attempts)
-  # remove all provisioned resources
-  uri = URI.parse(ENV['SERVICE_URL'] || default_uri)
-
-  inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
-  # rubocop:disable Style/GuardClause
-  if File.file?(inventory_full_path)
-    inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
-    facts = facts_from_node(inventory_hash, platform)
-    job_id = facts['uuid']
-    response = invoke_cloud_request(job_id, uri, '', 'delete', retry_attempts)
-    response.to_json
-  end
-  # rubocop:enable Style/GuardClause
-end
-
-params = JSON.parse($stdin.read)
-platform = params['platform']
-action = params['action']
-vars = params['vars']
-node_name = params['node_name']
-retry_attempts = params['retry_attempts']
-inventory_location = sanitise_inventory_location(params['inventory'])
-
-begin
-  case action
-  when 'provision'
-    raise 'specify a platform when provisioning' if platform.nil?
-
-    result = provision(platform, inventory_location, vars, retry_attempts)
-  when 'tear_down'
-    raise 'specify a node_name when tearing down' if node_name.nil?
-
-    result = tear_down(node_name, inventory_location, vars, retry_attempts)
-  else
-    result = { _error: { kind: 'provision_service/argument_error', msg: "Unknown action '#{action}'" } }
-  end
-  puts result.to_json
-  exit 0
-rescue StandardError => e
-  puts({ _error: { kind: 'provision_service/failure', msg: e.message, details: { backtrace: e.backtrace } } }.to_json)
-  exit 1
-end
+ProvisionService.run if __FILE__ == $PROGRAM_NAME

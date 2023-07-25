@@ -67,8 +67,21 @@ describe 'provision::abs' do
       expect { ABSProvision.run }.to raise_error(RuntimeError, %r{specify a platform when provisioning})
     end
 
-    it 'raises an error when node_name not given for tear_down'
-    it 'raises an error if both node_name and platform are given'
+    it 'raises an error when node_name not given for tear_down' do
+      expect($stdin).to receive(:read).and_return('{"action":"teardown"}')
+
+      expect { ABSProvision.run }.to raise_error(RuntimeError, %r{specify only one of: node_name, platform})
+    end
+
+    it 'raises an error if both node_name and platform are given' do
+      expect($stdin).to receive(:read).and_return('{"action":"teardown","platform":"centos-9"}')
+
+      expect { ABSProvision.run }.to(
+        raise_error(SystemExit) do |e|
+          expect(e.status).to eq(0)
+        end,
+      )
+    end
   end
 
   context 'when provisioning' do
