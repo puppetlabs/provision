@@ -2,6 +2,10 @@ name: "Release Prep"
 
 on:
   workflow_dispatch:
+   inputs:
+    version:
+      description: "Version of module to be released. Must be a valid semver string. Ex: 1.0.0"
+      required: true
 
 jobs:
   release_prep:
