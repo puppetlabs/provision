@@ -169,6 +169,7 @@ class ProvisionService
     params = JSON.parse($stdin.read)
     params.transform_keys!(&:to_sym)
     action, node_name, platform, vars, retry_attempts, inventory_location = params.values_at(:action, :node_name, :platform, :vars, :retry_attempts, :inventory)
+    inventory_location = sanitise_inventory_location(inventory_location)
 
     runner = new
     begin
