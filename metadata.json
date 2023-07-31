@@ -56,8 +56,11 @@
     {
       "operatingsystem": "windows",
       "operatingsystemrelease": [
+        "10",
         "2012 R2",
-        "10"
+        "2016",
+        "2019",
+        "2022"
       ]
     }
   ],
