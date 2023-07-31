@@ -37,20 +37,15 @@
     },
     {
       "operatingsystem": "Debian",
-      "operatingsystemrelease": [
-        "8"
-      ]
+      "operatingsystemrelease": []
     },
     {
       "operatingsystem": "Ubuntu",
-      "operatingsystemrelease": [
-        "16.04"
-      ]
+      "operatingsystemrelease": []
     },
     {
       "operatingsystem": "windows",
       "operatingsystemrelease": [
-        "2008 R2",
         "2012 R2",
         "10"
       ]
