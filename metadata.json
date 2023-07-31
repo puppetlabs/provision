@@ -47,7 +47,11 @@
     },
     {
       "operatingsystem": "Ubuntu",
-      "operatingsystemrelease": []
+      "operatingsystemrelease": [
+        "18.04",
+        "20.04",
+        "22.04"
+      ]
     },
     {
       "operatingsystem": "windows",
