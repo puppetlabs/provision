@@ -40,7 +40,10 @@
     },
     {
       "operatingsystem": "Debian",
-      "operatingsystemrelease": []
+      "operatingsystemrelease": [
+        "10",
+        "11"
+      ]
     },
     {
       "operatingsystem": "Ubuntu",
