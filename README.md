@@ -1,6 +1,6 @@
 # Provision
 
-Simple tasks to provision and tear_down containers / instances and virtual machines.
+Simple tasks to provision and tear down containers, instances and virtual machines.
 
 #### Table of Contents
 
@@ -23,6 +23,7 @@ Provisioners so far:
 * ABS (AlwaysBeScheduling)
 * Docker
 * Vagrant
+* Provision Service
 
 ## Setup
 
@@ -32,7 +33,7 @@ Bolt has to be installed to run the tasks. Each provisioner has its own requirem
 
 #### Running the tasks as part of puppet_litmus
 
-Please follow the documentation here: https://puppetlabs.github.io/litmus/
+Please follow the documentation here: https://puppetlabs.github.io/content-and-tooling-team/docs/litmus/
 
 #### Running the module stand-alone call the tasks/plans directly
 
@@ -49,8 +50,8 @@ mod 'puppetlabs-puppet_conf'
 
 There is a basic workflow for the provision tasks.
 
-* provision - creates / initiates a platform and edits a bolt inventory file.
-* tear_down - creates / initiates a system / container and edits a bolt inventory file.
+* provision - creates/initiates a platform and edits a bolt inventory file.
+* tear_down - creates/initiates a system/container and edits a bolt inventory file.
 
 For extended functionality please look at the wiki https://github.com/puppetlabs/provision/wiki
 
@@ -125,7 +126,7 @@ Ran on 1 node in 1.54 seconds
 
 ### Docker
 
-Given an docker image name it will spin up that container and setup external ssh on that platform. For helpful docker tips look [here](https://github.com/puppetlabs/litmus_image/blob/main/README.md) 
+Given an docker image name it will spin up that container and setup external ssh on that platform. For helpful docker tips look [here](https://github.com/puppetlabs/litmus_image/blob/main/README.md)
 
 provision
 
@@ -281,7 +282,7 @@ bundle exec rake 'litmus:provision[provision::provision_service, centos-7-v20200
 
 #### Synced Folders
 
-By default the task will provision a Vagrant box with the [synced folder]() **disabled**.
+By default the task will provision a Vagrant box with the [synced folder](https://developer.hashicorp.com/vagrant/docs/synced-folders) **disabled**.
 To enable the synced folder you must specify the parameter `enable_synced_folder` as `true`.
 Instead of passing this parameter directly you can instead specify the environment variable `LITMUS_ENABLE_SYNCED_FOLDER` as `true`.
 
