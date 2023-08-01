@@ -2,7 +2,7 @@
 
 Simple tasks to provision and tear down containers, instances and virtual machines.
 
-#### Table of Contents
+## Table of Contents
 
 1. [Description](#description)
 2. [Setup - The basics of getting started with provision](#setup)
@@ -33,13 +33,14 @@ Bolt has to be installed to run the tasks. Each provisioner has its own requirem
 
 #### Running the tasks as part of puppet_litmus
 
-Please follow the documentation here: https://puppetlabs.github.io/content-and-tooling-team/docs/litmus/
+Please follow the litmus documentation [here](https://puppetlabs.github.io/content-and-tooling-team/docs/litmus/).
 
 #### Running the module stand-alone call the tasks/plans directly
 
-For provisioning to work you will need to have a number of other modules available. Using bolt to install the modules for you, your puppet file https://puppet.com/docs/bolt/latest/installing_tasks_from_the_forge.html The required modules are:
+For provisioning to work you will need to have a number of other modules available. You can use bolt to install the modules for you from your Puppetfile, by following this [guide](https://puppet.com/docs/bolt/latest/installing_tasks_from_the_forge.html).
+The required modules are:
 
-```
+```shell
 cat $HOME/.puppetlabs/bolt/Puppetfile
 mod 'puppetlabs-puppet_agent'
 mod 'puppetlabs-facts'
@@ -53,7 +54,7 @@ There is a basic workflow for the provision tasks.
 * provision - creates/initiates a platform and edits a bolt inventory file.
 * tear_down - creates/initiates a system/container and edits a bolt inventory file.
 
-For extended functionality please look at the wiki https://github.com/puppetlabs/provision/wiki
+For extended functionality please look at the [provision wiki](https://github.com/puppetlabs/provision/wiki).
 
 ### ABS
 
@@ -63,8 +64,7 @@ For extended functionality please look at the wiki https://github.com/puppetlabs
 
 In order to run ABS you first require an access token stored within your '.fog' file. If you already have one you may skip this section, otherwise request one by running the following command, changing the username.
 
-
-```
+```shell
 $ curl -X POST -d '' -u tp --url https://test-example.abs.net/api/v2/token
 Enter host password for user 'tp':
 {
@@ -75,7 +75,7 @@ Enter host password for user 'tp':
 
 Now that you have your token, check that it works by running:
 
-```
+```shell
 $ curl --url https://test-example.abs.net/api/v2/token/0pd263lej948h28493692r07
 {
   "ok": true,
@@ -86,7 +86,8 @@ $ curl --url https://test-example.abs.net/api/v2/token/0pd263lej948h28493692r07
 ```
 
 Finally all that you have left to do is to place your new token into your '.fog' file as shown below:
-```
+
+```shell
 $ cat ~/.fog
 :default:
   :abs_token: 0pd263lej948h28493692r07
@@ -96,7 +97,7 @@ $ cat ~/.fog
 
 ##### Setting up a new machine
 
-```
+```ruby
 $ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::abs --targets localhost action=provision platform=ubuntu-1604-x86_64 inventory=/Users/tp/workspace/git/provision
 
 Started on localhost...
@@ -111,7 +112,7 @@ Ran on 1 node in 1.44 seconds
 
 ##### Tearing down a finished machine
 
-```
+```ruby
 $ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::abs --targets localhost  action=tear_down inventory=/Users/tp/workspace/git/provision node_name=yh6f4djvz7o3te6.delivery.puppetlabs.net
 
 Started on localhost...
@@ -130,7 +131,7 @@ Given an docker image name it will spin up that container and setup external ssh
 
 provision
 
-```
+```ruby
 $ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --targets localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/provision
 
 Started on localhost...
@@ -146,23 +147,24 @@ Ran on 1 node in 33.96 seconds
 Provision allows for passing additional command line arguments to the docker run when specifying `vars['docker_run_opts']` as an array of arguments.
 
 When running Debian or Ubuntu containers, the following flags will be added to the $docker_run_opts by default.
-```
+
+```shell
 --volume /sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host
 ```
 
 These defaults can be overriden by passing the flags with different values i.e.
 
-```
+```shell
 --volume /sys/fs/cgroup:/sys/fs/cgroup:ro --cgroupns=private
 ```
 
-```
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --targets localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/provision vars='{ "docker_run_opts": ["-p 8086:8086", "-p 3000:3000"]}'
+```ruby
+bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --targets localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/provision vars='{ "docker_run_opts": ["-p 8086:8086", "-p 3000:3000"]}'
 ```
 
 tear_down
 
-```
+```ruby
 $ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --targets localhost  action=tear_down inventory=/Users/tp/workspace/git/provision node_name=localhost:2222
 
 Started on localhost...
@@ -178,15 +180,16 @@ Ran on 1 node in 2.02 seconds
 ### Vagrant
 
 Tested with vagrant images:
-  * ubuntu/trusty64
-  * ubuntu/xenial64
-  * ubuntu/bionic64
-  * debian/jessie64
-  * centos/7
+
+* ubuntu/trusty64
+* ubuntu/xenial64
+* ubuntu/bionic64
+* debian/jessie64
+* centos/7
 
 provision
 
-```
+```ruby
 $ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vagrant --targets localhost  action=provision platform=ubuntu/xenial64 inventory=/Users/tp/workspace/git/provision
 
 Started on localhost...
@@ -206,7 +209,7 @@ By default the Puppet agent installation does not change the systems' sudo *secu
 This leads to errors when anything tries to execute `puppet` commands on the test system.
 To add the Puppet agent binary path to the *secure_path* please run the `provision::fix_secure_path` Bolt task:
 
-```
+```ruby
 $ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::fix_secure_path path=/opt/puppetlabs/bin -i inventory.yaml -t ssh_nodes
 
 Started on 127.0.0.1:2222...
@@ -217,7 +220,8 @@ Ran on 1 target in 0.84 sec
 ```
 
 tear_down
-```
+
+```ruby
 $ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vagrant --targets localhost  action=tear_down inventory=/Users/tp/workspace/git/provision node_name=127.0.0.1:2222
 
 Started on localhost...
@@ -258,7 +262,7 @@ The provision service task is meant to be used from a Github Action workflow.
 Example usage:
 Using the following provision.yaml file:
 
-```
+```yaml
 test_serv:
   provisioner: provision::provision_service
   params:
@@ -271,13 +275,15 @@ test_serv:
 In the provision step you can invoke bundle exec rake 'litmus:provision_list[test_serv]' and this will ensure the creation of two VMs in GCP.
 
 Manual invocation of the provision service task from a workflow can be done using:
-```
+
+```ruby
 bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::provision_service --targets localhost  action=provision platform=centos-7-v20200813 inventory=/Users/tp/workspace/git/provision
 ```
+
 Or using Litmus:
 
-```
-bundle exec rake 'litmus:provision[provision::provision_service, centos-7-v20200813]'
+```ruby
+bundle exec rake 'litmus:provision[provision_service, centos-7-v20200813]'
 ```
 
 #### Synced Folders
@@ -291,21 +297,21 @@ Instead of passing this parameter directly you can instead specify the environme
 This task can also be used against a Windows host to utilize Hyper-V Vagrant boxes.
 When provisioning, a few additional parameters need to be passed:
 
-- `hyperv_vswitch`, which specifies the Hyper-V Virtual Switch to assign the VM.
+* `hyperv_vswitch`, which specifies the Hyper-V Virtual Switch to assign the VM.
   If you do not specify one the [`Default Switch`](https://searchenterprisedesktop.techtarget.com/blog/Windows-Enterprise-Desktop/Default-Switch-Makes-Hyper-V-Networking-Dead-Simple) will be used.
-- `hyperv_smb_username` and `hyperv_smb_password`, which ensure the synced folder works correctly (only necessary is `enable_synced_folder` is `true`).
+* `hyperv_smb_username` and `hyperv_smb_password`, which ensure the synced folder works correctly (only necessary is `enable_synced_folder` is `true`).
   If these parameters are omitted when provisioning on Windows and using synced folders Vagrant will try to prompt for input and the task will hang indefinitely until it finally times out.
   The context in which a Bolt task is run does not allow for mid-task input.
 
 Instead of passing them as parameters directly they can also be passed as environment variables:
 
-- `LITMUS_HYPERV_VSWITCH` for `hyperv_vswitch`
-- `HYPERV_SMB_USERNAME` for `hyperv_smb_username`
-- `HYPERV_SMB_PASSWORD` for `hyperv_smb_password`
+* `LITMUS_HYPERV_VSWITCH` for `hyperv_vswitch`
+* `HYPERV_SMB_USERNAME` for `hyperv_smb_username`
+* `HYPERV_SMB_PASSWORD` for `hyperv_smb_password`
 
 provision
 
-```
+```powershell
 PS> $env:LITMUS_HYPERV_VSWITCH = 'internal_nat'
 PS> bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vagrant --targets localhost  action=provision platform=centos/7 inventory=/Users/tp/workspace/git/provision hyperv_smb_username=tp hyperv_smb_password=notMyrealPassword
 
@@ -326,20 +332,19 @@ Using the `tear_down` task is the same as on Linux or MacOS.
 * The docker task only supports Linux
 * The docker task uses port forwarding, not internal IP addresses. This is because of limitations when running on the mac.
 
-
 ## Development
 
 Testing/development/debugging it is better to use ruby directly, you will need to pass the JSON parameters. Depending on how you are running (using a puppet file or as part of a puppet_litmus). The dependencies of provision will need to be available. See the setup section above.
 
-```
+```shell
 # powershell
  echo '{ "platform": "ubuntu-1604-x86_64", "action": "provision", "inventory": "c:\\workspace\\puppetlabs-motd\\" }' | bundle exec ruby .\spec\fixtures\modules\provision\tasks\abs.rb
 # bash / zshell ...
  echo '{ "platform": "ubuntu-1604-x86_64", "action": "provision", "inventory": "/home/tp/workspace/puppetlabs-motd/" }' | bundle exec ruby spec/fixtures/modules/provision/tasks/abs.rb
 ```
 
-
 Testing using bolt, the second step
-```
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --targets localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/provision
+
+```ruby
+bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --targets localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/provision
 ```
