@@ -10,6 +10,11 @@
     "test_path": {
       "description": "Location of the test files. Defaults to './spec/acceptance'",
       "type": "Optional[String[1]]"
+    },
+    "format": {
+      "description": "",
+      "type": "Enum[progress, documentation]",
+      "default": "progress"
     }
   },
   "files": [

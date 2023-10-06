@@ -4,8 +4,8 @@
 require 'puppet_litmus'
 require_relative '../lib/task_helper'
 
-def run_tests(sut, test_path)
-  test = "bundle exec rspec #{test_path} --format progress"
+def run_tests(sut, test_path, format)
+  test = "bundle exec rspec #{test_path} --format #{format}"
   options = {
     env: {
       'TARGET_HOST' => sut
@@ -25,8 +25,10 @@ test_path = if params['test_path'].nil?
             else
               params['test_path']
             end
+format = params['format']
+
 begin
-  result = run_tests(sut, test_path)
+  result = run_tests(sut, test_path, format)
   puts result.to_json
   exit 0
 rescue StandardError => e
