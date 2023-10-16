@@ -28,6 +28,11 @@ def install_ssh_components(distro, version, container)
         'yum clean all; '\
         'yum install -y sudo openssh-server openssh-clients"')
     else
+      # If systemd is running for init, ensure systemd has finished starting up before proceeding:
+      check_init_cmd = 'if [[ "$(readlink /proc/1/exe)" == "/usr/lib/systemd/systemd" ]]; then '\
+            'count=0 ; while ! [[ "$(systemctl is-system-running)" =~ ^running|degraded$ && $count > 20 ]]; '\
+            'do sleep 0.1 ; count=$((count+1)) ; done ; fi'
+      run_local_command("docker exec #{container} bash -c '#{check_init_cmd}'")
       run_local_command("docker exec #{container} yum install -y sudo openssh-server openssh-clients")
     end
     ssh_folder = run_local_command("docker exec #{container} ls /etc/ssh/")
@@ -68,11 +73,13 @@ def fix_ssh(distro, version, container)
     # https://bugzilla.redhat.com/show_bug.cgi?id=1728777
     run_local_command("docker exec #{container} sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd") if distro =~ %r{redhat|centos} && version =~ %r{^7}
 
-    if !%r{^(7|8|2)}.match?(version)
+    if !%r{^(7|8|9|2)}.match?(version)
       run_local_command("docker exec #{container} service sshd restart")
     else
       run_local_command("docker exec #{container} /usr/sbin/sshd")
     end
+  when %r{sles}
+    run_local_command("docker exec #{container} /usr/sbin/sshd")
   else
     raise "distribution #{distro} not yet supported on docker"
   end
