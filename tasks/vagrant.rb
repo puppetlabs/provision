@@ -80,16 +80,6 @@ def configure_remoting(platform, remoting_config_path, password)
     command = "vagrant ssh-config > \"#{remoting_config_path}\""
     run_local_command(command, @vagrant_env)
     remoting_config = Net::SSH::Config.load(remoting_config_path, 'default')
-    case platform
-    when %r{debian.*|ubuntu.*}
-      restart_command = 'service ssh restart'
-    when %r{sles-11.*|(centos|redhat|oracle)-[56].*}
-      restart_command = 'service sshd restart'
-    when %r{centos.*|redhat.*|oracle.*|sles.*}
-      restart_command = 'systemctl restart sshd.service'
-    else
-      raise ArgumentError, "Unsupported Platform: '#{platform}'"
-    end
     # Pre-configure sshd on the platform prior to handing back
     ssh_params = {
       port: remoting_config['port'],
@@ -104,6 +94,15 @@ def configure_remoting(platform, remoting_config_path, password)
     ) do |session|
       session.exec!('sudo su -c "cp -r .ssh /root/."')
       session.exec!('sudo su -c "sed -i \"s/.*PermitUserEnvironment\s.*/PermitUserEnvironment yes/g\" /etc/ssh/sshd_config"')
+      systemctl = session.exec!('which systemctl 2>/dev/null')
+      restart_command = if systemctl.strip.empty?
+                          # Debian and Ubuntu use 'ssh' and the EL/Suse family use 'sshd'. This will catch either.
+                          'service ssh restart || service sshd restart'
+                        else
+                          # On Debian/Ubuntu sshd is an alias to the 'ssh' service, and on the EL/Suse families
+                          # 'sshd' is the service name, so 'sshd.service' works for all:
+                          'systemctl restart sshd.service'
+                        end
       session.exec!("sudo su -c \"#{restart_command}\"")
     end
   else
