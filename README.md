@@ -2,8 +2,7 @@
 
 [![Code Owners](https://img.shields.io/badge/owners-DevX--team-blue)](https://github.com/puppetlabs/provision/blob/main/CODEOWNERS)
 ![ci](https://github.com/puppetlabs/provision/actions/workflows/ci.yml/badge.svg)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/puppetlabs/provision)
-
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/puppetlabs/provision
 Simple tasks to provision and tear down containers, instances and virtual machines.
 
 ## Table of Contents
