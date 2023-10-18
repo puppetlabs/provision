@@ -18,6 +18,7 @@ Simple tasks to provision and tear down containers, instances and virtual machin
     * [Provision Service](#provision_service)
 4. [Limitations - OS compatibility, etc.](#limitations)
 5. [Development - Guide for contributing to the module](#development)
+6. [License - Additional information in regards to licensing](#license)
 
 ## Description
 
@@ -352,3 +353,7 @@ Testing using bolt, the second step
 ```ruby
 bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --targets localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/provision
 ```
+
+## License
+
+This codebase is licensed under Apache 2.0. However, the open source dependencies included in this codebase might be subject to other software licenses such as AGPL, GPL2.0, and MIT.
