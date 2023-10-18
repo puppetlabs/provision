@@ -18,7 +18,7 @@ Simple tasks to provision and tear down containers, instances and virtual machin
     * [Provision Service](#provision_service)
 4. [Limitations - OS compatibility, etc.](#limitations)
 5. [Development - Guide for contributing to the module](#development)
-6. [License - Additional information in regards to licensing](#licensing)
+6. [License - Additional information in regards to licensing](#license)
 
 ## Description
 
