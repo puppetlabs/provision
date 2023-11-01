@@ -134,7 +134,9 @@ Ran on 1 node in 1.54 seconds
 
 Given an docker image name it will spin up that container and setup external ssh on that platform. For helpful docker tips look [here](https://github.com/puppetlabs/litmus_image/blob/main/README.md)
 
-provision
+Containers by default will be managed in the current [docker context](https://docs.docker.com/engine/context/working-with-contexts/), on the [DOCKER_HOST](https://docs.docker.com/engine/reference/commandline/cli/#environment-variables), or on localhost if nether are configured.
+
+#### Provision
 
 ```ruby
 $ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --targets localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/provision
@@ -167,7 +169,7 @@ These defaults can be overriden by passing the flags with different values i.e.
 bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --targets localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/provision vars='{ "docker_run_opts": ["-p 8086:8086", "-p 3000:3000"]}'
 ```
 
-tear_down
+#### Tear down
 
 ```ruby
 $ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --targets localhost  action=tear_down inventory=/Users/tp/workspace/git/provision node_name=localhost:2222
