@@ -165,7 +165,8 @@ def provision(image, inventory_location, vars)
   begin
     # Use the current docker context to determine the docker hostname
     docker_context = JSON.parse(run_local_command('docker context inspect'))[0]
-    hostname = URI.parse(docker_context['Endpoints']['docker']['Host']).host || hostname
+    docker_uri = URI.parse(docker_context['Endpoints']['docker']['Host'])
+    hostname = docker_uri.host unless docker_uri.host.nil? || docker_uri.host.empty?
   rescue RuntimeError
     # old clients may not support docker context
   end
