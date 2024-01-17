@@ -161,7 +161,7 @@ def provision(image, inventory_location, vars)
   distro = os_release_facts['ID']
   version = os_release_facts['VERSION_ID']
 
-  hostname = (ENV['DOCKER_HOST'].nil? || ENV['DOCKER_HOST'].empty?) ? 'localhost' : URI.parse(ENV['DOCKER_HOST']).host || ENV['DOCKER_HOST']
+  hostname = (ENV['DOCKER_HOST'].nil? || ENV['DOCKER_HOST'].empty?) ? 'localhost' : URI.parse(ENV.fetch('DOCKER_HOST', nil)).host || ENV.fetch('DOCKER_HOST', nil)
   begin
     # Use the current docker context to determine the docker hostname
     docker_context = JSON.parse(run_local_command('docker context inspect'))[0]

@@ -46,7 +46,7 @@ class ProvisionService
       request.body = if job_url
                        { url: job_url, VMs: machines }.to_json
                      else
-                       { github_token: ENV['GITHUB_TOKEN'], VMs: machines }.to_json
+                       { github_token: ENV.fetch('GITHUB_TOKEN', nil), VMs: machines }.to_json
                      end
     when 'delete'
       request = Net::HTTP::Delete.new(uri, headers)
@@ -89,14 +89,14 @@ class ProvisionService
     # Call the provision service with the information necessary and write the inventory file locally
 
     if ENV['GITHUB_RUN_ID']
-      job_url = ENV['GITHUB_URL'] || "https://api.github.com/repos/#{ENV['GITHUB_REPOSITORY']}/actions/runs/#{ENV['GITHUB_RUN_ID']}"
+      job_url = ENV['GITHUB_URL'] || "https://api.github.com/repos/#{ENV.fetch('GITHUB_REPOSITORY', nil)}/actions/runs/#{ENV['GITHUB_RUN_ID']}"
     else
       puts 'Using GITHUB_TOKEN as no GITHHUB_RUN_ID found'
     end
     uri = URI.parse(ENV['SERVICE_URL'] || default_uri)
-    cloud = ENV['CLOUD']
-    region = ENV['REGION']
-    zone = ENV['ZONE']
+    cloud = ENV.fetch('CLOUD', nil)
+    region = ENV.fetch('REGION', nil)
+    zone = ENV.fetch('ZONE', nil)
     if job_url.nil? && vars
       data = JSON.parse(vars.tr(';', ','))
       job_url = data['job_url']

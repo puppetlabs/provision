@@ -213,18 +213,18 @@ platform = params['platform']
 action = params['action']
 node_name = params['node_name']
 inventory_location = sanitise_inventory_location(params['inventory'])
-enable_synced_folder = params['enable_synced_folder'].nil? ? ENV['VAGRANT_ENABLE_SYNCED_FOLDER'] : params['enable_synced_folder']
+enable_synced_folder = params['enable_synced_folder'].nil? ? ENV.fetch('VAGRANT_ENABLE_SYNCED_FOLDER', nil) : params['enable_synced_folder']
 if enable_synced_folder.is_a?(String)
   enable_synced_folder = enable_synced_folder.casecmp('true').zero? ? true : false
 end
-provider            = params['provider'].nil? ? ENV['VAGRANT_PROVIDER'] : params['provider']
-cpus                = params['cpus'].nil? ? ENV['VAGRANT_CPUS'] : params['cpus']
-memory              = params['memory'].nil? ? ENV['VAGRANT_MEMORY'] : params['memory']
-hyperv_vswitch      = params['hyperv_vswitch'].nil? ? ENV['VAGRANT_HYPERV_VSWITCH'] : params['hyperv_vswitch']
-hyperv_smb_username = params['hyperv_smb_username'].nil? ? ENV['VAGRANT_HYPERV_SMB_USERNAME'] : params['hyperv_smb_username']
-hyperv_smb_password = params['hyperv_smb_password'].nil? ? ENV['VAGRANT_HYPERV_SMB_PASSWORD'] : params['hyperv_smb_password']
-box_url             = params['box_url'].nil? ? ENV['VAGRANT_BOX_URL'] : params['box_url']
-password            = params['password'].nil? ? ENV['VAGRANT_PASSWORD'] : params['password']
+provider            = params['provider'].nil? ? ENV.fetch('VAGRANT_PROVIDER', nil) : params['provider']
+cpus                = params['cpus'].nil? ? ENV.fetch('VAGRANT_CPUS', nil) : params['cpus']
+memory              = params['memory'].nil? ? ENV.fetch('VAGRANT_MEMORY', nil) : params['memory']
+hyperv_vswitch      = params['hyperv_vswitch'].nil? ? ENV.fetch('VAGRANT_HYPERV_VSWITCH', nil) : params['hyperv_vswitch']
+hyperv_smb_username = params['hyperv_smb_username'].nil? ? ENV.fetch('VAGRANT_HYPERV_SMB_USERNAME', nil) : params['hyperv_smb_username']
+hyperv_smb_password = params['hyperv_smb_password'].nil? ? ENV.fetch('VAGRANT_HYPERV_SMB_PASSWORD', nil) : params['hyperv_smb_password']
+box_url             = params['box_url'].nil? ? ENV.fetch('VAGRANT_BOX_URL', nil) : params['box_url']
+password            = params['password'].nil? ? ENV.fetch('VAGRANT_PASSWORD', nil) : params['password']
 raise 'specify a node_name when tearing down' if action == 'tear_down' && node_name.nil?
 raise 'specify a platform when provisioning' if action == 'provision' && platform.nil?
 
