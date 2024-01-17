@@ -54,7 +54,7 @@ def generate_vagrantfile(file_path, platform, enable_synced_folder, provider, cp
                      ''
                    end
   vf = <<~VF
-    Vagrant.configure(\"2\") do |config|
+    Vagrant.configure("2") do |config|
       config.vm.box = '#{platform}'
       config.vm.boot_timeout = 600
       config.ssh.insert_key = false
