@@ -67,12 +67,6 @@ RSpec/StubbedMock:
   Exclude:
     - 'spec/tasks/abs_spec.rb'
 
-# Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Style/CollectionCompact:
-  Exclude:
-    - 'tasks/vagrant.rb'
-
 # Offense count: 14
 # This cop supports safe autocorrection (--autocorrect).
 Style/FileWrite:
@@ -85,14 +79,6 @@ Style/FileWrite:
     - 'tasks/update_site_pp.rb'
     - 'tasks/vagrant.rb'
 
-# Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-# Configuration parameters: AllowedMethods.
-# AllowedMethods: nonzero?
-Style/IfWithBooleanLiteralBranches:
-  Exclude:
-    - 'tasks/vagrant.rb'
-
 # Offense count: 7
 Style/MixinUsage:
   Exclude:
@@ -100,10 +86,3 @@ Style/MixinUsage:
     - 'tasks/docker.rb'
     - 'tasks/docker_exp.rb'
     - 'tasks/vagrant.rb'
-
-# Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-# Configuration parameters: Methods.
-Style/RedundantArgument:
-  Exclude:
-    - 'tasks/update_node_pp.rb'

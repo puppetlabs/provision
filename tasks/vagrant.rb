@@ -86,7 +86,7 @@ def configure_remoting(platform, remoting_config_path, password)
       keys: remoting_config['identityfile'],
       password: password,
       verbose: :debug
-    }.reject { |_k, v| v.nil? }
+    }.compact
     Net::SSH.start(
       remoting_config['hostname'],
       remoting_config['user'],
@@ -214,9 +214,7 @@ action = params['action']
 node_name = params['node_name']
 inventory_location = sanitise_inventory_location(params['inventory'])
 enable_synced_folder = params['enable_synced_folder'].nil? ? ENV.fetch('VAGRANT_ENABLE_SYNCED_FOLDER', nil) : params['enable_synced_folder']
-if enable_synced_folder.is_a?(String)
-  enable_synced_folder = enable_synced_folder.casecmp('true').zero? ? true : false
-end
+enable_synced_folder = enable_synced_folder.casecmp('true').zero? if enable_synced_folder.is_a?(String)
 provider            = params['provider'].nil? ? ENV.fetch('VAGRANT_PROVIDER', nil) : params['provider']
 cpus                = params['cpus'].nil? ? ENV.fetch('VAGRANT_CPUS', nil) : params['cpus']
 memory              = params['memory'].nil? ? ENV.fetch('VAGRANT_MEMORY', nil) : params['memory']
