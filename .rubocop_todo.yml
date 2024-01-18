@@ -67,18 +67,6 @@ RSpec/StubbedMock:
   Exclude:
     - 'spec/tasks/abs_spec.rb'
 
-# Offense count: 14
-# This cop supports safe autocorrection (--autocorrect).
-Style/FileWrite:
-  Exclude:
-    - 'tasks/abs.rb'
-    - 'tasks/docker.rb'
-    - 'tasks/docker_exp.rb'
-    - 'tasks/provision_service.rb'
-    - 'tasks/update_node_pp.rb'
-    - 'tasks/update_site_pp.rb'
-    - 'tasks/vagrant.rb'
-
 # Offense count: 7
 Style/MixinUsage:
   Exclude:
