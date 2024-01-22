@@ -17,7 +17,7 @@ def update_file(manifest, target_node)
     # remove the last bracket in the manifest
     existing_manifest.pop
     existing_manifest.push("\n  #{manifest}\n}")
-    final_manifest = existing_manifest.join('')
+    final_manifest = existing_manifest.join
   else
     final_manifest = "node '#{target_node}' \n{\n  #{manifest} \n}"
   end
