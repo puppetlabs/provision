@@ -26,11 +26,11 @@ class ABSProvision
   def provision(platform, inventory_location, vars)
     uri = URI.parse("https://#{abs_host}/api/v2/request")
     jenkins_build_url = if ENV['CI'] == 'true' && ENV['TRAVIS'] == 'true'
-                          ENV['TRAVIS_JOB_WEB_URL']
+                          ENV.fetch('TRAVIS_JOB_WEB_URL', nil)
                         elsif ENV['CI'] == 'True' && ENV['APPVEYOR'] == 'True'
-                          "https://ci.appveyor.com/project/#{ENV['APPVEYOR_REPO_NAME']}/build/job/#{ENV['APPVEYOR_JOB_ID']}"
+                          "https://ci.appveyor.com/project/#{ENV.fetch('APPVEYOR_REPO_NAME', nil)}/build/job/#{ENV.fetch('APPVEYOR_JOB_ID', nil)}"
                         elsif ENV['GITHUB_ACTIONS'] == 'true'
-                          "https://github.com/#{ENV['GITHUB_REPOSITORY']}/actions/runs/#{ENV['GITHUB_RUN_ID']}"
+                          "https://github.com/#{ENV.fetch('GITHUB_REPOSITORY', nil)}/actions/runs/#{ENV.fetch('GITHUB_RUN_ID', nil)}"
                         else
                           'https://litmus_manual'
                         end
@@ -91,17 +91,18 @@ class ABSProvision
     data.each do |host|
       if platform_uses_ssh(host['type'])
         node = { 'uri' => host['hostname'],
-                 'config' => { 'transport' => 'ssh', 'ssh' => { 'user' => ENV['ABS_USER'], 'host-key-check' => false, 'connect-timeout' => 120 } },
+                 'config' => { 'transport' => 'ssh', 'ssh' => { 'user' => ENV.fetch('ABS_USER', nil), 'host-key-check' => false, 'connect-timeout' => 120 } },
                  'facts' => { 'provisioner' => 'abs', 'platform' => host['type'], 'job_id' => job_id } }
         if !ENV['ABS_SSH_PRIVATE_KEY'].nil? && !ENV['ABS_SSH_PRIVATE_KEY'].empty?
-          node['config']['ssh']['private-key'] = ENV['ABS_SSH_PRIVATE_KEY']
+          node['config']['ssh']['private-key'] = ENV.fetch('ABS_SSH_PRIVATE_KEY', nil)
         else
-          node['config']['ssh']['password'] = ENV['ABS_PASSWORD']
+          node['config']['ssh']['password'] = ENV.fetch('ABS_PASSWORD', nil)
         end
         group_name = 'ssh_nodes'
       else
         node = { 'uri' => host['hostname'],
-                 'config' => { 'transport' => 'winrm', 'winrm' => { 'user' => ENV['ABS_WIN_USER'], 'password' => ENV['ABS_PASSWORD'], 'ssl' => false, 'connect-timeout' => 120 } },
+                 'config' => { 'transport' => 'winrm',
+                               'winrm' => { 'user' => ENV.fetch('ABS_WIN_USER', nil), 'password' => ENV.fetch('ABS_PASSWORD', nil), 'ssl' => false, 'connect-timeout' => 120 } },
                  'facts' => { 'provisioner' => 'abs', 'platform' => host['type'], 'job_id' => job_id } }
         group_name = 'winrm_nodes'
       end

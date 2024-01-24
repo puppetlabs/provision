@@ -23,16 +23,16 @@ def install_ssh_components(distro, version, container)
       # sometimes the redhat 6 variant containers like to eat their rpmdb, leading to
       # issues with "rpmdb: unable to join the environment" errors
       # This "fix" is from https://www.srv24x7.com/criticalyum-main-error-rpmdb-open-failed/
-      run_local_command("docker exec #{container} bash -exc \"rm -f /var/lib/rpm/__db*; "\
-        'db_verify /var/lib/rpm/Packages; '\
-        'rpm --rebuilddb; '\
-        'yum clean all; '\
-        'yum install -y sudo openssh-server openssh-clients"')
+      run_local_command("docker exec #{container} bash -exc \"rm -f /var/lib/rpm/__db*; " \
+                        'db_verify /var/lib/rpm/Packages; ' \
+                        'rpm --rebuilddb; ' \
+                        'yum clean all; ' \
+                        'yum install -y sudo openssh-server openssh-clients"')
     else
       # If systemd is running for init, ensure systemd has finished starting up before proceeding:
-      check_init_cmd = 'if [[ "$(readlink /proc/1/exe)" == "/usr/lib/systemd/systemd" ]]; then '\
-            'count=0 ; while ! [[ "$(systemctl is-system-running)" =~ ^running|degraded$ && $count > 20 ]]; '\
-            'do sleep 0.1 ; count=$((count+1)) ; done ; fi'
+      check_init_cmd = 'if [[ "$(readlink /proc/1/exe)" == "/usr/lib/systemd/systemd" ]]; then ' \
+                       'count=0 ; while ! [[ "$(systemctl is-system-running)" =~ ^running|degraded$ && $count > 20 ]]; ' \
+                       'do sleep 0.1 ; count=$((count+1)) ; done ; fi'
       run_local_command("docker exec #{container} bash -c '#{check_init_cmd}'")
       run_local_command("docker exec #{container} yum install -y sudo openssh-server openssh-clients")
     end
@@ -74,10 +74,10 @@ def fix_ssh(distro, version, container)
     # https://bugzilla.redhat.com/show_bug.cgi?id=1728777
     run_local_command("docker exec #{container} sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd") if distro =~ %r{redhat|centos} && version =~ %r{^7}
 
-    if !%r{^(7|8|9|2)}.match?(version)
-      run_local_command("docker exec #{container} service sshd restart")
-    else
+    if %r{^(7|8|9|2)}.match?(version)
       run_local_command("docker exec #{container} /usr/sbin/sshd")
+    else
+      run_local_command("docker exec #{container} service sshd restart")
     end
   when %r{sles}
     run_local_command("docker exec #{container} /usr/sbin/sshd")
@@ -161,7 +161,7 @@ def provision(image, inventory_location, vars)
   distro = os_release_facts['ID']
   version = os_release_facts['VERSION_ID']
 
-  hostname = (ENV['DOCKER_HOST'].nil? || ENV['DOCKER_HOST'].empty?) ? 'localhost' : URI.parse(ENV['DOCKER_HOST']).host || ENV['DOCKER_HOST']
+  hostname = (ENV['DOCKER_HOST'].nil? || ENV['DOCKER_HOST'].empty?) ? 'localhost' : URI.parse(ENV.fetch('DOCKER_HOST', nil)).host || ENV.fetch('DOCKER_HOST', nil)
   begin
     # Use the current docker context to determine the docker hostname
     docker_context = JSON.parse(run_local_command('docker context inspect'))[0]

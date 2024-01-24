@@ -5,6 +5,7 @@ require:
 - rubocop-performance
 - rubocop-rspec
 AllCops:
+  NewCops: enable
   DisplayCopNames: true
   TargetRubyVersion: '2.6'
   Include:
@@ -81,3 +82,6 @@ Style/Documentation:
   - spec/**/*
 Style/WordArray:
   EnforcedStyle: brackets
+Style/FileWrite:
+  Description: Enforcing this rule might break the code in unexpected ways.
+  Enabled: false
