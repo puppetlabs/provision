@@ -1,0 +1,56 @@
+{
+  "puppet_task_version": 1,
+  "supports_noop": false,
+  "description": "Provision/Tear down an instance on LXD",
+  "parameters": {
+    "action": {
+      "description": "Action to perform, tear_down or provision",
+      "type": "Enum[provision, tear_down]",
+      "default": "provision"
+    },
+    "inventory": {
+      "description": "Location of the inventory file",
+      "type": "Optional[String[1]]"
+    },
+    "node_name": {
+      "description": "The name of the instance",
+      "type": "Optional[String[1]]"
+    },
+    "platform": {
+      "description": "LXD image to use, eg images:ubuntu/22.04",
+      "type": "Optional[String[1]]"
+    },
+    "profiles": {
+      "description": "LXD Profiles to apply",
+      "type": "Optional[Array[String[1]]]"
+    },
+    "storage": {
+      "description": "LXD Storage pool name",
+      "type": "Optional[String[1]]"
+    },
+    "instance_type": {
+      "description": "LXD Instance type",
+      "type": "Optional[String[1]]"
+    },
+    "vm": {
+      "description": "Provision as a virtual-machine instead of a container",
+      "type": "Optional[Boolean]"
+    },
+    "remote": {
+      "description": "LXD remote, defaults to the LXD client configured default remote",
+      "type": "Optional[String]"
+    },
+    "retries": {
+      "description": "On provision check the instance is accepting commands, will be deleted if retries exceeded, 0 to disable",
+      "type": "Integer",
+      "default": 5
+    },
+    "vars": {
+      "description": "YAML string of key/value pairs to add to the inventory vars section",
+      "type": "Optional[String[1]]"
+    }
+  },
+  "files": [
+    "provision/lib/task_helper.rb"
+  ]
+}
