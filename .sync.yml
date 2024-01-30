@@ -17,6 +17,8 @@ Gemfile:
     - gem: webmock
 Rakefile:
   changelog_project: provision
+  default_disabled_lint_checks:
+    - 140chars
 spec/spec_helper.rb:
   coverage_report: true
 .gitpod.Dockerfile:
