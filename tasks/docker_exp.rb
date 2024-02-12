@@ -5,6 +5,7 @@ require 'json'
 require 'yaml'
 require 'puppet_litmus'
 require_relative '../lib/task_helper'
+require_relative '../lib/docker_helper'
 
 # TODO: detect what shell to use
 @shell_command = 'bash -lc'
@@ -13,6 +14,7 @@ def provision(docker_platform, inventory_location, vars)
   include PuppetLitmus::InventoryManipulation
   inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
   inventory_hash = get_inventory_hash(inventory_full_path)
+  os_release_facts = docker_image_os_release_facts(docker_platform)
 
   docker_run_opts = ''
   unless vars.nil?
@@ -30,7 +32,7 @@ def provision(docker_platform, inventory_location, vars)
   fix_missing_tty_error_message(container_id) unless platform_is_windows?(docker_platform)
   node = { 'uri' => container_id,
            'config' => { 'transport' => 'docker', 'docker' => { 'shell-command' => @shell_command, 'connect-timeout' => 120 } },
-           'facts' => { 'provisioner' => 'docker_exp', 'container_id' => container_id, 'platform' => docker_platform } }
+           'facts' => { 'provisioner' => 'docker_exp', 'container_id' => container_id, 'platform' => docker_platform, 'os-release' => os_release_facts } }
   unless vars.nil?
     var_hash = YAML.safe_load(vars)
     node['vars'] = var_hash
