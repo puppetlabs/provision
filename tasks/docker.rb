@@ -41,8 +41,7 @@ def install_ssh_components(distro, version, container)
     run_local_command("docker exec #{container} ssh-keygen -t dsa -f /etc/ssh/ssh_host_dsa_key -N \"\"") unless ssh_folder.include?('ssh_host_dsa_key')
   when %r{opensuse}, %r{sles}
     run_local_command("docker exec #{container} zypper -n in openssh")
-    run_local_command("docker exec #{container} ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key")
-    run_local_command("docker exec #{container} ssh-keygen -t dsa -f /etc/ssh/ssh_host_dsa_key")
+    run_local_command("docker exec #{container} ssh-keygen -A")
     run_local_command("docker exec #{container} sed -ri \"s/^#?UsePAM .*/UsePAM no/\" /etc/ssh/sshd_config")
   when %r{archlinux}
     run_local_command("docker exec #{container} pacman --noconfirm -Sy archlinux-keyring")
