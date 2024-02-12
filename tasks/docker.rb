@@ -6,6 +6,7 @@ require 'uri'
 require 'yaml'
 require 'puppet_litmus'
 require_relative '../lib/task_helper'
+require_relative '../lib/docker_helper'
 
 def install_ssh_components(distro, version, container)
   case distro
@@ -86,33 +87,6 @@ def fix_ssh(distro, version, container)
   end
 end
 
-def get_image_os_release_facts(image)
-  os_release_facts = {}
-  begin
-    os_release = run_local_command("docker run --rm #{image} cat /etc/os-release")
-    # The or-release file is a newline-separated list of environment-like
-    # shell-compatible variable assignments.
-    re = '^(.+)=(.+)'
-    os_release.each_line do |line|
-      line = line.strip || line
-      next unless !line.nil? && !line.empty?
-
-      _, key, value = line.match(re).to_a
-      # The values seems to be quoted most of the time, however debian only quotes
-      # some of the values :/.  Parse it, as if it was a JSON string.
-      value = JSON.parse(value) unless value[0] != '"'
-      os_release_facts[key] = value
-    end
-  rescue StandardError
-    # fall through to parsing the id and version from the image if it doesn't have `/etc/os-release`
-    id, version_id = image.split(':')
-    id = id.sub(%r{/}, '_')
-    os_release_facts['ID'] = id
-    os_release_facts['VERSION_ID'] = version_id
-  end
-  os_release_facts
-end
-
 # We check for a local port open by binding a raw socket to it
 # If the socket can successfully bind, then the port is open
 def local_port_open?(port)
@@ -157,7 +131,7 @@ def provision(image, inventory_location, vars)
   include PuppetLitmus::InventoryManipulation
   inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
   inventory_hash = get_inventory_hash(inventory_full_path)
-  os_release_facts = get_image_os_release_facts(image)
+  os_release_facts = docker_image_os_release_facts(image)
   distro = os_release_facts['ID']
   version = os_release_facts['VERSION_ID']
 
@@ -174,7 +148,6 @@ def provision(image, inventory_location, vars)
   group_name = 'ssh_nodes'
   warn '!!! Using private port forwarding!!!'
   front_facing_port = random_ssh_forwarding_port
-  full_container_name = "#{image.gsub(%r{[/:.]}, '_')}-#{front_facing_port}"
 
   node = {
     'uri' => "#{hostname}:#{front_facing_port}",
@@ -184,7 +157,6 @@ def provision(image, inventory_location, vars)
     },
     'facts' => {
       'provisioner' => 'docker',
-      'container_name' => full_container_name,
       'platform' => image,
       'os-release' => os_release_facts
     }
@@ -201,15 +173,17 @@ def provision(image, inventory_location, vars)
   docker_run_opts += ' --cgroupns=host' if (image =~ %r{debian|ubuntu}) \
   && !docker_run_opts.include?('--cgroupns')
 
-  creation_command = "docker run -d -it --privileged --tmpfs /tmp:exec -p #{front_facing_port}:22 --name #{full_container_name} "
+  creation_command = "docker run -d -it --privileged --tmpfs /tmp:exec -p #{front_facing_port}:22 "
   creation_command += "#{docker_run_opts} " unless docker_run_opts.nil?
   creation_command += image
-  run_local_command(creation_command).strip
-  install_ssh_components(distro, version, full_container_name)
-  fix_ssh(distro, version, full_container_name)
+  container_id = run_local_command(creation_command).strip[0..11]
+  node['name'] = container_id
+  node['facts']['container_id'] = container_id
+  install_ssh_components(distro, version, container_id)
+  fix_ssh(distro, version, container_id)
   add_node_to_group(inventory_hash, node, group_name)
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
-  { status: 'ok', node_name: "#{hostname}:#{front_facing_port}", node: node }
+  { status: 'ok', node_name: container_id, node: node }
 end
 
 def tear_down(node_name, inventory_location)
@@ -219,7 +193,7 @@ def tear_down(node_name, inventory_location)
 
   inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
   node_facts = facts_from_node(inventory_hash, node_name)
-  remove_docker = "docker rm -f #{node_facts['container_name']}"
+  remove_docker = "docker rm -f #{node_facts['container_id']}"
   run_local_command(remove_docker)
   remove_node(inventory_hash, node_name)
   puts "Removed #{node_name}"
