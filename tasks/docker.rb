@@ -18,7 +18,7 @@ def install_ssh_components(distro, version, container)
     run_local_command("docker exec #{container} dnf clean all")
     run_local_command("docker exec #{container} dnf install -y sudo openssh-server openssh-clients")
     run_local_command("docker exec #{container} ssh-keygen -A")
-  when %r{centos}, %r{^el-}, %r{eos}, %r{oracle}, %r{ol}, %r{redhat}, %r{scientific}, %r{amzn}, %r{rocky}, %r{almalinux}
+  when %r{centos}, %r{^el-}, %r{eos}, %r{oracle}, %r{ol}, %r{rhel|redhat}, %r{scientific}, %r{amzn}, %r{rocky}, %r{almalinux}
     if version == '6'
       # sometimes the redhat 6 variant containers like to eat their rpmdb, leading to
       # issues with "rpmdb: unable to join the environment" errors
@@ -68,11 +68,12 @@ def fix_ssh(distro, version, container)
   case distro
   when %r{debian}, %r{ubuntu}
     run_local_command("docker exec #{container} service ssh restart")
-  when %r{centos}, %r{^el-}, %r{eos}, %r{fedora}, %r{ol}, %r{redhat}, %r{scientific}, %r{amzn}, %r{rocky}, %r{almalinux}
+  when %r{centos}, %r{^el-}, %r{eos}, %r{fedora}, %r{ol}, %r{rhel|redhat}, %r{scientific}, %r{amzn}, %r{rocky}, %r{almalinux}
     # Current RedHat/CentOs 7 packs an old version of pam, which are missing a
     # crucial patch when running unprivileged containers.  See:
     # https://bugzilla.redhat.com/show_bug.cgi?id=1728777
-    run_local_command("docker exec #{container} sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd") if distro =~ %r{redhat|centos} && version =~ %r{^7}
+    run_local_command("docker exec #{container} sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd") \
+      if distro =~ %r{rhel|redhat|centos} && version =~ %r{^7}
 
     if %r{^(7|8|9|2)}.match?(version)
       run_local_command("docker exec #{container} /usr/sbin/sshd")
