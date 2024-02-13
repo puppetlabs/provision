@@ -184,21 +184,6 @@ def provision(image, inventory_location, vars)
   { status: 'ok', node_name: container_id, node: node }
 end
 
-def tear_down(node_name, inventory_location)
-  include PuppetLitmus::InventoryManipulation
-  inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
-  raise "Unable to find '#{inventory_full_path}'" unless File.file?(inventory_full_path)
-
-  inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
-  node_facts = facts_from_node(inventory_hash, node_name)
-  remove_docker = "docker rm -f #{node_facts['container_id']}"
-  run_local_command(remove_docker)
-  remove_node(inventory_hash, node_name)
-  puts "Removed #{node_name}"
-  File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
-  { status: 'ok' }
-end
-
 params = JSON.parse($stdin.read)
 platform = params['platform']
 action = params['action']
@@ -221,7 +206,7 @@ end
 
 begin
   result = provision(platform, inventory_location, vars) if action == 'provision'
-  result = tear_down(node_name, inventory_location) if action == 'tear_down'
+  result = docker_tear_down(node_name, inventory_location) if action == 'tear_down'
   puts result.to_json
   exit 0
 rescue StandardError => e

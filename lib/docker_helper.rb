@@ -30,3 +30,18 @@ def docker_image_os_release_facts(image)
   end
   os_release_facts
 end
+
+def docker_tear_down(node_name, inventory_location)
+  include PuppetLitmus::InventoryManipulation
+  inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
+  raise "Unable to find '#{inventory_full_path}'" unless File.file?(inventory_full_path)
+
+  inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
+  node_facts = facts_from_node(inventory_hash, node_name)
+  remove_docker = "docker rm -f #{node_facts['container_id']}"
+  run_local_command(remove_docker)
+  remove_node(inventory_hash, node_name)
+  puts "Removed #{node_name}"
+  File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
+  { status: 'ok' }
+end
