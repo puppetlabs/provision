@@ -12,76 +12,75 @@ def install_ssh_components(distro, version, container)
   case distro
   when %r{debian}, %r{ubuntu}, %r{cumulus}
     warn '!!! Disabling ESM security updates for ubuntu - no access without privilege !!!'
-    run_local_command("docker exec #{container} rm -f /etc/apt/sources.list.d/ubuntu-esm-infra-trusty.list")
-    run_local_command("docker exec #{container} apt-get update")
-    run_local_command("docker exec #{container} apt-get install -y openssh-server openssh-client")
+    docker_exec(container, 'rm -f /etc/apt/sources.list.d/ubuntu-esm-infra-trusty.list')
+    docker_exec(container, 'apt-get update')
+    docker_exec(container, 'apt-get install -y openssh-server openssh-client')
   when %r{fedora}
-    run_local_command("docker exec #{container} dnf clean all")
-    run_local_command("docker exec #{container} dnf install -y sudo openssh-server openssh-clients")
-    run_local_command("docker exec #{container} ssh-keygen -A")
+    docker_exec(container, 'dnf clean all')
+    docker_exec(container, 'dnf install -y sudo openssh-server openssh-clients')
+    docker_exec(container, 'ssh-keygen -A')
   when %r{centos}, %r{^el-}, %r{eos}, %r{oracle}, %r{ol}, %r{rhel|redhat}, %r{scientific}, %r{amzn}, %r{rocky}, %r{almalinux}
     if version == '6'
       # sometimes the redhat 6 variant containers like to eat their rpmdb, leading to
       # issues with "rpmdb: unable to join the environment" errors
       # This "fix" is from https://www.srv24x7.com/criticalyum-main-error-rpmdb-open-failed/
-      run_local_command("docker exec #{container} bash -exc \"rm -f /var/lib/rpm/__db*; " \
+      docker_exec(container, 'bash -exc "rm -f /var/lib/rpm/__db*; "' \
                         'db_verify /var/lib/rpm/Packages; ' \
                         'rpm --rebuilddb; ' \
-                        'yum clean all; ' \
-                        'yum install -y sudo openssh-server openssh-clients"')
+                        'yum clean all')
     else
       # If systemd is running for init, ensure systemd has finished starting up before proceeding:
       check_init_cmd = 'if [[ "$(readlink /proc/1/exe)" == "/usr/lib/systemd/systemd" ]]; then ' \
                        'count=0 ; while ! [[ "$(systemctl is-system-running)" =~ ^running|degraded$ && $count > 20 ]]; ' \
                        'do sleep 0.1 ; count=$((count+1)) ; done ; fi'
-      run_local_command("docker exec #{container} bash -c '#{check_init_cmd}'")
-      run_local_command("docker exec #{container} yum install -y sudo openssh-server openssh-clients")
+      docker_exec(container, "bash -c '#{check_init_cmd}'")
     end
-    ssh_folder = run_local_command("docker exec #{container} ls /etc/ssh/")
-    run_local_command("docker exec #{container} ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N \"\"") unless ssh_folder.include?('ssh_host_rsa_key')
-    run_local_command("docker exec #{container} ssh-keygen -t dsa -f /etc/ssh/ssh_host_dsa_key -N \"\"") unless ssh_folder.include?('ssh_host_dsa_key')
+    docker_exec(container, 'yum install -y sudo openssh-server openssh-clients')
+    ssh_folder = docker_exec(container, 'ls /etc/ssh/')
+    docker_exec(container, 'ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N ""') unless ssh_folder.include?('ssh_host_rsa_key')
+    docker_exec(container, 'ssh-keygen -t dsa -f /etc/ssh/ssh_host_dsa_key -N ""') unless ssh_folder.include?('ssh_host_dsa_key')
   when %r{opensuse}, %r{sles}
-    run_local_command("docker exec #{container} zypper -n in openssh")
-    run_local_command("docker exec #{container} ssh-keygen -A")
-    run_local_command("docker exec #{container} sed -ri \"s/^#?UsePAM .*/UsePAM no/\" /etc/ssh/sshd_config")
+    docker_exec(container, 'zypper -n in openssh')
+    docker_exec(container, 'ssh-keygen -A')
+    docker_exec(container, 'sed -ri "s/^#?UsePAM .*/UsePAM no/" /etc/ssh/sshd_config')
   when %r{archlinux}
-    run_local_command("docker exec #{container} pacman --noconfirm -Sy archlinux-keyring")
-    run_local_command("docker exec #{container} pacman --noconfirm -Syu")
-    run_local_command("docker exec #{container} pacman -S --noconfirm openssh")
-    run_local_command("docker exec #{container} ssh-keygen -A")
-    run_local_command("docker exec #{container} sed -ri \"s/^#?UsePAM .*/UsePAM no/\" /etc/ssh/sshd_config")
-    run_local_command("docker exec #{container} systemctl enable sshd")
+    docker_exec(container, 'pacman --noconfirm -Sy archlinux-keyring')
+    docker_exec(container, 'pacman --noconfirm -Syu')
+    docker_exec(container, 'pacman -S --noconfirm openssh')
+    docker_exec(container, 'ssh-keygen -A')
+    docker_exec(container, 'sed -ri "s/^#?UsePAM .*/UsePAM no/" /etc/ssh/sshd_config')
+    docker_exec(container, 'systemctl enable sshd')
   else
     raise "distribution #{distro} not yet supported on docker"
   end
 
   # Make sshd directory, set root password
-  run_local_command("docker exec #{container} mkdir -p /var/run/sshd")
-  run_local_command("docker exec #{container} bash -c \"echo root:root | /usr/sbin/chpasswd\"")
+  docker_exec(container, 'mkdir -p /var/run/sshd')
+  docker_exec(container, 'bash -c "echo root:root | /usr/sbin/chpasswd"')
 end
 
 def fix_ssh(distro, version, container)
-  run_local_command("docker exec #{container} sed -ri \"s/^#?PermitRootLogin .*/PermitRootLogin yes/\" /etc/ssh/sshd_config")
-  run_local_command("docker exec #{container} sed -ri \"s/^#?PasswordAuthentication .*/PasswordAuthentication yes/\" /etc/ssh/sshd_config")
-  run_local_command("docker exec #{container} sed -ri \"s/^#?UseDNS .*/UseDNS no/\" /etc/ssh/sshd_config")
-  run_local_command("docker exec #{container} sed -e \"/HostKey.*ssh_host_e.*_key/ s/^#*/#/\" -ri /etc/ssh/sshd_config")
+  docker_exec(container, 'sed -ri "s/^#?PermitRootLogin .*/PermitRootLogin yes/" /etc/ssh/sshd_config')
+  docker_exec(container, 'sed -ri "s/^#?PasswordAuthentication .*/PasswordAuthentication yes/" /etc/ssh/sshd_config')
+  docker_exec(container, 'sed -ri "s/^#?UseDNS .*/UseDNS no/" /etc/ssh/sshd_config')
+  docker_exec(container, 'sed -e "/HostKey.*ssh_host_e.*_key/ s/^#*/#/" -ri /etc/ssh/sshd_config')
   case distro
   when %r{debian}, %r{ubuntu}
-    run_local_command("docker exec #{container} service ssh restart")
+    docker_exec(container, 'service ssh restart')
   when %r{centos}, %r{^el-}, %r{eos}, %r{fedora}, %r{ol}, %r{rhel|redhat}, %r{scientific}, %r{amzn}, %r{rocky}, %r{almalinux}
     # Current RedHat/CentOs 7 packs an old version of pam, which are missing a
     # crucial patch when running unprivileged containers.  See:
     # https://bugzilla.redhat.com/show_bug.cgi?id=1728777
-    run_local_command("docker exec #{container} sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd") \
+    docker_exec(container, 'sed "s@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g" -i /etc/pam.d/sshd') \
       if distro =~ %r{rhel|redhat|centos} && version =~ %r{^7}
 
     if %r{^(7|8|9|2)}.match?(version)
-      run_local_command("docker exec #{container} /usr/sbin/sshd")
+      docker_exec(container, '/usr/sbin/sshd')
     else
-      run_local_command("docker exec #{container} service sshd restart")
+      docker_exec(container, 'service sshd restart')
     end
   when %r{sles}
-    run_local_command("docker exec #{container} /usr/sbin/sshd")
+    docker_exec(container, '/usr/sbin/sshd')
   else
     raise "distribution #{distro} not yet supported on docker"
   end

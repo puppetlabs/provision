@@ -1,5 +1,9 @@
 # frozen_string_literal: true
 
+def docker_exec(container, command)
+  run_local_command("docker exec #{container} #{command}")
+end
+
 def docker_image_os_release_facts(image)
   os_release_facts = {}
   begin
