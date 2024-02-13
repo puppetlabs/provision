@@ -43,13 +43,6 @@ def install_ssh_components(distro, version, container)
     docker_exec(container, 'zypper -n in openssh')
     docker_exec(container, 'ssh-keygen -A')
     docker_exec(container, 'sed -ri "s/^#?UsePAM .*/UsePAM no/" /etc/ssh/sshd_config')
-  when %r{archlinux}
-    docker_exec(container, 'pacman --noconfirm -Sy archlinux-keyring')
-    docker_exec(container, 'pacman --noconfirm -Syu')
-    docker_exec(container, 'pacman -S --noconfirm openssh')
-    docker_exec(container, 'ssh-keygen -A')
-    docker_exec(container, 'sed -ri "s/^#?UsePAM .*/UsePAM no/" /etc/ssh/sshd_config')
-    docker_exec(container, 'systemctl enable sshd')
   else
     raise "distribution #{distro} not yet supported on docker"
   end
@@ -79,7 +72,7 @@ def install_ssh_components(distro, version, container)
     else
       docker_exec(container, 'service sshd restart')
     end
-  when %r{sles}
+  when %r{opensuse}, %r{sles}
     docker_exec(container, '/usr/sbin/sshd')
   else
     raise "distribution #{distro} not yet supported on docker"
