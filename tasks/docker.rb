@@ -57,23 +57,23 @@ def install_ssh_components(distro, version, container)
   # Make sshd directory, set root password
   docker_exec(container, 'mkdir -p /var/run/sshd')
   docker_exec(container, 'bash -c "echo root:root | /usr/sbin/chpasswd"')
-end
 
-def fix_ssh(distro, version, container)
+  # fix ssh
   docker_exec(container, 'sed -ri "s/^#?PermitRootLogin .*/PermitRootLogin yes/" /etc/ssh/sshd_config')
   docker_exec(container, 'sed -ri "s/^#?PasswordAuthentication .*/PasswordAuthentication yes/" /etc/ssh/sshd_config')
   docker_exec(container, 'sed -ri "s/^#?UseDNS .*/UseDNS no/" /etc/ssh/sshd_config')
   docker_exec(container, 'sed -e "/HostKey.*ssh_host_e.*_key/ s/^#*/#/" -ri /etc/ssh/sshd_config')
+  # Current RedHat/CentOs 7 packs an old version of pam, which are missing a
+  # crucial patch when running unprivileged containers.  See:
+  # https://bugzilla.redhat.com/show_bug.cgi?id=1728777
+  docker_exec(container, 'sed "s@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g" -i /etc/pam.d/sshd') \
+    if distro =~ %r{rhel|redhat|centos} && version =~ %r{^7}
+
+  # install ssh
   case distro
   when %r{debian}, %r{ubuntu}
     docker_exec(container, 'service ssh restart')
   when %r{centos}, %r{^el-}, %r{eos}, %r{fedora}, %r{ol}, %r{rhel|redhat}, %r{scientific}, %r{amzn}, %r{rocky}, %r{almalinux}
-    # Current RedHat/CentOs 7 packs an old version of pam, which are missing a
-    # crucial patch when running unprivileged containers.  See:
-    # https://bugzilla.redhat.com/show_bug.cgi?id=1728777
-    docker_exec(container, 'sed "s@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g" -i /etc/pam.d/sshd') \
-      if distro =~ %r{rhel|redhat|centos} && version =~ %r{^7}
-
     if %r{^(7|8|9|2)}.match?(version)
       docker_exec(container, '/usr/sbin/sshd')
     else
@@ -179,7 +179,6 @@ def provision(image, inventory_location, vars)
   node['name'] = container_id
   node['facts']['container_id'] = container_id
   install_ssh_components(distro, version, container_id)
-  fix_ssh(distro, version, container_id)
   add_node_to_group(inventory_hash, node, group_name)
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
   { status: 'ok', node_name: container_id, node: node }
