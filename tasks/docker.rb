@@ -126,14 +126,15 @@ def random_ssh_forwarding_port(start_port = 52_222, end_port = 52_999)
   random_ssh_forwarding_port(new_start_port, new_end_port)
 end
 
-def provision(image, inventory_location, vars)
+def provision(docker_platform, inventory_location, vars)
   include PuppetLitmus::InventoryManipulation
   inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
   inventory_hash = get_inventory_hash(inventory_full_path)
-  os_release_facts = docker_image_os_release_facts(image)
+  os_release_facts = docker_image_os_release_facts(docker_platform)
   distro = os_release_facts['ID']
   version = os_release_facts['VERSION_ID']
 
+  # support for ssh to remote docker
   hostname = (ENV['DOCKER_HOST'].nil? || ENV['DOCKER_HOST'].empty?) ? 'localhost' : URI.parse(ENV.fetch('DOCKER_HOST', nil)).host || ENV.fetch('DOCKER_HOST', nil)
   begin
     # Use the current docker context to determine the docker hostname
@@ -144,44 +145,57 @@ def provision(image, inventory_location, vars)
     # old clients may not support docker context
   end
 
-  group_name = 'ssh_nodes'
   warn '!!! Using private port forwarding!!!'
   front_facing_port = random_ssh_forwarding_port
 
-  node = {
+  inventory_node = {
     'uri' => "#{hostname}:#{front_facing_port}",
+    'alias' => "#{hostname}:#{front_facing_port}",
     'config' => {
       'transport' => 'ssh',
-      'ssh' => { 'user' => 'root', 'password' => 'root', 'port' => front_facing_port, 'host-key-check' => false, 'connect-timeout' => 120 }
+      'ssh' => {
+        'user' => 'root',
+        'password' => 'root',
+        'port' => front_facing_port,
+        'host-key-check' => false,
+        'connect-timeout' => 120
+      }
     },
     'facts' => {
       'provisioner' => 'docker',
-      'platform' => image,
+      'platform' => docker_platform,
       'os-release' => os_release_facts
     }
   }
+
   docker_run_opts = ''
   unless vars.nil?
     var_hash = YAML.safe_load(vars)
-    node['vars'] = var_hash
+    inventory_node['vars'] = var_hash
     docker_run_opts = var_hash['docker_run_opts'].flatten.join(' ') unless var_hash['docker_run_opts'].nil?
   end
 
-  docker_run_opts += ' --volume /sys/fs/cgroup:/sys/fs/cgroup:rw' if (image =~ %r{debian|ubuntu}) \
-  && !docker_run_opts.include?('--volume /sys/fs/cgroup:/sys/fs/cgroup')
-  docker_run_opts += ' --cgroupns=host' if (image =~ %r{debian|ubuntu}) \
-  && !docker_run_opts.include?('--cgroupns')
+  if docker_platform.match?(%r{debian|ubuntu})
+    docker_run_opts += ' --volume /sys/fs/cgroup:/sys/fs/cgroup:rw' unless docker_run_opts.include?('--volume /sys/fs/cgroup:/sys/fs/cgroup')
+    docker_run_opts += ' --cgroupns=host' unless docker_run_opts.include?('--cgroupns')
+  end
 
-  creation_command = "docker run -d -it --privileged --tmpfs /tmp:exec -p #{front_facing_port}:22 "
+  creation_command = 'docker run -d -it --privileged --tmpfs /tmp:exec '
+  creation_command += "-p #{front_facing_port}:22 "
   creation_command += "#{docker_run_opts} " unless docker_run_opts.nil?
-  creation_command += image
+  creation_command += docker_platform
+
   container_id = run_local_command(creation_command).strip[0..11]
-  node['name'] = container_id
-  node['facts']['container_id'] = container_id
+
   install_ssh_components(distro, version, container_id)
-  add_node_to_group(inventory_hash, node, group_name)
+
+  inventory_node['name'] = container_id
+  inventory_node['facts']['container_id'] = container_id
+
+  add_node_to_group(inventory_hash, inventory_node, 'ssh_nodes')
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
-  { status: 'ok', node_name: container_id, node: node }
+
+  { status: 'ok', node_name: inventory_node['name'], node: inventory_node }
 end
 
 params = JSON.parse($stdin.read)
