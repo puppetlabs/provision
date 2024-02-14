@@ -69,8 +69,3 @@ def token_from_fogfile(provider = 'abs')
 rescue StandardError
   puts 'Failed to get token from .fog file'
 end
-
-# Workaround for fixing the bash message in stderr when tty is missing
-def fix_missing_tty_error_message(container_id)
-  system("docker exec #{container_id} sed -i 's/^mesg n/tty -s \\&\\& mesg n/g' /root/.profile")
-end
