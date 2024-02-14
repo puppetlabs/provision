@@ -143,6 +143,7 @@ def provision(docker_platform, inventory_location, vars)
 
   inventory_node = {
     uri: "#{hostname}:#{front_facing_port}",
+    alias: "#{hostname}:#{front_facing_port}",
     config: {
       transport: 'ssh',
       ssh: {
