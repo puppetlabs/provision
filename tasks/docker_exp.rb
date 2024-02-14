@@ -49,7 +49,7 @@ def provision(docker_platform, inventory_location, vars)
 
   container_id = run_local_command(creation_command).strip[0..11]
 
-  fix_missing_tty_error_message(container_id) unless platform_is_windows?(docker_platform)
+  docker_fix_missing_tty_error_message(container_id) unless platform_is_windows?(docker_platform)
 
   inventory_node[:name] = container_id
   inventory_node[:uri] = container_id

@@ -45,3 +45,8 @@ def docker_tear_down(node_name, inventory_location)
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
   { status: 'ok' }
 end
+
+# Workaround for fixing the bash message in stderr when tty is missing
+def docker_fix_missing_tty_error_message(container_id)
+  system("docker exec #{container_id} sed -i 's/^mesg n/tty -s \\&\\& mesg n/g' /root/.profile")
+end
