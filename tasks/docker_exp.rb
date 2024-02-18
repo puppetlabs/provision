@@ -21,7 +21,6 @@ def provision(docker_platform, inventory_location, vars)
       'transport' => 'docker',
       'docker' => {
         'shell-command' => @shell_command,
-        'connect-timeout' => 120
       }
     },
     'facts' => {
