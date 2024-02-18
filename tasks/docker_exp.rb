@@ -43,7 +43,7 @@ def provision(docker_platform, inventory_location, vars)
     docker_run_opts += ' --cgroupns=host' unless docker_run_opts.include?('--cgroupns')
   end
 
-  creation_command = 'docker run -d -it --privileged --tmpfs /tmp:exec '
+  creation_command = 'docker run -d -it --privileged '
   creation_command += "#{docker_run_opts} " unless docker_run_opts.nil?
   creation_command += docker_platform
 
