@@ -101,7 +101,6 @@ class ProvisionService
       data = JSON.parse(vars.tr(';', ','))
       job_url = data['job_url']
     end
-    inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
     currnet_retry_count = 0
     begin
       params = platform_to_cloud_request_parameters(platform, cloud, region, zone)
@@ -127,17 +126,17 @@ class ProvisionService
       end
     end
 
-    if File.file?(inventory_full_path)
-      inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
+    if File.file?(inventory_location)
+      inventory_hash = inventory_hash_from_inventory_file(inventory_location)
       inventory_hash['groups'].each do |g|
         response_hash['groups'].each do |bg|
           g['targets'] = g['targets'] + bg['targets'] if g['name'] == bg['name']
         end
       end
-      File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
+      File.open(inventory_location, 'w') { |f| f.write inventory_hash.to_yaml }
     else
       FileUtils.mkdir_p(File.join(Dir.pwd, '/spec/fixtures'))
-      File.open(inventory_full_path, 'wb') do |f|
+      File.open(inventory_location, 'wb') do |f|
         f.write(YAML.dump(response_hash))
       end
     end
@@ -153,10 +152,9 @@ class ProvisionService
     # remove all provisioned resources
     uri = URI.parse(ENV['SERVICE_URL'] || default_uri)
 
-    inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
     # rubocop:disable Style/GuardClause
-    if File.file?(inventory_full_path)
-      inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
+    if File.file?(inventory_location)
+      inventory_hash = inventory_hash_from_inventory_file(inventory_location)
       facts = facts_from_node(inventory_hash, platform)
       job_id = facts['uuid']
       response = invoke_cloud_request(job_id, uri, '', 'delete', retry_attempts)
