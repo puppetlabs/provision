@@ -109,7 +109,7 @@ class LXDProvision
     @node_name = params.delete(:node_name)
     @vars = YAML.safe_load(params.delete(:vars) || '~')
 
-    @inventory_full_path = File.join(sanitise_inventory_location(params.delete(:inventory)), 'spec/fixtures/litmus_inventory.yaml')
+    @inventory_full_path = sanitise_inventory_location(params.delete(:inventory))
     raise "Unable to find '#{@inventory_full_path}'" unless (action == 'provision') || File.file?(@inventory_full_path)
 
     @inventory = get_inventory_hash(@inventory_full_path)

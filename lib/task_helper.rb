@@ -1,8 +1,19 @@
 # frozen_string_literal: true
 
 def sanitise_inventory_location(location)
-  # Inventory location is an optional task parameter. If not specified use the current directory
-  location.nil? ? Dir.pwd : location
+  # Inventory location is an optional task parameter.
+  location = location.nil? ? Dir.pwd : location
+  # If not specified use the current directory + inventory.yaml
+  if File.exist?(location) && File.directory?(location)
+    # DEPRECATED: puppet_litmus <= 1.4.0 support
+    if Gem.loaded_specs['puppet_litmus'].version <= Gem::Version.new('1.4.0')
+      File.join(location, 'spec', 'fixtures', 'litmus_inventory.yaml')
+    else
+      File.join(location, 'inventory.yaml')
+    end
+  else
+    location
+  end
 end
 
 def get_inventory_hash(inventory_full_path)

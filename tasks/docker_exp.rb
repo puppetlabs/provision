@@ -12,8 +12,7 @@ require_relative '../lib/docker_helper'
 
 def provision(docker_platform, inventory_location, vars)
   include PuppetLitmus::InventoryManipulation
-  inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
-  inventory_hash = get_inventory_hash(inventory_full_path)
+  inventory_hash = get_inventory_hash(inventory_location)
   os_release_facts = docker_image_os_release_facts(docker_platform)
 
   inventory_node = {
@@ -55,7 +54,7 @@ def provision(docker_platform, inventory_location, vars)
   inventory_node['facts']['container_id'] = container_id
 
   add_node_to_group(inventory_hash, inventory_node, 'docker_nodes')
-  File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
+  File.open(inventory_location, 'w') { |f| f.write inventory_hash.to_yaml }
 
   { status: 'ok', node_name: inventory_node['name'], node: inventory_node }
 end
