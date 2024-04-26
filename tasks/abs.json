@@ -26,6 +26,7 @@
     }
   },
   "files": [
-    "provision/lib/task_helper.rb"
+    "provision/lib/task_helper.rb",
+    "provision/lib/inventory_helper.rb"
   ]
 }

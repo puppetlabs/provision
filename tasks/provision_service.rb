@@ -4,15 +4,13 @@
 require 'json'
 require 'net/http'
 require 'yaml'
-require 'puppet_litmus'
 require 'etc'
 require_relative '../lib/task_helper'
+require_relative '../lib/inventory_helper'
 
 # Provision and teardown vms through provision service.
 class ProvisionService
   RETRY_COUNT = 3
-
-  include PuppetLitmus::InventoryManipulation
 
   def default_uri
     'https://facade-release-6f3kfepqcq-ew.a.run.app/v1/provision'
@@ -85,7 +83,7 @@ class ProvisionService
     end
   end
 
-  def provision(platform, inventory_location, vars, retry_attempts)
+  def provision(platform, inventory, vars, retry_attempts)
     # Call the provision service with the information necessary and write the inventory file locally
 
     if ENV['GITHUB_RUN_ID']
@@ -119,27 +117,15 @@ class ProvisionService
 
     unless vars.nil?
       var_hash = YAML.safe_load(vars)
-      response_hash['groups'].each do |bg|
-        bg['targets'].each do |trgts|
-          trgts['vars'] = var_hash
-        end
-      end
     end
 
-    if File.file?(inventory_location)
-      inventory_hash = inventory_hash_from_inventory_file(inventory_location)
-      inventory_hash['groups'].each do |g|
-        response_hash['groups'].each do |bg|
-          g['targets'] = g['targets'] + bg['targets'] if g['name'] == bg['name']
-        end
-      end
-      File.open(inventory_location, 'w') { |f| f.write inventory_hash.to_yaml }
-    else
-      FileUtils.mkdir_p(File.join(Dir.pwd, '/spec/fixtures'))
-      File.open(inventory_location, 'wb') do |f|
-        f.write(YAML.dump(response_hash))
+    response_hash['groups'].each do |bg|
+      bg['targets'].each do |trgts|
+        trgts['vars'] = var_hash if var_hash
+        inventory.add(trgts, bg['name'])
       end
     end
+    inventory.save
 
     {
       status: 'ok',
@@ -148,26 +134,22 @@ class ProvisionService
     }
   end
 
-  def tear_down(platform, inventory_location, _vars, retry_attempts)
+  def tear_down(node_name, inventory, _vars, retry_attempts)
     # remove all provisioned resources
     uri = URI.parse(ENV['SERVICE_URL'] || default_uri)
 
-    # rubocop:disable Style/GuardClause
-    if File.file?(inventory_location)
-      inventory_hash = inventory_hash_from_inventory_file(inventory_location)
-      facts = facts_from_node(inventory_hash, platform)
-      job_id = facts['uuid']
-      response = invoke_cloud_request(job_id, uri, '', 'delete', retry_attempts)
-      response.to_json
-    end
-    # rubocop:enable Style/GuardClause
+    node = inventory.lookup(name: node_name)
+    facts = node['facts']
+    job_id = facts['uuid']
+    response = invoke_cloud_request(job_id, uri, '', 'delete', retry_attempts)
+    response.to_json
   end
 
   def self.run
     params = JSON.parse($stdin.read)
     params.transform_keys!(&:to_sym)
     action, node_name, platform, vars, retry_attempts, inventory_location = params.values_at(:action, :node_name, :platform, :vars, :retry_attempts, :inventory)
-    inventory_location = sanitise_inventory_location(inventory_location)
+    inventory = InventoryHelper.open(inventory_location)
 
     runner = new
     begin
@@ -175,11 +157,11 @@ class ProvisionService
       when 'provision'
         raise 'specify a platform when provisioning' if platform.to_s.empty?
 
-        result = runner.provision(platform, inventory_location, vars, retry_attempts)
+        result = runner.provision(platform, inventory, vars, retry_attempts)
       when 'tear_down'
         raise 'specify a node_name when tearing down' if node_name.nil?
 
-        result = runner.tear_down(node_name, inventory_location, vars, retry_attempts)
+        result = runner.tear_down(node_name, inventory, vars, retry_attempts)
       else
         result = { _error: { kind: 'provision_service/argument_error', msg: "Unknown action '#{action}'" } }
       end

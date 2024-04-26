@@ -3,16 +3,14 @@
 
 require 'json'
 require 'yaml'
-require 'puppet_litmus'
 require_relative '../lib/task_helper'
 require_relative '../lib/docker_helper'
+require_relative '../lib/inventory_helper'
 
 # TODO: detect what shell to use
 @shell_command = 'bash -lc'
 
-def provision(docker_platform, inventory_location, vars)
-  include PuppetLitmus::InventoryManipulation
-  inventory_hash = get_inventory_hash(inventory_location)
+def provision(docker_platform, inventory, vars)
   os_release_facts = docker_image_os_release_facts(docker_platform)
 
   inventory_node = {
@@ -53,15 +51,14 @@ def provision(docker_platform, inventory_location, vars)
   inventory_node['uri'] = container_id
   inventory_node['facts']['container_id'] = container_id
 
-  add_node_to_group(inventory_hash, inventory_node, 'docker_nodes')
-  File.open(inventory_location, 'w') { |f| f.write inventory_hash.to_yaml }
+  inventory.add(inventory_node, 'docker_nodes').save
 
   { status: 'ok', node_name: inventory_node['name'], node: inventory_node }
 end
 
 params = JSON.parse($stdin.read)
 action = params['action']
-inventory_location = sanitise_inventory_location(params['inventory'])
+inventory = InventoryHelper.open(params['inventory'])
 node_name = params['node_name']
 platform = params['platform']
 vars = params['vars']
@@ -80,11 +77,15 @@ unless node_name.nil? ^ platform.nil?
 end
 
 begin
-  result = provision(platform, inventory_location, vars) if action == 'provision'
-  result = docker_tear_down(node_name, inventory_location) if action == 'tear_down'
+  result = provision(platform, inventory, vars) if action == 'provision'
+  if action == 'tear_down'
+    node = inventory.lookup(name: node_name, group: 'docker_nodes')
+    result = docker_tear_down(node['facts']['container_id'])
+    inventory.remove(node).save
+  end
   puts result.to_json
   exit 0
 rescue StandardError => e
-  puts({ _error: { kind: 'provision/docker_exp_failure', msg: e.message } }.to_json)
+  puts({ _error: { kind: 'provision/docker_exp_failure', msg: e.message, backtrace: e.backtrace } }.to_json)
   exit 1
 end
