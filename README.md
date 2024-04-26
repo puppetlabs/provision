@@ -103,7 +103,7 @@ $ cat ~/.fog
 ##### Setting up a new machine
 
 ```ruby
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::abs --targets localhost action=provision platform=ubuntu-1604-x86_64 inventory=/Users/tp/workspace/git/provision/inventory.yaml
+$ bundle exec bolt task run provision::abs --targets localhost action=provision platform=ubuntu-1604-x86_64
 
 Started on localhost...
 Finished on localhost:
@@ -118,7 +118,7 @@ Ran on 1 node in 1.44 seconds
 ##### Tearing down a finished machine
 
 ```ruby
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::abs --targets localhost  action=tear_down inventory=/Users/tp/workspace/git/provision/inventory.yaml node_name=yh6f4djvz7o3te6.delivery.puppetlabs.net
+$ bundle exec bolt task run provision::abs --targets localhost action=tear_down node_name=yh6f4djvz7o3te6.delivery.puppetlabs.net
 
 Started on localhost...
 Finished on localhost:
@@ -139,7 +139,7 @@ Containers by default will be managed in the current [docker context](https://do
 #### Provision
 
 ```ruby
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --targets localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/provision/inventory.yaml
+$ bundle exec bolt task run provision::docker --targets localhost action=provision platform=ubuntu:14.04
 
 Started on localhost...
 Finished on localhost:
@@ -166,13 +166,13 @@ These defaults can be overriden by passing the flags with different values i.e.
 ```
 
 ```ruby
-bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --targets localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/provision/inventory.yaml vars='{ "docker_run_opts": ["-p 8086:8086", "-p 3000:3000"]}'
+bundle exec bolt task run provision::docker --targets localhost action=provision platform=ubuntu:14.04 vars='{ "docker_run_opts": ["-p 8086:8086", "-p 3000:3000"]}'
 ```
 
 #### Tear down
 
 ```ruby
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --targets localhost  action=tear_down inventory=/Users/tp/workspace/git/provision/inventory.yaml node_name=localhost:2222
+$ bundle exec bolt task run provision::docker --targets localhost action=tear_down node_name=localhost:2222
 
 Started on localhost...
 Finished on localhost:
@@ -197,7 +197,7 @@ Tested with vagrant images:
 provision
 
 ```ruby
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vagrant --targets localhost  action=provision platform=ubuntu/xenial64 inventory=/Users/tp/workspace/git/provision/inventory.yaml
+$ bundle exec bolt task run provision::vagrant --targets localhost action=provision platform=ubuntu/xenial64
 
 Started on localhost...
 Finished on localhost:
@@ -212,7 +212,7 @@ Ran on 1 node in 51.98 seconds
 For multi-node provisioning, you can assign arbitrary tags to the nodes you deploy, by passing an optional YAML-string 'vars' to the bolt task. In the example below we are assigning the role of `k8s-controller` to the provisioned node.
 
 ```ruby
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vagrant --targets localhost  action=provision platform=ubuntu/xenial64 inventory=/Users/tp/workspace/git/provision vars='role: k8s-controller'
+$ bundle exec bolt task run provision::vagrant --targets localhost action=provision platform=ubuntu/xenial64 inventory=/Users/tp/workspace/git/provision vars='role: k8s-controller'
 ```
 
 sudo secure_path fix
@@ -223,7 +223,7 @@ This leads to errors when anything tries to execute `puppet` commands on the tes
 To add the Puppet agent binary path to the *secure_path* please run the `provision::fix_secure_path` Bolt task:
 
 ```ruby
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::fix_secure_path path=/opt/puppetlabs/bin -i inventory.yaml -t ssh_nodes
+$ bundle exec bolt task run provision::fix_secure_path path=/opt/puppetlabs/bin -i inventory.yaml -t ssh_nodes
 
 Started on 127.0.0.1:2222...
 Finished on 127.0.0.1:2222:
@@ -235,7 +235,7 @@ Ran on 1 target in 0.84 sec
 tear_down
 
 ```ruby
-$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vagrant --targets localhost  action=tear_down inventory=/Users/tp/workspace/git/provision/inventory.yaml node_name=127.0.0.1:2222
+$ bundle exec bolt task run provision::vagrant --targets localhost action=tear_down node_name=127.0.0.1:2222
 
 Started on localhost...
 Finished on localhost:
@@ -290,7 +290,7 @@ In the provision step you can invoke bundle exec rake 'litmus:provision_list[tes
 Manual invocation of the provision service task from a workflow can be done using:
 
 ```ruby
-bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::provision_service --targets localhost  action=provision platform=centos-7-v20200813 inventory=/Users/tp/workspace/git/provision/inventory.yaml vars='role: puppetserver'
+bundle exec bolt task run provision::provision_service --targets localhost action=provision platform=centos-7-v20200813 inventory=/Users/tp/workspace/git/provision/inventory.yaml vars='role: puppetserver'
 ```
 
 Or using Litmus:
@@ -326,7 +326,7 @@ provision
 
 ```powershell
 PS> $env:LITMUS_HYPERV_VSWITCH = 'internal_nat'
-PS> bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vagrant --targets localhost  action=provision platform=centos/7 inventory=/Users/tp/workspace/git/provision/inventory.yaml hyperv_smb_username=tp hyperv_smb_password=notMyrealPassword
+PS> bundle exec bolt task run provision::vagrant --targets localhost action=provision platform=centos/7 hyperv_smb_username=tp hyperv_smb_password=notMyrealPassword
 
 Started on localhost...
 Finished on localhost:
@@ -359,7 +359,7 @@ Testing/development/debugging it is better to use ruby directly, you will need t
 Testing using bolt, the second step
 
 ```ruby
-bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::docker --targets localhost  action=provision platform=ubuntu:14.04 inventory=/Users/tp/workspace/git/provision/inventory.yaml
+bundle exec bolt task run provision::docker --targets localhost action=provision platform=ubuntu:14.04
 ```
 
 ## License

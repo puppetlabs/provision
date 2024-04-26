@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'fileutils'
 require 'spec_helper'
 require 'webmock/rspec'
 require_relative '../../tasks/lxd'
@@ -7,23 +8,13 @@ require 'yaml'
 
 RSpec::Matchers.define_negated_matcher :not_raise_error, :raise_error
 
-RSpec.shared_context('with tmpdir') do
-  let(:tmpdir) { @tmpdir } # rubocop:disable RSpec/InstanceVariable
-
-  around(:each) do |example|
-    Dir.mktmpdir('rspec-provision_test') do |t|
-      @tmpdir = t
-      example.run
-    end
-  end
-end
-
 describe 'provision::lxd' do
+  include_context('with tmpdir')
+
   let(:lxd) { LXDProvision.new }
 
-  let(:inventory_dir) { "#{tmpdir}/spec/fixtures" }
-  let(:inventory_file) { "#{inventory_dir}/litmus_inventory.yaml" }
-  let(:inventory_hash) { get_inventory_hash(inventory_file) }
+  let(:inventory_file) { tmpdir }
+  let(:inventory) { InventoryHelper.open(inventory_file) }
 
   let(:provision_input) do
     {
@@ -114,12 +105,6 @@ describe 'provision::lxd' do
     }
   end
 
-  include_context('with tmpdir')
-
-  before(:each) do
-    FileUtils.mkdir_p(inventory_dir)
-  end
-
   describe '.run' do
     let(:task_input) { {} }
     let(:imposter) { instance_double('LXDProvision') }
@@ -171,9 +156,6 @@ describe 'provision::lxd' do
         expect(lxd).to receive(:run_local_command)
           .with("lxc -q exec #{lxd_remote}:#{container_id} uptime")
 
-        LXDProvision.new.add_node_to_group(inventory_hash, JSON.parse(provision_output[:node].to_json), 'lxd_nodes')
-
-        expect(File).to receive(:write).with(inventory_file, JSON.parse(inventory_hash.to_json).to_yaml)
         expect(lxd.task(**provision_input)).to eq(provision_output)
       end
 
@@ -198,27 +180,22 @@ describe 'provision::lxd' do
     end
 
     context 'action=tear_down' do
-      before(:each) do
-        File.write(inventory_file, JSON.parse(inventory_hash.to_json).to_yaml)
-      end
-
       it 'tears down successfully' do
+        inventory.add(provision_output[:node], 'lxd_nodes').save
+
         expect(lxd).to receive(:run_local_command)
           .with("lxc -q delete #{lxd_remote}:#{container_id} -f")
-
-        LXDProvision.new.add_node_to_group(inventory_hash, JSON.parse(provision_output[:node].to_json), 'lxd_nodes')
-        File.write(inventory_file, inventory_hash.to_yaml)
 
         expect(lxd.task(**tear_down_input)).to eq(tear_down_output)
       end
 
       it 'expect to raise error if no inventory' do
-        File.delete(inventory_file)
-        expect { lxd.task(**tear_down_input) }.to raise_error(StandardError, %r{Unable to find})
+        expect { lxd.task(**tear_down_input) }.to raise_error(RuntimeError, %r{Failed to lookup target #{container_id}})
       end
 
       it 'expect to raise error if node_name not in inventory' do
-        expect { lxd.task(**tear_down_input) }.to raise_error(StandardError, %r{node_name #{container_id} not found in inventory})
+        inventory.save
+        expect { lxd.task(**tear_down_input) }.to raise_error(RuntimeError, %r{Failed to lookup target #{container_id}})
       end
     end
   end

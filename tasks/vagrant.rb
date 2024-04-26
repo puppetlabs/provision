@@ -8,6 +8,7 @@ require 'puppet_litmus'
 require 'fileutils'
 require 'net/ssh'
 require_relative '../lib/task_helper'
+require_relative '../lib/inventory_helper'
 
 def vagrant_version
   return @vagrant_version if defined?(@vagrant_version)
@@ -115,7 +116,7 @@ def configure_remoting(platform, remoting_config_path, password)
   remoting_config
 end
 
-def provision(platform, inventory_location, enable_synced_folder, provider, cpus, memory, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password, box_url, password, vars)
+def provision(platform, inventory, enable_synced_folder, provider, cpus, memory, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password, box_url, password, vars)
   if platform_is_windows?(platform) && !supports_windows_platform?
     raise "To provision a Windows VM with this task you must have vagrant 2.2.0 or later installed; vagrant seems to be installed at v#{vagrant_version}"
   end
@@ -124,10 +125,8 @@ def provision(platform, inventory_location, enable_synced_folder, provider, cpus
     provider = on_windows? ? 'hyperv' : 'virtualbox'
   end
 
-  include PuppetLitmus
-  inventory_hash = get_inventory_hash(inventory_location)
-  vagrant_dirs = Dir.glob("#{File.join(File.dirname(inventory_location), '.vagrant')}/*/").map { |d| File.basename(d) }
-  @vagrant_env = File.expand_path(File.join(File.dirname(inventory_location), '.vagrant', get_vagrant_dir(platform, vagrant_dirs)))
+  vagrant_dirs = Dir.glob("#{File.join(File.dirname(inventory.location), '.vagrant')}/*/").map { |d| File.basename(d) }
+  @vagrant_env = File.expand_path(File.join(File.dirname(inventory.location), '.vagrant', get_vagrant_dir(platform, vagrant_dirs)))
   FileUtils.mkdir_p @vagrant_env
   generate_vagrantfile(File.join(@vagrant_env, 'Vagrantfile'), platform, enable_synced_folder, provider, cpus, memory, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password, box_url)
   command = "vagrant up --provider #{provider}"
@@ -140,6 +139,7 @@ def provision(platform, inventory_location, enable_synced_folder, provider, cpus
 
   if platform_uses_ssh(platform)
     node = {
+      'name' => node_name,
       'uri' => node_name,
       'config' => {
         'transport' => 'ssh',
@@ -166,6 +166,7 @@ def provision(platform, inventory_location, enable_synced_folder, provider, cpus
     # TODO: Need to figure out where SSL comes from
     remote_config['uses_ssl'] ||= false # TODO: Is the default _actually_ false?
     node = {
+      'name' => node_name,
       'uri' => node_name,
       'config' => {
         'transport' => 'winrm',
@@ -190,23 +191,17 @@ def provision(platform, inventory_location, enable_synced_folder, provider, cpus
     var_hash = YAML.safe_load(vars)
     node['vars'] = var_hash
   end
-  add_node_to_group(inventory_hash, node, group_name)
-  File.open(inventory_location, 'w') { |f| f.write inventory_hash.to_yaml }
+  inventory.add(node, group_name).save
   { status: 'ok', node_name: node_name, node: node }
 end
 
-def tear_down(node_name, inventory_location)
-  include PuppetLitmus
+def tear_down(node_name, inventory)
   command = 'vagrant destroy -f'
-  if File.file?(inventory_location)
-    inventory_hash = inventory_hash_from_inventory_file(inventory_location)
-    vagrant_env = facts_from_node(inventory_hash, node_name)['vagrant_env']
-    run_local_command(command, vagrant_env)
-    remove_node(inventory_hash, node_name)
-    FileUtils.rm_r(vagrant_env)
-  end
-  warn "Removed #{node_name}"
-  File.open(inventory_location, 'w') { |f| f.write inventory_hash.to_yaml }
+  node = inventory.lookup(name: node_name, group: 'ssh_nodes')
+  vagrant_env = node['facts']['vagrant_env']
+  run_local_command(command, vagrant_env)
+  FileUtils.rm_r(vagrant_env)
+  inventory.remote(node).save
   { status: 'ok' }
 end
 
@@ -216,7 +211,7 @@ platform = params['platform']
 action = params['action']
 node_name = params['node_name']
 vars = params['vars']
-inventory_location = sanitise_inventory_location(params['inventory'])
+inventory = InventoryHelper.open(params['inventory'])
 enable_synced_folder = params['enable_synced_folder'].nil? ? ENV.fetch('VAGRANT_ENABLE_SYNCED_FOLDER', nil) : params['enable_synced_folder']
 enable_synced_folder = enable_synced_folder.casecmp('true').zero? if enable_synced_folder.is_a?(String)
 provider            = params['provider'].nil? ? ENV.fetch('VAGRANT_PROVIDER', nil) : params['provider']
@@ -242,11 +237,8 @@ unless node_name.nil? ^ platform.nil?
 end
 
 begin
-  if action == 'provision'
-    result = provision(platform, inventory_location, enable_synced_folder, provider, cpus, memory, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password, box_url, password,
-vars)
-  end
-  result = tear_down(node_name, inventory_location) if action == 'tear_down'
+  result = provision(platform, inventory, enable_synced_folder, provider, cpus, memory, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password, box_url, password, vars) if action == 'provision'
+  result = tear_down(node_name, inventory) if action == 'tear_down'
   puts result.to_json
   exit 0
 rescue StandardError => e
