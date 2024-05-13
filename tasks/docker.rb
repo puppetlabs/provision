@@ -15,11 +15,7 @@ def install_ssh_components(distro, version, container)
     docker_exec(container, 'rm -f /etc/apt/sources.list.d/ubuntu-esm-infra-trusty.list')
     docker_exec(container, 'apt-get update')
     docker_exec(container, 'apt-get install -y openssh-server openssh-client')
-  when %r{fedora}
-    docker_exec(container, 'dnf clean all')
-    docker_exec(container, 'dnf install -y sudo openssh-server openssh-clients')
-    docker_exec(container, 'ssh-keygen -A')
-  when %r{centos}, %r{^el-}, %r{eos}, %r{oracle}, %r{ol}, %r{rhel|redhat}, %r{scientific}, %r{amzn}, %r{rocky}, %r{almalinux}
+  when %r{centos}, %r{^el-}, %r{eos}, %r{oracle}, %r{ol}, %r{rhel|redhat}, %r{scientific}, %r{amzn}, %r{rocky}, %r{almalinux}, %r{fedora}
     if version == '6'
       # sometimes the redhat 6 variant containers like to eat their rpmdb, leading to
       # issues with "rpmdb: unable to join the environment" errors
@@ -35,7 +31,8 @@ def install_ssh_components(distro, version, container)
                        'do sleep 0.1 ; count=$((count+1)) ; done ; fi'
       docker_exec(container, "bash -c '#{check_init_cmd}'")
     end
-    docker_exec(container, 'yum install -y sudo openssh-server openssh-clients')
+    packager = (version.to_i > 8) ? 'dnf' : 'yum'
+    docker_exec(container, "#{packager} install -y sudo openssh-server openssh-clients")
     ssh_folder = docker_exec(container, 'ls /etc/ssh/')
     docker_exec(container, 'ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N ""') unless ssh_folder.include?('ssh_host_rsa_key')
     docker_exec(container, 'ssh-keygen -t dsa -f /etc/ssh/ssh_host_dsa_key -N ""') unless ssh_folder.include?('ssh_host_dsa_key')
