@@ -1,18 +1,5 @@
 # frozen_string_literal: true
 
-def sanitise_inventory_location(location)
-  # Inventory location is an optional task parameter. If not specified use the current directory
-  location.nil? ? Dir.pwd : location
-end
-
-def get_inventory_hash(inventory_full_path)
-  if File.file?(inventory_full_path)
-    inventory_hash_from_inventory_file(inventory_full_path)
-  else
-    { 'version' => 2, 'groups' => [{ 'name' => 'docker_nodes', 'targets' => [] }, { 'name' => 'ssh_nodes', 'targets' => [] }, { 'name' => 'winrm_nodes', 'targets' => [] }] }
-  end
-end
-
 def run_local_command(command, dir = Dir.pwd)
   require 'open3'
   stdout, stderr, status = Open3.capture3(command, chdir: dir)

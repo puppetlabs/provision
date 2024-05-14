@@ -81,19 +81,10 @@ describe 'Docker Helper Functions' do
   end
 
   describe '.docker_tear_down' do
-    it 'expect to raise error if inventory file is not found' do
-      allow(File).to receive(:file?).and_return(false)
-      expect { docker_tear_down(container_id, inventory_location) }.to raise_error(RuntimeError, "Unable to find '#{inventory_location}/spec/fixtures/litmus_inventory.yaml'")
-    end
-
     it 'expect to return status ok' do
-      allow(File).to receive(:file?).with(full_inventory_location).and_return(true)
-      allow(File).to receive(:exist?).with(full_inventory_location).and_return(true)
-      allow(File).to receive(:open).with(full_inventory_location, anything).and_yield(StringIO.new(inventory_yaml.dup))
       allow(self).to receive(:run_local_command).with("docker rm -f #{container_id}")
-      allow(self).to receive(:remove_node).and_return(nil)
       expect {
-        expect(docker_tear_down(container_id, inventory_location)).to eql({ status: 'ok' })
+        expect(docker_tear_down(container_id)).to eql({ status: 'ok' })
       }.to output("Removed #{container_id}\n").to_stdout
     end
   end
