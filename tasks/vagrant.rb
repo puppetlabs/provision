@@ -115,7 +115,7 @@ def configure_remoting(platform, remoting_config_path, password)
   remoting_config
 end
 
-def provision(platform, inventory_location, enable_synced_folder, provider, cpus, memory, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password, box_url, password)
+def provision(platform, inventory_location, enable_synced_folder, provider, cpus, memory, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password, box_url, password, vars)
   if platform_is_windows?(platform) && !supports_windows_platform?
     raise "To provision a Windows VM with this task you must have vagrant 2.2.0 or later installed; vagrant seems to be installed at v#{vagrant_version}"
   end
@@ -186,6 +186,11 @@ def provision(platform, inventory_location, enable_synced_folder, provider, cpus
     }
     group_name = 'winrm_nodes'
   end
+  # Add the vars hash to the node if they are passed exists
+  unless vars.nil?
+    var_hash = YAML.safe_load(vars)
+    node['vars'] = var_hash
+  end
   add_node_to_group(inventory_hash, node, group_name)
   File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
   { status: 'ok', node_name: node_name, node: node }
@@ -212,6 +217,7 @@ warn params
 platform = params['platform']
 action = params['action']
 node_name = params['node_name']
+vars = params['vars']
 inventory_location = sanitise_inventory_location(params['inventory'])
 enable_synced_folder = params['enable_synced_folder'].nil? ? ENV.fetch('VAGRANT_ENABLE_SYNCED_FOLDER', nil) : params['enable_synced_folder']
 enable_synced_folder = enable_synced_folder.casecmp('true').zero? if enable_synced_folder.is_a?(String)
@@ -238,7 +244,7 @@ unless node_name.nil? ^ platform.nil?
 end
 
 begin
-  result = provision(platform, inventory_location, enable_synced_folder, provider, cpus, memory, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password, box_url, password) if action == 'provision'
+  result = provision(platform, inventory_location, enable_synced_folder, provider, cpus, memory, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password, box_url, password, vars) if action == 'provision'
   result = tear_down(node_name, inventory_location) if action == 'tear_down'
   puts result.to_json
   exit 0
