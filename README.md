@@ -209,6 +209,12 @@ Successful on 1 node: localhost
 Ran on 1 node in 51.98 seconds
 ```
 
+For multi-node provisioning, you can assign arbitrary tags to the nodes you deploy, by passing an optional YAML-string 'vars' to the bolt task. In the example below we are assigning the role of `k8s-controller` to the provisioned node.
+
+```ruby
+$ bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::vagrant --targets localhost  action=provision platform=ubuntu/xenial64 inventory=/Users/tp/workspace/git/provision vars='role: k8s-controller'
+```
+
 sudo secure_path fix
 
 As some Vagrant boxes do not allow ssh root logins, the **vagrant** user is used to login and *sudo* is used to execute privileged commands as root user.
@@ -284,13 +290,13 @@ In the provision step you can invoke bundle exec rake 'litmus:provision_list[tes
 Manual invocation of the provision service task from a workflow can be done using:
 
 ```ruby
-bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::provision_service --targets localhost  action=provision platform=centos-7-v20200813 inventory=/Users/tp/workspace/git/provision
+bundle exec bolt --modulepath /Users/tp/workspace/git/ task run provision::provision_service --targets localhost  action=provision platform=centos-7-v20200813 inventory=/Users/tp/workspace/git/provision vars='role: puppetserver'
 ```
 
 Or using Litmus:
 
 ```ruby
-bundle exec rake 'litmus:provision[provision_service, centos-7-v20200813]'
+bundle exec rake 'litmus:provision[provision_service, centos-7-v20200813, role: puppetserver]'
 ```
 
 #### Synced Folders
