@@ -89,7 +89,7 @@ describe 'provision::abs' do
       {
         action: 'provision',
         platform: 'redhat-8-x86_64',
-        inventory: tmpdir
+        inventory: inventory_file,
       }
     end
     let(:response_body) do
@@ -139,7 +139,7 @@ describe 'provision::abs' do
       {
         action: 'tear_down',
         node_name: 'foo-bar.test',
-        inventory: tmpdir
+        inventory: inventory_file
       }
     end
     let(:inventory_yaml) do

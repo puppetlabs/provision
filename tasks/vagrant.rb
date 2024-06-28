@@ -125,10 +125,9 @@ def provision(platform, inventory_location, enable_synced_folder, provider, cpus
   end
 
   include PuppetLitmus
-  inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
-  inventory_hash = get_inventory_hash(inventory_full_path)
-  vagrant_dirs = Dir.glob("#{File.join(inventory_location, '.vagrant')}/*/").map { |d| File.basename(d) }
-  @vagrant_env = File.expand_path(File.join(inventory_location, '.vagrant', get_vagrant_dir(platform, vagrant_dirs)))
+  inventory_hash = get_inventory_hash(inventory_location)
+  vagrant_dirs = Dir.glob("#{File.join(File.dirname(inventory_location), '.vagrant')}/*/").map { |d| File.basename(d) }
+  @vagrant_env = File.expand_path(File.join(File.dirname(inventory_location), '.vagrant', get_vagrant_dir(platform, vagrant_dirs)))
   FileUtils.mkdir_p @vagrant_env
   generate_vagrantfile(File.join(@vagrant_env, 'Vagrantfile'), platform, enable_synced_folder, provider, cpus, memory, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password, box_url)
   command = "vagrant up --provider #{provider}"
@@ -192,23 +191,22 @@ def provision(platform, inventory_location, enable_synced_folder, provider, cpus
     node['vars'] = var_hash
   end
   add_node_to_group(inventory_hash, node, group_name)
-  File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
+  File.open(inventory_location, 'w') { |f| f.write inventory_hash.to_yaml }
   { status: 'ok', node_name: node_name, node: node }
 end
 
 def tear_down(node_name, inventory_location)
   include PuppetLitmus
   command = 'vagrant destroy -f'
-  inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
-  if File.file?(inventory_full_path)
-    inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
+  if File.file?(inventory_location)
+    inventory_hash = inventory_hash_from_inventory_file(inventory_location)
     vagrant_env = facts_from_node(inventory_hash, node_name)['vagrant_env']
     run_local_command(command, vagrant_env)
     remove_node(inventory_hash, node_name)
     FileUtils.rm_r(vagrant_env)
   end
   warn "Removed #{node_name}"
-  File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
+  File.open(inventory_location, 'w') { |f| f.write inventory_hash.to_yaml }
   { status: 'ok' }
 end
 
