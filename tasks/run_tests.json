@@ -19,5 +19,6 @@
   },
   "files": [
     "provision/lib/task_helper.rb"
-  ]
+  ],
+  "private": true
 }

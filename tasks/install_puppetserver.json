@@ -15,5 +15,6 @@
       "description": "The number of retries in case of network connectivity failures",
       "type": "Optional[Integer]"
     }
-  }
+  },
+  "private": true
 }
