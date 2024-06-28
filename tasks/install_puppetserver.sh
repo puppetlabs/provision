@@ -21,7 +21,7 @@ fi
 
 parse_platform() {
   data=()
-  for x in $(echo $1 | tr "[/|-|-|:]" "\n")
+  for x in $(echo "$1" | tr "/|-|-|:" "\n")
   do
     data+=("$x")
   done
@@ -59,9 +59,8 @@ fetch_osfamily() {
 }
 
 fetch_collection() {
-  data=$(echo $1 | tr "-" "\n")
   myarr=()
-  for x in $(echo $1 | tr "-" "\n")
+  for x in $(echo "$1" | tr "-" "\n")
   do
     myarr+=("$x")
   done
@@ -100,14 +99,14 @@ fetch_codename() {
 }
 
 run_cmd() {
-  eval $1
+  eval "$1"
   rc=$?
 
   if test $rc -ne 0; then
     attempt_number=0
-    while test $attempt_number -lt $retry; do
+    while test $attempt_number -lt "$retry"; do
       echo "Retrying... [$((attempt_number + 1))/$retry]"
-      eval $1
+      eval "$1"
       rc=$?
 
       if test $rc -eq 0; then
@@ -133,10 +132,10 @@ if [[ "$platform" == "null" || "$collection" == "null" ]]; then
   exit 1
 fi
 
-osname=$(parse_platform $platform "osname")
-major_version=$(parse_platform $platform "majorversion")
-osfamily=$(fetch_osfamily $osname)
-collection=$(fetch_collection $collection)
+osname=$(parse_platform "$platform" "osname")
+major_version=$(parse_platform "$platform" "majorversion")
+osfamily=$(fetch_osfamily "$osname")
+collection=$(fetch_collection "$collection")
 
 if [[ "$collection" == "puppet5" ]]; then
   echo "puppet5 eol!"
@@ -149,7 +148,7 @@ if [[ "$osfamily" == "unsupported" ]]; then
 fi
 
 if [[ "$osfamily" == "debian" ]]; then
-  codename=$(fetch_codename $collection $major_version)
+  codename=$(fetch_codename "$collection $major_version")
   if [[ "$codename" == "unsupported" ]]; then
     echo "No builds for $platform"
     exit 1

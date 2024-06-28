@@ -7,34 +7,31 @@ else
   PE_RELEASE=$PT_version
 fi
 
-PE_LATEST=$(curl https://artifactory.delivery.puppetlabs.net/artifactory/generic_enterprise__local/${PE_RELEASE}/ci-ready/LATEST)
+PE_LATEST=$(curl https://artifactory.delivery.puppetlabs.net/artifactory/generic_enterprise__local/"${PE_RELEASE}"/ci-ready/LATEST)
 PE_FILE_NAME=puppet-enterprise-${PE_LATEST}-el-7-x86_64
 TAR_FILE=${PE_FILE_NAME}.tar
 DOWNLOAD_URL=https://artifactory.delivery.puppetlabs.net/artifactory/generic_enterprise__local/${PE_RELEASE}/ci-ready/${TAR_FILE}
 
 ## Download PE
-curl -o ${TAR_FILE} ${DOWNLOAD_URL}
-if [[ $? -ne 0 ]];then
- echo “Error: wget failed to download [${DOWNLOAD_URL}]”
+if ! curl -o "${TAR_FILE}" "${DOWNLOAD_URL}" ; then
+ echo "Error: failed to download [${DOWNLOAD_URL}]"
  exit 2
 fi
 
 ## Install PE
-tar xvf ${TAR_FILE}
-if [[ $? -ne 0 ]];then
- echo “Error: Failed to untar [${TAR_FILE}]”
+if ! tar xvf "${TAR_FILE}" ; then
+ echo "Error: Failed to untar [${TAR_FILE}]"
  exit 2
 fi
 
-cd ${PE_FILE_NAME}
-DISABLE_ANALYTICS=1 ./puppet-enterprise-installer -y -c ./conf.d/pe.conf
-if [[ $? -ne 0 ]];then
- echo “Error: Failed to install Puppet Enterprise. Please check the logs and call Bryan.x ”
+cd "${PE_FILE_NAME}" || exit 1
+if ! DISABLE_ANALYTICS=1 ./puppet-enterprise-installer -y -c ./conf.d/pe.conf ; then
+ echo "Error: Failed to install Puppet Enterprise. Please check the logs and call Bryan.x"
  exit 2
 fi
 
 ## Finalize configuration
-echo “Finalize PE install”
+echo "Finalize PE install"
 puppet agent -t
 # if [[ $? -ne 0 ]];then
 #  echo “Error: Agent run failed. Check the logs above...”
