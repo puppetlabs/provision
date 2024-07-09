@@ -2,6 +2,7 @@ require 'json'
 require 'rspec'
 require 'spec_helper'
 require 'net/ssh'
+require_relative '../../tasks/vagrant'
 
 describe 'vagrant' do
   let(:provider) { 'virtualbox' }
@@ -25,12 +26,11 @@ describe 'vagrant' do
     allow(File).to receive(:read).with(%r{#{tmpdir}.*\.vagrant}).and_return('some_unique_id')
     allow(Open3).to receive(:capture3).with(%r{vagrant ssh-config}, any_args).and_return(['', '', 0]).once
     allow(Net::SSH).to receive(:start).and_return(true)
-    require_relative '../../tasks/vagrant'
   end
 
   it 'provisions a new vagrant box when action is provision' do
-    expect { vagrant }.to output(%r{"status":"ok"}).to_stdout
-    expect { vagrant }.to output(%r{"platform":"generic/debian10"}).to_stdout
-    expect { vagrant }.to output(%r{"role":"worker1"}).to_stdout
+    expect { vagrant }.to raise_error(SystemExit).and output(
+      include('"status":"ok"', '"platform":"generic/debian10"', '"role":"worker1"'),
+    ).to_stdout
   end
 end

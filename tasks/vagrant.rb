@@ -205,43 +205,47 @@ def tear_down(node_name, inventory)
   { status: 'ok' }
 end
 
-params = JSON.parse($stdin.read)
-warn params
-platform = params['platform']
-action = params['action']
-node_name = params['node_name']
-vars = params['vars']
-inventory = InventoryHelper.open(params['inventory'])
-enable_synced_folder = params['enable_synced_folder'].nil? ? ENV.fetch('VAGRANT_ENABLE_SYNCED_FOLDER', nil) : params['enable_synced_folder']
-enable_synced_folder = enable_synced_folder.casecmp('true').zero? if enable_synced_folder.is_a?(String)
-provider            = params['provider'].nil? ? ENV.fetch('VAGRANT_PROVIDER', nil) : params['provider']
-cpus                = params['cpus'].nil? ? ENV.fetch('VAGRANT_CPUS', nil) : params['cpus']
-memory              = params['memory'].nil? ? ENV.fetch('VAGRANT_MEMORY', nil) : params['memory']
-hyperv_vswitch      = params['hyperv_vswitch'].nil? ? ENV.fetch('VAGRANT_HYPERV_VSWITCH', nil) : params['hyperv_vswitch']
-hyperv_smb_username = params['hyperv_smb_username'].nil? ? ENV.fetch('VAGRANT_HYPERV_SMB_USERNAME', nil) : params['hyperv_smb_username']
-hyperv_smb_password = params['hyperv_smb_password'].nil? ? ENV.fetch('VAGRANT_HYPERV_SMB_PASSWORD', nil) : params['hyperv_smb_password']
-box_url             = params['box_url'].nil? ? ENV.fetch('VAGRANT_BOX_URL', nil) : params['box_url']
-password            = params['password'].nil? ? ENV.fetch('VAGRANT_PASSWORD', nil) : params['password']
-raise 'specify a node_name when tearing down' if action == 'tear_down' && node_name.nil?
-raise 'specify a platform when provisioning' if action == 'provision' && platform.nil?
+def vagrant
+  params = JSON.parse($stdin.read)
+  warn params
+  platform = params['platform']
+  action = params['action']
+  node_name = params['node_name']
+  vars = params['vars']
+  inventory = InventoryHelper.open(params['inventory'])
+  enable_synced_folder = params['enable_synced_folder'].nil? ? ENV.fetch('VAGRANT_ENABLE_SYNCED_FOLDER', nil) : params['enable_synced_folder']
+  enable_synced_folder = enable_synced_folder.casecmp('true').zero? if enable_synced_folder.is_a?(String)
+  provider            = params['provider'].nil? ? ENV.fetch('VAGRANT_PROVIDER', nil) : params['provider']
+  cpus                = params['cpus'].nil? ? ENV.fetch('VAGRANT_CPUS', nil) : params['cpus']
+  memory              = params['memory'].nil? ? ENV.fetch('VAGRANT_MEMORY', nil) : params['memory']
+  hyperv_vswitch      = params['hyperv_vswitch'].nil? ? ENV.fetch('VAGRANT_HYPERV_VSWITCH', nil) : params['hyperv_vswitch']
+  hyperv_smb_username = params['hyperv_smb_username'].nil? ? ENV.fetch('VAGRANT_HYPERV_SMB_USERNAME', nil) : params['hyperv_smb_username']
+  hyperv_smb_password = params['hyperv_smb_password'].nil? ? ENV.fetch('VAGRANT_HYPERV_SMB_PASSWORD', nil) : params['hyperv_smb_password']
+  box_url             = params['box_url'].nil? ? ENV.fetch('VAGRANT_BOX_URL', nil) : params['box_url']
+  password            = params['password'].nil? ? ENV.fetch('VAGRANT_PASSWORD', nil) : params['password']
+  raise 'specify a node_name when tearing down' if action == 'tear_down' && node_name.nil?
+  raise 'specify a platform when provisioning' if action == 'provision' && platform.nil?
 
-unless node_name.nil? ^ platform.nil?
-  case action
-  when 'tear_down'
-    raise 'specify only a node_name, not platform, when tearing down'
-  when 'provision'
-    raise 'specify only a platform, not node_name, when provisioning'
-  else
-    raise 'specify only one of: node_name, platform'
+  unless node_name.nil? ^ platform.nil?
+    case action
+    when 'tear_down'
+      raise 'specify only a node_name, not platform, when tearing down'
+    when 'provision'
+      raise 'specify only a platform, not node_name, when provisioning'
+    else
+      raise 'specify only one of: node_name, platform'
+    end
+  end
+
+  begin
+    result = provision(platform, inventory, enable_synced_folder, provider, cpus, memory, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password, box_url, password, vars) if action == 'provision'
+    result = tear_down(node_name, inventory) if action == 'tear_down'
+    puts result.to_json
+    exit 0
+  rescue StandardError => e
+    puts({ _error: { kind: 'provision/vagrant_failure', msg: e.message } }.to_json)
+    exit 1
   end
 end
 
-begin
-  result = provision(platform, inventory, enable_synced_folder, provider, cpus, memory, hyperv_vswitch, hyperv_smb_username, hyperv_smb_password, box_url, password, vars) if action == 'provision'
-  result = tear_down(node_name, inventory) if action == 'tear_down'
-  puts result.to_json
-  exit 0
-rescue StandardError => e
-  puts({ _error: { kind: 'provision/vagrant_failure', msg: e.message } }.to_json)
-  exit 1
-end
+vagrant if __FILE__ == $PROGRAM_NAME
