@@ -1,37 +1,5 @@
 # frozen_string_literal: true
 
-def sanitise_inventory_location(location)
-  # Inventory location is an optional task parameter.
-  location = location.nil? ? Dir.pwd : location
-  # If not specified use the current directory + inventory.yaml
-  if File.exist?(location) && File.directory?(location)
-    # DEPRECATED: puppet_litmus <= 1.4.0 support
-    if Gem.loaded_specs['puppet_litmus'].version <= Gem::Version.new('1.4.0')
-      File.join(location, 'spec', 'fixtures', 'litmus_inventory.yaml')
-    else
-      File.join(location, 'inventory.yaml')
-    end
-  else
-    location
-  end
-end
-
-def get_inventory_hash(inventory_full_path)
-  if File.file?(inventory_full_path)
-    inventory_hash_from_inventory_file(inventory_full_path)
-  else
-    {
-      'version' => 2,
-      'groups' => [
-        { 'name' => 'docker_nodes', 'targets' => [] },
-        { 'name' => 'lxd_nodes', 'targets' => [] },
-        { 'name' => 'ssh_nodes', 'targets' => [] },
-        { 'name' => 'winrm_nodes', 'targets' => [] },
-      ]
-    }
-  end
-end
-
 def run_local_command(command, dir = Dir.pwd)
   require 'open3'
   stdout, stderr, status = Open3.capture3(command, chdir: dir)

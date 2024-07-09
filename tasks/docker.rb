@@ -4,9 +4,9 @@
 require 'json'
 require 'uri'
 require 'yaml'
-require 'puppet_litmus'
 require_relative '../lib/task_helper'
 require_relative '../lib/docker_helper'
+require_relative '../lib/inventory_helper'
 
 def install_ssh_components(distro, version, container)
   case distro
@@ -116,9 +116,7 @@ def random_ssh_forwarding_port(start_port = 52_222, end_port = 52_999)
   random_ssh_forwarding_port(new_start_port, new_end_port)
 end
 
-def provision(docker_platform, inventory_location, vars)
-  include PuppetLitmus::InventoryManipulation
-  inventory_hash = get_inventory_hash(inventory_location)
+def provision(docker_platform, inventory, vars)
   os_release_facts = docker_image_os_release_facts(docker_platform)
   distro = os_release_facts['ID']
   version = os_release_facts['VERSION_ID']
@@ -181,8 +179,7 @@ def provision(docker_platform, inventory_location, vars)
   inventory_node['name'] = container_id
   inventory_node['facts']['container_id'] = container_id
 
-  add_node_to_group(inventory_hash, inventory_node, 'ssh_nodes')
-  File.open(inventory_location, 'w') { |f| f.write inventory_hash.to_yaml }
+  inventory.add(inventory_node, 'ssh_nodes').save
 
   { status: 'ok', node_name: inventory_node['name'], node: inventory_node }
 end
@@ -191,7 +188,7 @@ params = JSON.parse($stdin.read)
 platform = params['platform']
 action = params['action']
 node_name = params['node_name']
-inventory_location = sanitise_inventory_location(params['inventory'])
+inventory = InventoryHelper.open(params['inventory'])
 vars = params['vars']
 raise 'specify a node_name when tearing down' if action == 'tear_down' && node_name.nil?
 raise 'specify a platform when provisioning' if action == 'provision' && platform.nil?
@@ -208,8 +205,12 @@ unless node_name.nil? ^ platform.nil?
 end
 
 begin
-  result = provision(platform, inventory_location, vars) if action == 'provision'
-  result = docker_tear_down(node_name, inventory_location) if action == 'tear_down'
+  result = provision(platform, inventory, vars) if action == 'provision'
+  if action == 'tear_down'
+    node = inventory.lookup(name: node_name, group: 'ssh_nodes')
+    result = docker_tear_down(node['facts']['container_id'])
+    inventory.remove(node).save
+  end
   puts result.to_json
   exit 0
 rescue StandardError => e

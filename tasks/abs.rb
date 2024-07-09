@@ -4,15 +4,13 @@
 require 'json'
 require 'net/http'
 require 'yaml'
-require 'puppet_litmus'
 require 'etc'
 require 'date'
 require_relative '../lib/task_helper'
+require_relative '../lib/inventory_helper'
 
 # Provision and teardown vms through ABS.
 class ABSProvision
-  include PuppetLitmus::InventoryManipulation
-
   # Enforces a k8s.infracore.puppet.net domain, but allows selection of prod,
   # stage, etc hostname from the environment variable +ABS_SUBDOMAIN+ so that
   # CI can test vms from staging.
@@ -23,7 +21,7 @@ class ABSProvision
     "#{subdomain}.k8s.infracore.puppet.net"
   end
 
-  def provision(platform, inventory_location, vars)
+  def provision(platform, inventory, vars)
     uri = URI.parse("https://#{abs_host}/api/v2/request")
     jenkins_build_url = if ENV['CI'] == 'true' && ENV['TRAVIS'] == 'true'
                           ENV.fetch('TRAVIS_JOB_WEB_URL', nil)
@@ -85,7 +83,6 @@ class ABSProvision
 
     raise "Timeout: unable to get a 200 response in #{poll_duration} seconds" if reply.code != '200'
 
-    inventory_hash = get_inventory_hash(inventory_location)
     data = JSON.parse(reply.body)
     data.each do |host|
       if platform_uses_ssh(host['type'])
@@ -109,31 +106,27 @@ class ABSProvision
         var_hash = YAML.safe_load(vars)
         node['vars'] = var_hash
       end
-      add_node_to_group(inventory_hash, node, group_name)
+      inventory.add(node, group_name)
     end
 
-    File.open(inventory_location, 'w') { |f| f.write inventory_hash.to_yaml }
+    inventory.save
     { status: 'ok', nodes: data.length }
   end
 
-  def tear_down(node_name, inventory_location)
-    if File.file?(inventory_location)
-      inventory_hash = inventory_hash_from_inventory_file(inventory_location)
-      facts = facts_from_node(inventory_hash, node_name)
-      platform = facts['platform']
-      job_id = facts['job_id']
-    end
+  def tear_down(node_name, inventory)
+    node = inventory.lookup(node_name, group: 'ssh_nodes')
 
     targets_to_remove = []
-    inventory_hash['groups'].each do |group|
-      group['targets'].each do |node|
-        targets_to_remove.push(node['uri']) if node['facts']['job_id'] == job_id
+    inventory['groups'].each do |group|
+      group['targets'].each do |job_node|
+        targets_to_remove.push(job_node) if job_node['facts']['job_id'] == node['facts']['job_id']
       end
     end
+
     uri = URI.parse("https://#{abs_host}/api/v2/return")
     headers = { 'X-AUTH-TOKEN' => token_from_fogfile('abs'), 'Content-Type' => 'application/json' }
-    payload = { 'job_id' => job_id,
-                'hosts' => [{ 'hostname' => node_name, 'type' => platform, 'engine' => 'vmpooler' }] }
+    payload = { 'job_id' => node['job_id'],
+                'hosts' => [{ 'hostname' => node['uri'], 'type' => node['facts']['platform'], 'engine' => 'vmpooler' }] }
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
     request = Net::HTTP::Post.new(uri.request_uri, headers)
@@ -143,16 +136,17 @@ class ABSProvision
     raise "Error: #{reply}: #{reply.message}" unless reply.code == '200'
 
     targets_to_remove.each do |target|
-      remove_node(inventory_hash, target)
+      inventory.remove(target)
     end
-    File.open(inventory_location, 'w') { |f| f.write inventory_hash.to_yaml }
-    { status: 'ok', removed: targets_to_remove }
+    inventory.save
+
+    { status: 'ok', removed: targets_to_remove.map { |t| t['name'] || t['uri'] } }
   end
 
   def task(action:, platform: nil, node_name: nil, inventory: nil, vars: nil, **_kwargs)
-    inventory_location = sanitise_inventory_location(inventory)
-    result = provision(platform, inventory_location, vars) if action == 'provision'
-    result = tear_down(node_name, inventory_location) if action == 'tear_down'
+    inventory = InventoryHelper.open(inventory)
+    result = provision(platform, inventory, vars) if action == 'provision'
+    result = tear_down(node_name, inventory) if action == 'tear_down'
     result
   end
 

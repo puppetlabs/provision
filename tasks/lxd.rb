@@ -3,15 +3,13 @@
 
 require 'json'
 require 'yaml'
-require 'puppet_litmus'
 require_relative '../lib/task_helper'
+require_relative '../lib/inventory_helper'
 
 # Provision and teardown instances on LXD
 class LXDProvision
-  include PuppetLitmus::InventoryManipulation
-
   attr_reader :node_name, :retries
-  attr_reader :platform, :inventory, :inventory_full_path, :vars, :action, :options
+  attr_reader :platform, :inventory, :vars, :action, :options
 
   def provision
     lxd_remote = options[:remote] || lxd_default_remote
@@ -76,28 +74,21 @@ class LXDProvision
 
     node[:vars] = vars unless vars.nil?
 
-    add_node_to_group(inventory, node, 'lxd_nodes')
-    save_inventory
+    inventory.add(node, 'lxd_nodes').save
 
     { status: 'ok', node_name: container_id, node: node }
   end
 
   def tear_down
-    config = config_from_node(inventory, node_name)
-    node_facts = facts_from_node(inventory, node_name)
+    node = inventory.lookup(node_name, group: 'lxd_nodes')
 
-    raise "node_name #{node_name} not found in inventory" unless config
+    raise "node_name #{node_name} not found in inventory" unless node
 
-    run_local_command("lxc -q delete #{config['lxd']['remote']}:#{node_facts['container_id']} -f")
+    run_local_command("lxc -q delete #{node['config']['lxd']['remote']}:#{node['facts']['container_id']} -f")
 
-    remove_node(inventory, node_name)
-    save_inventory
+    inventory.remove(node).save
 
     { status: 'ok' }
-  end
-
-  def save_inventory
-    File.write(inventory_full_path, JSON.parse(inventory.to_json).to_yaml)
   end
 
   def task(**params)
@@ -109,10 +100,7 @@ class LXDProvision
     @node_name = params.delete(:node_name)
     @vars = YAML.safe_load(params.delete(:vars) || '~')
 
-    @inventory_full_path = sanitise_inventory_location(params.delete(:inventory))
-    raise "Unable to find '#{@inventory_full_path}'" unless (action == 'provision') || File.file?(@inventory_full_path)
-
-    @inventory = get_inventory_hash(@inventory_full_path)
+    @inventory = InventoryHelper.open(params.delete(:inventory))
 
     @options = params.reject { |k, _v| k.start_with? '_' }
     method(action).call

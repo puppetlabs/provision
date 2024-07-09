@@ -5,17 +5,6 @@ require 'webmock/rspec'
 require_relative '../../tasks/abs'
 require 'yaml'
 
-RSpec.shared_context('with tmpdir') do
-  let(:tmpdir) { @tmpdir } # rubocop:disable RSpec/InstanceVariable
-
-  around(:each) do |example|
-    Dir.mktmpdir('rspec-provision_test') do |t|
-      @tmpdir = t
-      example.run
-    end
-  end
-end
-
 describe 'provision::abs' do
   let(:abs) { ABSProvision.new }
   let(:inventory_dir) { "#{tmpdir}/spec/fixtures" }
