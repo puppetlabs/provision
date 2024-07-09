@@ -138,7 +138,7 @@ class ProvisionService
     # remove all provisioned resources
     uri = URI.parse(ENV['SERVICE_URL'] || default_uri)
 
-    node = inventory.lookup(name: node_name)
+    node = inventory.lookup(node_name)
     facts = node['facts']
     job_id = facts['uuid']
     response = invoke_cloud_request(job_id, uri, '', 'delete', retry_attempts)
