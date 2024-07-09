@@ -207,7 +207,7 @@ end
 begin
   result = provision(platform, inventory, vars) if action == 'provision'
   if action == 'tear_down'
-    node = inventory.lookup(name: node_name, group: 'ssh_nodes')
+    node = inventory.lookup(node_name, group: 'ssh_nodes')
     result = docker_tear_down(node['facts']['container_id'])
     inventory.remove(node).save
   end

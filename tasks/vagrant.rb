@@ -197,7 +197,7 @@ end
 
 def tear_down(node_name, inventory)
   command = 'vagrant destroy -f'
-  node = inventory.lookup(name: node_name, group: 'ssh_nodes')
+  node = inventory.lookup(node_name, group: 'ssh_nodes')
   vagrant_env = node['facts']['vagrant_env']
   run_local_command(command, vagrant_env)
   FileUtils.rm_r(vagrant_env)
