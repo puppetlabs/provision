@@ -85,8 +85,7 @@ class ABSProvision
 
     raise "Timeout: unable to get a 200 response in #{poll_duration} seconds" if reply.code != '200'
 
-    inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
-    inventory_hash = get_inventory_hash(inventory_full_path)
+    inventory_hash = get_inventory_hash(inventory_location)
     data = JSON.parse(reply.body)
     data.each do |host|
       if platform_uses_ssh(host['type'])
@@ -113,14 +112,13 @@ class ABSProvision
       add_node_to_group(inventory_hash, node, group_name)
     end
 
-    File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
+    File.open(inventory_location, 'w') { |f| f.write inventory_hash.to_yaml }
     { status: 'ok', nodes: data.length }
   end
 
   def tear_down(node_name, inventory_location)
-    inventory_full_path = File.join(inventory_location, '/spec/fixtures/litmus_inventory.yaml')
-    if File.file?(inventory_full_path)
-      inventory_hash = inventory_hash_from_inventory_file(inventory_full_path)
+    if File.file?(inventory_location)
+      inventory_hash = inventory_hash_from_inventory_file(inventory_location)
       facts = facts_from_node(inventory_hash, node_name)
       platform = facts['platform']
       job_id = facts['job_id']
@@ -147,7 +145,7 @@ class ABSProvision
     targets_to_remove.each do |target|
       remove_node(inventory_hash, target)
     end
-    File.open(inventory_full_path, 'w') { |f| f.write inventory_hash.to_yaml }
+    File.open(inventory_location, 'w') { |f| f.write inventory_hash.to_yaml }
     { status: 'ok', removed: targets_to_remove }
   end
 
