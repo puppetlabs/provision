@@ -125,7 +125,7 @@ class ABSProvision
 
     uri = URI.parse("https://#{abs_host}/api/v2/return")
     headers = { 'X-AUTH-TOKEN' => token_from_fogfile('abs'), 'Content-Type' => 'application/json' }
-    payload = { 'job_id' => node['job_id'],
+    payload = { 'job_id' => node['facts']['job_id'],
                 'hosts' => [{ 'hostname' => node['uri'], 'type' => node['facts']['platform'], 'engine' => 'vmpooler' }] }
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
