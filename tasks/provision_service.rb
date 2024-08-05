@@ -145,10 +145,22 @@ class ProvisionService
     response.to_json
   end
 
+  # Runs the provision or tear_down action based on the provided parameters.
+  # Expects the following parameters in JSON format from stdin:
+  # - action: The action to perform ('provision' or 'tear_down').
+  # - node_name: The name of the node to provision or tear down.
+  # - platform: The platform to provision.
+  # - vars: Additional variables to assign to nodes.
+  # - retry_attempts: The number of retry attempts for provisioning or tearing down.
+  # - inventory_location: The location of the inventory file. If not provided, defaults to './spec/fixtures/litmus_inventory.yaml'.
+  # The result of the action is printed to stdout in JSON format.
+  # Exits with status 0 on success, or 1 on failure.
   def self.run
     params = JSON.parse($stdin.read)
     params.transform_keys!(&:to_sym)
     action, node_name, platform, vars, retry_attempts, inventory_location = params.values_at(:action, :node_name, :platform, :vars, :retry_attempts, :inventory)
+
+    inventory_location ||= File.join(Dir.pwd, '/spec/fixtures/litmus_inventory.yaml')
     inventory = InventoryHelper.open(inventory_location)
 
     runner = new
