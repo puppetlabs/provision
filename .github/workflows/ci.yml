@@ -7,15 +7,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  shellcheck:
-    name: Shellcheck
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: reviewdog/action-shellcheck@v1
-        with:
-          check_all_files_with_shebangs: "true"
-
   Spec:
     uses: "puppetlabs/cat-github-actions/.github/workflows/module_ci.yml@main"
+    with:
+      # This line enables shellcheck to be run on this repository
+      run_shellcheck: true
     secrets: "inherit"
