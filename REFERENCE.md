@@ -12,6 +12,7 @@
 * [`fix_secure_path`](#fix_secure_path): Add puppet agent bin directory to sudo secure_path
 * [`install_pe`](#install_pe): Installs PE on a target
 * [`install_puppetserver`](#install_puppetserver): install puppetserver community edition
+* [`lxd`](#lxd): Provision/Tear down an instance on LXD
 * [`provision_service`](#provision_service): Provision/Tear down a list of machines using the provisioning service
 * [`run_tests`](#run_tests): Run rspec tests against a target machine
 * [`update_node_pp`](#update_node_pp): Creates a manifest file for a target node on pe server
@@ -199,6 +200,80 @@ Data type: `Optional[Integer]`
 
 The number of retries in case of network connectivity failures
 
+### <a name="lxd"></a>`lxd`
+
+Provision/Tear down an instance on LXD
+
+**Supports noop?** false
+
+#### Parameters
+
+##### `action`
+
+Data type: `Enum[provision, tear_down]`
+
+Action to perform, tear_down or provision
+
+##### `inventory`
+
+Data type: `Optional[String[1]]`
+
+Location of the inventory file
+
+##### `node_name`
+
+Data type: `Optional[String[1]]`
+
+The name of the instance
+
+##### `platform`
+
+Data type: `Optional[String[1]]`
+
+LXD image to use, eg images:ubuntu/22.04
+
+##### `profiles`
+
+Data type: `Optional[Array[String[1]]]`
+
+LXD Profiles to apply
+
+##### `storage`
+
+Data type: `Optional[String[1]]`
+
+LXD Storage pool name
+
+##### `instance_type`
+
+Data type: `Optional[String[1]]`
+
+LXD Instance type
+
+##### `vm`
+
+Data type: `Optional[Boolean]`
+
+Provision as a virtual-machine instead of a container
+
+##### `remote`
+
+Data type: `Optional[String]`
+
+LXD remote, defaults to the LXD client configured default remote
+
+##### `retries`
+
+Data type: `Integer`
+
+On provision check the instance is accepting commands, will be deleted if retries exceeded, 0 to disable
+
+##### `vars`
+
+Data type: `Optional[String[1]]`
+
+YAML string of key/value pairs to add to the inventory vars section
+
 ### <a name="provision_service"></a>`provision_service`
 
 Provision/Tear down a list of machines using the provisioning service
@@ -262,6 +337,12 @@ The target SUT to run tests against
 Data type: `Optional[String[1]]`
 
 Location of the test files. Defaults to './spec/acceptance'
+
+##### `format`
+
+Data type: `Enum[progress, documentation]`
+
+
 
 ### <a name="update_node_pp"></a>`update_node_pp`
 
@@ -382,6 +463,12 @@ Path to the Vagrant Box URL
 Data type: `Optional[String[1]]`
 
 Password to use for Vagrant boxes without the default Vagrant insecure key
+
+##### `vars`
+
+Data type: `Optional[String[1]]`
+
+YAML string of key/value pairs to add to the inventory vars section
 
 ## Plans
 
