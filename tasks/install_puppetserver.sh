@@ -93,6 +93,8 @@ fetch_codename() {
     "18.04") codename="bionic";;
     "2004") codename="focal";;
     "20.04") codename="focal";;
+    "2204") codename="jammy";;
+    "22.04") codename="jammy";;
     *) codename="unsupported"
   esac
   echo $codename
