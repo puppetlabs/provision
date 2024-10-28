@@ -186,13 +186,13 @@ install puppetserver community edition
 
 Data type: `Optional[String[1]]`
 
-The name of the node
+The Puppet Server version
 
 ##### `platform`
 
 Data type: `Optional[String[1]]`
 
-The name of the node
+The operating system and version
 
 ##### `retry`
 
