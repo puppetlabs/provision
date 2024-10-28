@@ -4,11 +4,11 @@
   "description": "install puppetserver community edition",
   "parameters": {
     "collection": {
-      "description": "The name of the node",
+      "description": "The Puppet Server version",
       "type": "Optional[String[1]]"
     },
     "platform": {
-      "description": "The name of the node",
+      "description": "The operating system and version",
       "type": "Optional[String[1]]"
     },
     "retry": {

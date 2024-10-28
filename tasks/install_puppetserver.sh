@@ -150,7 +150,7 @@ if [[ "$osfamily" == "unsupported" ]]; then
 fi
 
 if [[ "$osfamily" == "debian" ]]; then
-  codename=$(fetch_codename "$collection $major_version")
+  codename=$(fetch_codename "$collection" "$major_version")
   if [[ "$codename" == "unsupported" ]]; then
     echo "No builds for $platform"
     exit 1
