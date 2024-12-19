@@ -6,6 +6,10 @@
       "version": {
       "description": "The release of PE you want to install e.g. 2018.1 (Default: 2019.2)",
       "type": "Optional[String[1]]"
+    },
+      "os": {
+      "description": "The os of PE you are installing e.g. ubuntu-22.04-amd64  (Default: el-7-x86_64)",
+      "type": "Optional[String[1]]"
     }
   },
   "private": true
