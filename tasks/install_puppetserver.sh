@@ -77,6 +77,8 @@ fetch_codename() {
       ;;
     "9") codename="stretch";;
     "10") codename="buster";;
+    "11") codename="bullseye";;
+    "12") codename="bookworm";;
     "1404")
       if [[ "$1" == "puppet6" ]]; then
         codename="trusty"
