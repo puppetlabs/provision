@@ -89,7 +89,7 @@ class ProvisionService
     if ENV['GITHUB_RUN_ID']
       job_url = ENV['GITHUB_URL'] || "https://api.github.com/repos/#{ENV.fetch('GITHUB_REPOSITORY', nil)}/actions/runs/#{ENV['GITHUB_RUN_ID']}"
     else
-      puts 'Using GITHUB_TOKEN as no GITHHUB_RUN_ID found'
+      puts 'Using GITHUB_TOKEN as no GITHUB_RUN_ID found'
     end
     uri = URI.parse(ENV['SERVICE_URL'] || default_uri)
     cloud = ENV.fetch('CLOUD', nil)
