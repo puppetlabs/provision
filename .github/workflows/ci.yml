@@ -12,4 +12,5 @@ jobs:
     with:
       # This line enables shellcheck to be run on this repository
       run_shellcheck: true
+      ruby_version: '3.1'
     secrets: "inherit"
