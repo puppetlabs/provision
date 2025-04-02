@@ -8,7 +8,7 @@ on:
 
 jobs:
   Spec:
-    uses: "puppetlabs/cat-github-actions/.github/workflows/module_ci.yml@main"
+    uses: "puppetlabs/cat-github-actions/.github/workflows/module_ci.yml@increase-default-ruby"
     with:
       # This line enables shellcheck to be run on this repository
       run_shellcheck: true
