@@ -1,5 +1,4 @@
 name: "ci"
-environment: ci
 
 on:
   pull_request:
@@ -10,6 +9,7 @@ on:
 jobs:
   Spec:
     uses: "puppetlabs/cat-github-actions/.github/workflows/module_ci.yml@main"
+    environment: ci
     with:
       # This line enables shellcheck to be run on this repository
       run_shellcheck: true
