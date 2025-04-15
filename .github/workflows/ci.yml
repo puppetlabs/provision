@@ -1,4 +1,5 @@
 name: "ci"
+environment: ci
 
 on:
   pull_request:
