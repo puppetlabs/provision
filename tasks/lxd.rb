@@ -52,8 +52,8 @@ class LXDProvision
 
     facts = {
       provisioner: 'lxd',
-      container_id: container_id,
-      platform: platform
+      container_id:,
+      platform:
     }
 
     options.each do |option|
@@ -69,14 +69,14 @@ class LXDProvision
           'shell-command': 'sh -lc'
         }
       },
-      facts: facts
+      facts:
     }
 
     node[:vars] = vars unless vars.nil?
 
     inventory.add(node, 'lxd_nodes').save
 
-    { status: 'ok', node_name: container_id, node: node }
+    { status: 'ok', node_name: container_id, node: }
   end
 
   def tear_down

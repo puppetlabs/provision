@@ -13,12 +13,12 @@ describe 'vagrant' do
   before(:each) do
     # Stub $stdin.read to return a predefined JSON string
     allow($stdin).to receive(:read).and_return({
-      platform: platform,
+      platform:,
       action: 'provision',
       vars: 'role: worker1',
       inventory: tmpdir,
       enable_synced_folder: 'true',
-      provider: provider,
+      provider:,
       hyperv_vswitch: 'hyperv_vswitch',
       hyperv_smb_username: 'hyperv_smb_username'
     }.to_json)
