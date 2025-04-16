@@ -85,7 +85,7 @@ def configure_remoting(platform, remoting_config_path, password)
     ssh_params = {
       port: remoting_config['port'],
       keys: remoting_config['identityfile'],
-      password: password,
+      password:,
       verbose: :debug
     }.compact
     Net::SSH.start(
@@ -192,7 +192,7 @@ def provision(platform, inventory, enable_synced_folder, provider, cpus, memory,
     node['vars'] = var_hash
   end
   inventory.add(node, group_name).save
-  { status: 'ok', node_name: node_name, node: node }
+  { status: 'ok', node_name:, node: }
 end
 
 def tear_down(node_name, inventory)

@@ -92,7 +92,7 @@ describe 'provision::lxd' do
         },
         facts: {
           provisioner: 'lxd',
-          container_id: container_id,
+          container_id:,
           platform: lxd_platform
         }
       }

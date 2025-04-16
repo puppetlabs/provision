@@ -19,9 +19,9 @@ class ProvisionService
   def platform_to_cloud_request_parameters(platform, cloud, region, zone)
     case platform
     when String
-      { cloud: cloud, region: region, zone: zone, images: [platform] }
+      { cloud:, region:, zone:, images: [platform] }
     when Array
-      { cloud: cloud, region: region, zone: zone, images: platform }
+      { cloud:, region:, zone:, images: platform }
     else
       platform[:cloud] = cloud unless cloud.nil?
       platform[:images] = [platform[:images]] if platform[:images].is_a?(String)
@@ -78,7 +78,7 @@ class ProvisionService
         body = response.body
         body_json = false
       end
-      puts({ _error: { kind: 'provision_service/service_error', msg: 'provision service returned an error', code: response.code, body: body, body_json: body_json } }.to_json)
+      puts({ _error: { kind: 'provision_service/service_error', msg: 'provision service returned an error', code: response.code, body:, body_json: } }.to_json)
       exit 1
     end
   end
