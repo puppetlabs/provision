@@ -110,7 +110,7 @@ class ABSProvision
     end
 
     inventory.save
-    { status: 'ok', nodes: data.length }
+    { status: 'ok', nodes: data }
   end
 
   def tear_down(node_name, inventory)
