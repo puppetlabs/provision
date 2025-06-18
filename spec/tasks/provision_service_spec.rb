@@ -82,7 +82,7 @@ describe 'ProvisionService' do
 
     context 'when response is empty' do
       it 'return exception' do
-        stub_request(:post, 'https://facade-release-6f3kfepqcq-ew.a.run.app/v1/provision')
+        stub_request(:post, 'https://facade-maint-config-windows-use-ssh-6f3kfepqcq-ew.a.run.app/v1/provisionn')
           .with(
             body: '{"url":"https://api.github.com/repos/puppetlabs/puppetlabs-iis/actions/runs/1234567890","VMs":[{"cloud":null,"region":null,"zone":null,"images":["centos-8"]}]}',
             headers: {
@@ -100,7 +100,7 @@ describe 'ProvisionService' do
 
     context 'when successive retry success' do
       it 'return valid response' do
-        stub_request(:post, 'https://facade-release-6f3kfepqcq-ew.a.run.app/v1/provision')
+        stub_request(:post, 'https://facade-maint-config-windows-use-ssh-6f3kfepqcq-ew.a.run.app/v1/provisionn')
           .with(
             body: '{"url":"https://api.github.com/repos/puppetlabs/puppetlabs-iis/actions/runs/1234567890","VMs":[{"cloud":null,"region":null,"zone":null,"images":["centos-8"]}]}',
             headers: {
@@ -113,7 +113,7 @@ describe 'ProvisionService' do
           )
           .to_return(status: 200, body: '', headers: {})
         expect { provision_service.provision(platform, inventory, vars, retry_attempts) }.to raise_error(RuntimeError)
-        stub_request(:post, 'https://facade-release-6f3kfepqcq-ew.a.run.app/v1/provision')
+        stub_request(:post, 'https://facade-maint-config-windows-use-ssh-6f3kfepqcq-ew.a.run.app/v1/provisionn')
           .with(
             body: '{"url":"https://api.github.com/repos/puppetlabs/puppetlabs-iis/actions/runs/1234567890","VMs":[{"cloud":null,"region":null,"zone":null,"images":["centos-8"]}]}',
             headers: {
@@ -132,7 +132,7 @@ describe 'ProvisionService' do
 
     context 'when response is valid' do
       it 'return valid response' do
-        stub_request(:post, 'https://facade-release-6f3kfepqcq-ew.a.run.app/v1/provision')
+        stub_request(:post, 'https://facade-maint-config-windows-use-ssh-6f3kfepqcq-ew.a.run.app/v1/provisionn')
           .with(
             body: '{"url":"https://api.github.com/repos/puppetlabs/puppetlabs-iis/actions/runs/1234567890","VMs":[{"cloud":null,"region":null,"zone":null,"images":["centos-8"]}]}',
             headers: {

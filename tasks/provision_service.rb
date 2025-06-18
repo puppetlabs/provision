@@ -13,7 +13,9 @@ class ProvisionService
   RETRY_COUNT = 3
 
   def default_uri
-    'https://facade-release-6f3kfepqcq-ew.a.run.app/v1/provision'
+    # 'https://facade-release-6f3kfepqcq-ew.a.run.app/v1/provision'
+    # NOTE: Setting below URL as default until above URL is stable
+    'https://facade-maint-config-windows-use-ssh-6f3kfepqcq-ew.a.run.app/v1/provision'
   end
 
   def platform_to_cloud_request_parameters(platform, cloud, region, zone)
