@@ -139,7 +139,9 @@ fi
 osname=$(parse_platform "$platform" "osname")
 major_version=$(parse_platform "$platform" "majorversion")
 osfamily=$(fetch_osfamily "$osname")
-collection=$(fetch_collection "$collection")
+# Keep the full collection name (e.g., puppet8-nightly) instead of truncating
+# collection=$(fetch_collection "$collection")
+collection=$collection
 
 if [[ "$collection" == "puppet5" ]]; then
   echo "puppet5 eol!"
