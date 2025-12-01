@@ -59,12 +59,17 @@ fetch_osfamily() {
 }
 
 fetch_collection() {
-  myarr=()
-  for x in $(echo "$1" | tr "-" "\n")
-  do
-    myarr+=("$x")
-  done
-  echo "${myarr[0]}"
+  # Handle puppetcore8-nightly -> puppet8-nightly conversion
+  if [[ "$1" == puppetcore8* ]]; then
+    echo "${1/puppetcore8/puppet8}"
+  else
+    myarr=()
+    for x in $(echo "$1" | tr "-" "\n")
+    do
+      myarr+=("$x")
+    done
+    echo "${myarr[0]}"
+  fi
 }
 
 fetch_codename() {
