@@ -59,12 +59,17 @@ fetch_osfamily() {
 }
 
 fetch_collection() {
-  myarr=()
-  for x in $(echo "$1" | tr "-" "\n")
-  do
-    myarr+=("$x")
-  done
-  echo "${myarr[0]}"
+  # Handle puppetcore8-nightly -> puppet8-nightly conversion
+  if [[ "$1" == puppetcore8* ]]; then
+    echo "${1/puppetcore8/puppet8}"
+  else
+    myarr=()
+    for x in $(echo "$1" | tr "-" "\n")
+    do
+      myarr+=("$x")
+    done
+    echo "${myarr[0]}"
+  fi
 }
 
 fetch_codename() {
@@ -157,7 +162,7 @@ if [[ "$osfamily" == "debian" ]]; then
     echo "No builds for $platform"
     exit 1
   else
-    run_cmd "curl -o puppet.deb http://apt.puppetlabs.com/${collection}-release-${codename}.deb"
+    run_cmd "curl -o puppet.deb https://artifactory.delivery.puppetlabs.net:443/artifactory/internal_nightly__local/apt/${collection}-release-${codename}.deb"
     dpkg -i --force-confmiss puppet.deb
     apt-get update -y
     apt-get install puppetserver -y
@@ -165,7 +170,7 @@ if [[ "$osfamily" == "debian" ]]; then
 fi
 
 if [[ "$osfamily" == "redhat" ]]; then
-  run_cmd "curl -o puppet.rpm http://yum.puppetlabs.com/${collection}-release-el-${major_version}.noarch.rpm"
+  run_cmd "curl -o puppet.rpm https://artifactory.delivery.puppetlabs.net:443/artifactory/internal_nightly__local/yum/${collection}-release-el-${major_version}.noarch.rpm"
   rpm -Uvh puppet.rpm --quiet
   yum install puppetserver -y --quiet
 fi
