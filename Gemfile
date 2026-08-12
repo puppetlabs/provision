@@ -50,20 +50,19 @@ facter_version = ENV['FACTER_GEM_VERSION']
 hiera_version = ENV['HIERA_GEM_VERSION']
 
 gems = {}
+bolt_version = ENV.fetch('BOLT_GEM_VERSION', nil)
 puppet_version = ENV.fetch('PUPPET_GEM_VERSION', nil)
 facter_version = ENV.fetch('FACTER_GEM_VERSION', nil)
 hiera_version = ENV.fetch('HIERA_GEM_VERSION', nil)
 
-# If PUPPET_FORGE_TOKEN(_PUBLIC) is set then use the authenticated puppetcore source for both
-# puppet and facter, since facter is a transitive dependency of puppet. Still respects
-# PUPPET_GEM_VERSION/FACTER_GEM_VERSION (e.g. a '~> 9.0' CI lane) rather than pinning a fixed
-# version, so this doesn't silently keep testing 8.x once a forge token is present.
+# Use the authenticated puppetcore source for bolt/puppet/facter when a forge token is present.
 puppetcore_opts = if !(ENV['PUPPET_FORGE_TOKEN_PUBLIC'] || ENV['PUPPET_FORGE_TOKEN']).to_s.empty?
                     { source: 'https://rubygems-puppetcore.puppet.com' }
                   else
                     {}
                   end
 
+gems['bolt'] = location_for(bolt_version, nil, puppetcore_opts)
 gems['puppet'] = location_for(puppet_version, nil, puppetcore_opts)
 gems['facter'] = location_for(facter_version, nil, puppetcore_opts) if facter_version
 
