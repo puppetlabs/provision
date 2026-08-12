@@ -1,6 +1,6 @@
 source ENV['GEM_SOURCE'] || 'https://rubygems.org'
 
-def location_for(place_or_version, fake_version = nil)
+def location_for(place_or_version, fake_version = nil, opts = {})
   git_url_regex = %r{\A(?<url>(https?|git)[:@][^#]*)(#(?<branch>.*))?}
   file_url_regex = %r{\Afile:\/\/(?<path>.*)}
 
@@ -9,7 +9,7 @@ def location_for(place_or_version, fake_version = nil)
   elsif place_or_version && (file_url = place_or_version.match(file_url_regex))
     ['>= 0', { path: File.expand_path(file_url[:path]), require: false }]
   else
-    [place_or_version, { require: false }]
+    [place_or_version, { require: false }.merge(opts)]
   end
 end
 
@@ -54,15 +54,18 @@ puppet_version = ENV.fetch('PUPPET_GEM_VERSION', nil)
 facter_version = ENV.fetch('FACTER_GEM_VERSION', nil)
 hiera_version = ENV.fetch('HIERA_GEM_VERSION', nil)
 
-# If PUPPET_FORGE_TOKEN is set then use authenticated source for both puppet and facter, since facter is a transitive dependency of puppet
-# Otherwise, do as before and use location_for to fetch gems from the default source
-if !ENV['PUPPET_FORGE_TOKEN'].to_s.empty?
-  gems['puppet'] = ['~> 8.11', { require: false, source: 'https://rubygems-puppetcore.puppet.com' }]
-  gems['facter'] = ['~> 4.11', { require: false, source: 'https://rubygems-puppetcore.puppet.com' }]
-else
-  gems['puppet'] = location_for(puppet_version)
-  gems['facter'] = location_for(facter_version) if facter_version
-end
+# If PUPPET_FORGE_TOKEN(_PUBLIC) is set then use the authenticated puppetcore source for both
+# puppet and facter, since facter is a transitive dependency of puppet. Still respects
+# PUPPET_GEM_VERSION/FACTER_GEM_VERSION (e.g. a '~> 9.0' CI lane) rather than pinning a fixed
+# version, so this doesn't silently keep testing 8.x once a forge token is present.
+puppetcore_opts = if !(ENV['PUPPET_FORGE_TOKEN_PUBLIC'] || ENV['PUPPET_FORGE_TOKEN']).to_s.empty?
+                    { source: 'https://rubygems-puppetcore.puppet.com' }
+                  else
+                    {}
+                  end
+
+gems['puppet'] = location_for(puppet_version, nil, puppetcore_opts)
+gems['facter'] = location_for(facter_version, nil, puppetcore_opts) if facter_version
 
 gems['hiera'] = location_for(hiera_version) if hiera_version
 
