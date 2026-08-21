@@ -20,13 +20,12 @@ group :development do
   gem "voxpupuli-puppet-lint-plugins", '~> 7.0', require: false
   gem "facterdb", '~> 1.18',                     require: false
   gem "metadata-json-lint", '~> 4.0',            require: false
-  gem "puppetlabs_spec_helper", '~> 6.0',        require: false
+  gem "puppetlabs_spec_helper", '~> 9.0',        require: false
   gem "rspec-puppet-facts", '~> 2.0',            require: false
   gem "dependency_checker", '~> 1.0.0',          require: false
   gem "parallel_tests", '= 3.12.1',              require: false
   gem "pry", '~> 0.10',                          require: false
   gem "simplecov-console", '~> 0.9',             require: false
-  gem "codecov", '~> 0.6',                       require: false
   gem "puppet-debugger", '~> 1.0',               require: false
   gem "rubocop", '~> 1.50.0',                    require: false
   gem "rubocop-performance", '= 1.16.0',         require: false
@@ -42,7 +41,7 @@ group :system_tests do
 end
 group :release_prep do
   gem "puppet-strings", '~> 4.0',         require: false
-  gem "puppetlabs_spec_helper", '~> 6.0', require: false
+  gem "puppetlabs_spec_helper", '~> 9.0', require: false
 end
 
 puppet_version = ENV['PUPPET_GEM_VERSION']
