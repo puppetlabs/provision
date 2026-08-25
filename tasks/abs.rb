@@ -38,7 +38,9 @@ class ABSProvision
     job_id = "iac-task-pid-#{Process.pid}-#{DateTime.now.strftime('%Q')}"
 
     headers = { 'X-AUTH-TOKEN' => token_from_fogfile('abs'), 'Content-Type' => 'application/json' }
-    priority = ENV['CI'] ? 1 : 2
+    # ENV['CI'] is a string, so `? 1 : 2` was always truthy and made every CI run priority 1.
+    # casecmp? matches 'true'/'True' (Travis, GitHub Actions, AppVeyor all set CI).
+    priority = ENV['CI'].to_s.casecmp?('true') ? 3 : 2
     payload = if platform.instance_of?(String)
                 { 'resources' => { platform => 1 },
                   'priority' => priority,

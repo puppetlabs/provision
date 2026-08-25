@@ -26,10 +26,12 @@ describe 'provision::abs' do
   include_context('with tmpdir')
 
   def with_env(env_vars)
+    previous = {}
+    env_vars.each_key { |k| previous[k] = ENV.fetch(k, nil) }
     env_vars.each { |k, v| ENV[k] = v }
     yield
   ensure
-    env_vars.each { |k, _v| ENV.delete(k) }
+    previous.each { |k, v| v.nil? ? ENV.delete(k) : (ENV[k] = v) }
   end
 
   before(:each) do
@@ -121,6 +123,39 @@ describe 'provision::abs' do
     end
 
     it 'raises an error if abs returns error response'
+
+    it 'requests priority 3 (not 1) when running in CI' do
+      request = stub_request(:post, 'https://abs-prod.k8s.infracore.puppet.net/api/v2/request')
+                .with { |req| JSON.parse(req.body)['priority'] == 3 }
+                .to_return({ status: 202 }, { status: 200, body: response_body.to_json })
+
+      with_env('CI' => 'true') do
+        expect(abs.task(**params)).to eq({ status: 'ok', nodes: 1 })
+      end
+      expect(request).to have_been_made.at_least_once
+    end
+
+    it "requests priority 3 for AppVeyor's capitalized CI=True" do
+      request = stub_request(:post, 'https://abs-prod.k8s.infracore.puppet.net/api/v2/request')
+                .with { |req| JSON.parse(req.body)['priority'] == 3 }
+                .to_return({ status: 202 }, { status: 200, body: response_body.to_json })
+
+      with_env('CI' => 'True') do
+        expect(abs.task(**params)).to eq({ status: 'ok', nodes: 1 })
+      end
+      expect(request).to have_been_made.at_least_once
+    end
+
+    it 'requests priority 2 for local/non-CI runs' do
+      request = stub_request(:post, 'https://abs-prod.k8s.infracore.puppet.net/api/v2/request')
+                .with { |req| JSON.parse(req.body)['priority'] == 2 }
+                .to_return({ status: 202 }, { status: 200, body: response_body.to_json })
+
+      with_env('CI' => 'false') do
+        expect(abs.task(**params)).to eq({ status: 'ok', nodes: 1 })
+      end
+      expect(request).to have_been_made.at_least_once
+    end
   end
 
   context 'when tearing down' do
