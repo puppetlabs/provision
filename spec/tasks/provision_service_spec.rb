@@ -67,7 +67,7 @@ describe 'ProvisionService' do
       allow($stdin).to receive(:read).and_return('{"action":"provision","platform":"centos-8"}')
       runner = ProvisionService.new
       allow(ProvisionService).to receive(:new).and_return(runner)
-      allow(runner).to receive(:provision).and_return({ status: 'ok', node_name: 'centos-8' })
+expect(runner).to receive(:provision).with('centos-8', instance_of(InventoryHelper), nil, nil).and_return({ status: 'ok', node_name: 'centos-8' })
       expect { ProvisionService.run }.to raise_error(SystemExit) { |e| expect(e.status).to eq(0) }
     end
 
