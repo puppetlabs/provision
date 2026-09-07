@@ -71,6 +71,25 @@ describe 'provision::abs' do
         end,
       )
     end
+
+    it 'raises when both node_name and platform are given for tear_down' do
+      expect($stdin).to receive(:read).and_return('{"action":"tear_down","node_name":"foo","platform":"bar"}')
+      expect { ABSProvision.run }.to raise_error(RuntimeError, /specify only a node_name/)
+    end
+
+    it 'raises when both node_name and platform are given for provision' do
+      expect($stdin).to receive(:read).and_return('{"action":"provision","node_name":"foo","platform":"bar"}')
+      expect { ABSProvision.run }.to raise_error(RuntimeError, /specify only a platform/)
+    end
+
+    it 'outputs error and exits 1 when task raises' do
+      expect($stdin).to receive(:read).and_return('{"action":"provision","platform":"centos-8"}')
+      allow_any_instance_of(ABSProvision).to receive(:task).and_raise(StandardError, 'network error')
+      expect { ABSProvision.run }.to(
+        raise_error(SystemExit) { |e| expect(e.status).to eq(1) }
+          .and(output(/abs_failure/).to_stdout),
+      )
+    end
   end
 
   context 'when provisioning' do
@@ -121,6 +140,57 @@ describe 'provision::abs' do
     end
 
     it 'raises an error if abs returns error response'
+
+    it 'uses AppVeyor job URL when running in AppVeyor CI' do
+      stub_request(:post, 'https://abs-prod.k8s.infracore.puppet.net/api/v2/request')
+        .to_return({ status: 202 }, { status: 200, body: response_body.to_json })
+      with_env('CI' => 'True', 'APPVEYOR' => 'True', 'APPVEYOR_REPO_NAME' => 'org/repo', 'APPVEYOR_JOB_ID' => '123') do
+        expect(abs.task(**params)).to eq({ status: 'ok', nodes: 1 })
+      end
+    end
+
+    it 'uses GitHub Actions job URL when running in GitHub Actions' do
+      stub_request(:post, 'https://abs-prod.k8s.infracore.puppet.net/api/v2/request')
+        .to_return({ status: 202 }, { status: 200, body: response_body.to_json })
+      with_env('GITHUB_ACTIONS' => 'true', 'GITHUB_REPOSITORY' => 'org/repo', 'GITHUB_RUN_ID' => '456') do
+        expect(abs.task(**params)).to eq({ status: 'ok', nodes: 1 })
+      end
+    end
+
+    it 'uses litmus_manual URL when not in a known CI environment' do
+      stub_request(:post, 'https://abs-prod.k8s.infracore.puppet.net/api/v2/request')
+        .to_return({ status: 202 }, { status: 200, body: response_body.to_json })
+      with_env('CI' => nil, 'TRAVIS' => nil, 'APPVEYOR' => nil, 'GITHUB_ACTIONS' => nil) do
+        expect(abs.task(**params)).to eq({ status: 'ok', nodes: 1 })
+      end
+    end
+
+    it 'uses ABS_SSH_PRIVATE_KEY when set' do
+      stub_request(:post, 'https://abs-prod.k8s.infracore.puppet.net/api/v2/request')
+        .to_return({ status: 202 }, { status: 200, body: response_body.to_json })
+      with_env('ABS_SSH_PRIVATE_KEY' => '/path/to/key') do
+        abs.task(**params)
+      end
+      target = YAML.load_file(inventory_file)['groups'].find { |g| g['name'] == 'ssh_nodes' }['targets'].first
+      expect(target.dig('config', 'ssh', 'private-key')).to eq('/path/to/key')
+    end
+
+    it 'provisions a Windows platform into winrm_nodes with vars' do
+      windows_response = [{ 'type' => 'windows-2019-x86_64', 'hostname' => 'win-host.test' }]
+      stub_request(:post, 'https://abs-prod.k8s.infracore.puppet.net/api/v2/request')
+        .to_return({ status: 202 }, { status: 200, body: windows_response.to_json })
+      windows_params = params.merge(platform: 'windows-2019-x86_64', vars: 'role: agent_win')
+      abs.task(**windows_params)
+      targets = YAML.load_file(inventory_file)['groups'].find { |g| g['name'] == 'winrm_nodes' }['targets']
+      expect(targets.size).to eq(1)
+      expect(targets.first['vars']).to eq({ 'role' => 'agent_win' })
+    end
+
+    it 'handles a Hash platform' do
+      stub_request(:post, 'https://abs-prod.k8s.infracore.puppet.net/api/v2/request')
+        .to_return({ status: 202 }, { status: 200, body: response_body.to_json })
+      expect(abs.task(action: 'provision', platform: { 'redhat-8-x86_64' => 1 }, inventory: inventory_file)).to eq({ status: 'ok', nodes: 1 })
+    end
   end
 
   context 'when tearing down' do
