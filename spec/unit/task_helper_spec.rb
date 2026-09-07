@@ -25,14 +25,14 @@ describe 'Utility Functions' do
     it 'returns nil and prints a warning when the fog file does not exist' do
       allow(File).to receive(:file?).and_return(false)
       result = nil
-      expect { result = token_from_fogfile }.to output(/Cannot file fog file/).to_stdout
+      expect { result = token_from_fogfile }.to output(%r{Cannot file fog file}).to_stdout
       expect(result).to be_nil
     end
 
     it 'prints a warning and returns nil when reading the fog file raises an error' do
       allow(File).to receive(:file?).and_return(true)
       allow(YAML).to receive(:load_file).and_raise(StandardError, 'bad file')
-      expect { token_from_fogfile }.to output(/Failed to get token/).to_stdout
+      expect { token_from_fogfile }.to output(%r{Failed to get token}).to_stdout
     end
   end
 end

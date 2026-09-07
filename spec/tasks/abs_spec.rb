@@ -74,20 +74,22 @@ describe 'provision::abs' do
 
     it 'raises when both node_name and platform are given for tear_down' do
       expect($stdin).to receive(:read).and_return('{"action":"tear_down","node_name":"foo","platform":"bar"}')
-      expect { ABSProvision.run }.to raise_error(RuntimeError, /specify only a node_name/)
+      expect { ABSProvision.run }.to raise_error(RuntimeError, %r{specify only a node_name})
     end
 
     it 'raises when both node_name and platform are given for provision' do
       expect($stdin).to receive(:read).and_return('{"action":"provision","node_name":"foo","platform":"bar"}')
-      expect { ABSProvision.run }.to raise_error(RuntimeError, /specify only a platform/)
+      expect { ABSProvision.run }.to raise_error(RuntimeError, %r{specify only a platform})
     end
 
     it 'outputs error and exits 1 when task raises' do
       expect($stdin).to receive(:read).and_return('{"action":"provision","platform":"centos-8"}')
-      allow_any_instance_of(ABSProvision).to receive(:task).and_raise(StandardError, 'network error')
+      runner = ABSProvision.new
+      allow(ABSProvision).to receive(:new).and_return(runner)
+      allow(runner).to receive(:task).and_raise(StandardError, 'network error')
       expect { ABSProvision.run }.to(
         raise_error(SystemExit) { |e| expect(e.status).to eq(1) }
-          .and(output(/abs_failure/).to_stdout),
+          .and(output(%r{abs_failure}).to_stdout),
       )
     end
   end

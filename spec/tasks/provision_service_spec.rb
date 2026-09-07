@@ -65,13 +65,17 @@ describe 'ProvisionService' do
 
     it 'calls provision and exits 0' do
       allow($stdin).to receive(:read).and_return('{"action":"provision","platform":"centos-8"}')
-      allow_any_instance_of(ProvisionService).to receive(:provision).and_return({ status: 'ok', node_name: 'centos-8' })
+      runner = ProvisionService.new
+      allow(ProvisionService).to receive(:new).and_return(runner)
+      allow(runner).to receive(:provision).and_return({ status: 'ok', node_name: 'centos-8' })
       expect { ProvisionService.run }.to raise_error(SystemExit) { |e| expect(e.status).to eq(0) }
     end
 
     it 'calls tear_down and exits 0' do
       allow($stdin).to receive(:read).and_return('{"action":"tear_down","node_name":"some-node"}')
-      allow_any_instance_of(ProvisionService).to receive(:tear_down).and_return('{}')
+      runner = ProvisionService.new
+      allow(ProvisionService).to receive(:new).and_return(runner)
+      allow(runner).to receive(:tear_down).and_return('{}')
       expect { ProvisionService.run }.to raise_error(SystemExit) { |e| expect(e.status).to eq(0) }
     end
   end
