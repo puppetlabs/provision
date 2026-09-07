@@ -67,7 +67,7 @@ describe 'ProvisionService' do
       allow($stdin).to receive(:read).and_return('{"action":"provision","platform":"centos-8"}')
       runner = ProvisionService.new
       allow(ProvisionService).to receive(:new).and_return(runner)
-expect(runner).to receive(:provision).with('centos-8', instance_of(InventoryHelper), nil, nil).and_return({ status: 'ok', node_name: 'centos-8' })
+      expect(runner).to receive(:provision).with('centos-8', instance_of(InventoryHelper), nil, nil).and_return({ status: 'ok', node_name: 'centos-8' })
       expect { ProvisionService.run }.to raise_error(SystemExit) { |e| expect(e.status).to eq(0) }
     end
 
@@ -200,7 +200,7 @@ expect(runner).to receive(:provision).with('centos-8', instance_of(InventoryHelp
 
     it 'exits 1 with parsed JSON error details on a non-200 response' do
       stub_request(:post, uri.to_s).to_return(status: 500, body: '{"error":"server error"}')
-expect { svc.invoke_cloud_request({}, uri, nil, 'post', 0) }.to(
+      expect { svc.invoke_cloud_request({}, uri, nil, 'post', 0) }.to(
         raise_error(SystemExit) { |e| expect(e.status).to eq(1) }
           .and(output(include('"body":{"error":"server error"}', '"body_json":true')).to_stdout),
       )

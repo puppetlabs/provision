@@ -144,7 +144,7 @@ describe 'provision::abs' do
     it 'raises an error if abs returns error response'
 
     it 'uses AppVeyor job URL when running in AppVeyor CI' do
-stub_request(:post, 'https://abs-prod.k8s.infracore.puppet.net/api/v2/request')
+      stub_request(:post, 'https://abs-prod.k8s.infracore.puppet.net/api/v2/request')
         .with { |request| JSON.parse(request.body).dig('job', 'tags', 'jenkins_build_url') == 'https://ci.appveyor.com/project/org/repo/build/job/123' }
         .to_return({ status: 202 }, { status: 200, body: response_body.to_json })
       with_env('CI' => 'True', 'APPVEYOR' => 'True', 'APPVEYOR_REPO_NAME' => 'org/repo', 'APPVEYOR_JOB_ID' => '123') do
