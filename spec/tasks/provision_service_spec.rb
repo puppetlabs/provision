@@ -62,6 +62,22 @@ describe 'ProvisionService' do
         )
       end
     end
+
+    it 'calls provision and exits 0' do
+      allow($stdin).to receive(:read).and_return('{"action":"provision","platform":"centos-8"}')
+      runner = ProvisionService.new
+      allow(ProvisionService).to receive(:new).and_return(runner)
+      expect(runner).to receive(:provision).with('centos-8', instance_of(InventoryHelper), nil, nil).and_return({ status: 'ok', node_name: 'centos-8' })
+      expect { ProvisionService.run }.to raise_error(SystemExit) { |e| expect(e.status).to eq(0) }
+    end
+
+    it 'calls tear_down and exits 0' do
+      allow($stdin).to receive(:read).and_return('{"action":"tear_down","node_name":"some-node"}')
+      runner = ProvisionService.new
+      allow(ProvisionService).to receive(:new).and_return(runner)
+      allow(runner).to receive(:tear_down).and_return('{}')
+      expect { ProvisionService.run }.to raise_error(SystemExit) { |e| expect(e.status).to eq(0) }
+    end
   end
 
   describe '#provision' do
@@ -148,6 +164,53 @@ describe 'ProvisionService' do
         allow(File).to receive(:open)
         expect(provision_service.provision(platform, inventory, vars, retry_attempts)[:status]).to eq('ok')
       end
+    end
+  end
+
+  describe '#platform_to_cloud_request_parameters' do
+    let(:svc) { ProvisionService.new }
+
+    it 'handles an Array platform' do
+      result = svc.platform_to_cloud_request_parameters(['centos-8', 'ubuntu-20'], 'aws', 'us-east-1', 'a')
+      expect(result[:images]).to eq(['centos-8', 'ubuntu-20'])
+    end
+
+    it 'handles a Hash platform and wraps String images in an Array' do
+      platform = { cloud: 'gcp', images: 'centos-8' }
+      result = svc.platform_to_cloud_request_parameters(platform, nil, nil, nil)
+      expect(result[:images]).to eq(['centos-8'])
+    end
+
+    it 'handles a Hash platform and overrides the cloud' do
+      platform = { images: ['centos-8'] }
+      result = svc.platform_to_cloud_request_parameters(platform, 'aws', nil, nil)
+      expect(result[:cloud]).to eq('aws')
+    end
+  end
+
+  describe '#invoke_cloud_request' do
+    let(:svc) { ProvisionService.new }
+    let(:uri) { URI.parse('https://facade-release-6f3kfepqcq-ew.a.run.app/v1/provision') }
+
+    it 'sends a DELETE request' do
+      stub_request(:delete, uri.to_s).to_return(status: 200, body: '{}')
+      result = svc.invoke_cloud_request('some-uuid', uri, nil, 'delete', 0)
+      expect(result).to eq('{}')
+    end
+
+    it 'exits 1 with parsed JSON error details on a non-200 response' do
+      stub_request(:post, uri.to_s).to_return(status: 500, body: '{"error":"server error"}')
+      expect { svc.invoke_cloud_request({}, uri, nil, 'post', 0) }.to(
+        raise_error(SystemExit) { |e| expect(e.status).to eq(1) }
+          .and(output(include('"body":{"error":"server error"}', '"body_json":true')).to_stdout),
+      )
+    end
+
+    it 'exits 1 with raw body error details on a non-200 non-JSON response' do
+      stub_request(:post, uri.to_s).to_return(status: 500, body: 'Internal Server Error')
+      expect { svc.invoke_cloud_request({}, uri, nil, 'post', 0) }.to(
+        raise_error(SystemExit) { |e| expect(e.status).to eq(1) },
+      )
     end
   end
 end
