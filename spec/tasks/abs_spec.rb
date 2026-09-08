@@ -26,10 +26,11 @@ describe 'provision::abs' do
   include_context('with tmpdir')
 
   def with_env(env_vars)
+    original = env_vars.keys.each_with_object({}) { |k, h| h[k] = ENV.fetch(k, nil) }
     env_vars.each { |k, v| ENV[k] = v }
     yield
   ensure
-    env_vars.each { |k, _v| ENV.delete(k) }
+    original.each { |k, v| v.nil? ? ENV.delete(k) : ENV[k] = v }
   end
 
   before(:each) do
