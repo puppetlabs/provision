@@ -62,6 +62,9 @@ fetch_collection() {
   # Handle puppetcore8-nightly -> puppet8-nightly conversion
   if [[ "$1" == puppetcore8* ]]; then
     echo "${1/puppetcore8/puppet8}"
+  # Handle puppetcore9-nightly -> puppet9-nightly conversion
+  elif [[ "$1" == puppetcore9* ]]; then
+    echo "${1/puppetcore9/puppet9}"
   else
     myarr=()
     for x in $(echo "$1" | tr "-" "\n")
