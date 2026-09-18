@@ -34,6 +34,7 @@ group :development do
   gem "rb-readline", '= 0.5.5',                  require: false, platforms: [:mswin, :mingw, :x64_mingw]
   gem "github_changelog_generator", '= 1.15.2',  require: false
   gem "webmock",                                 require: false
+  gem "codecov",                                 require: false
 end
 group :system_tests do
   gem "puppet_litmus", '>= 2.0', require: false, platforms: [:ruby, :x64_mingw]
