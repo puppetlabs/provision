@@ -71,6 +71,17 @@ describe 'ProvisionService' do
       expect { ProvisionService.run }.to raise_error(SystemExit) { |e| expect(e.status).to eq(0) }
     end
 
+    it 'prints the service_error details and exits 1 when the service returns an error' do
+      allow($stdin).to receive(:read).and_return('{"action":"tear_down","node_name":"some-node"}')
+      runner = ProvisionService.new
+      allow(ProvisionService).to receive(:new).and_return(runner)
+      allow(runner).to receive(:tear_down).and_raise(ProvisionService::ServerError.new('500', { 'error' => 'server error' }, true))
+      expect { ProvisionService.run }.to(
+        raise_error(SystemExit) { |e| expect(e.status).to eq(1) }
+          .and(output(include('"kind":"provision_service/service_error"', '"code":"500"', '"body":{"error":"server error"}', '"body_json":true')).to_stdout),
+      )
+    end
+
     it 'calls tear_down and exits 0' do
       allow($stdin).to receive(:read).and_return('{"action":"tear_down","node_name":"some-node"}')
       runner = ProvisionService.new
@@ -95,6 +106,12 @@ describe 'ProvisionService' do
       }
     end
     let(:provision_service) { ProvisionService.new }
+    let(:service_url) { 'https://facade-release-6f3kfepqcq-ew.a.run.app/v1/provision' }
+
+    before(:each) do
+      allow(provision_service).to receive(:sleep)
+      allow(provision_service).to receive(:warn)
+    end
 
     context 'when response is empty' do
       it 'return exception' do
@@ -165,6 +182,59 @@ describe 'ProvisionService' do
         expect(provision_service.provision(platform, inventory, vars, retry_attempts)[:status]).to eq('ok')
       end
     end
+
+    context 'when the service returns a 5xx and then succeeds' do
+      it 'retries with a backoff and returns a valid response' do
+        stub_request(:post, service_url)
+          .to_return({ status: 500, body: '{"error":"server error"}' }, { status: 200, body: response_body.to_json })
+        allow(File).to receive(:open)
+        expect(provision_service).to receive(:sleep).once.with(be_between(30, 45))
+        expect(provision_service).to receive(:warn).with(%r{attempt 1 of 4 failed: provision service returned an error \(HTTP 500\)})
+
+        expect(provision_service.provision(platform, inventory, vars, retry_attempts)[:status]).to eq('ok')
+        expect(a_request(:post, service_url)).to have_been_made.twice
+      end
+    end
+
+    context 'when the service keeps returning a 5xx' do
+      it 'gives up after RETRY_COUNT attempts with exponential backoff' do
+        stub_request(:post, service_url).to_return(status: 503, body: 'Service Unavailable')
+        allow(File).to receive(:open)
+        expect(provision_service).to receive(:sleep).with(be_between(30, 45)).ordered
+        expect(provision_service).to receive(:sleep).with(be_between(60, 90)).ordered
+        expect(provision_service).to receive(:sleep).with(be_between(120, 180)).ordered
+
+        expect { provision_service.provision(platform, inventory, vars, retry_attempts) }.to raise_error(ProvisionService::ServerError) { |e|
+          expect(e.code).to eq('503')
+          expect(e.attempts).to eq(4)
+        }
+        expect(a_request(:post, service_url)).to have_been_made.times(4)
+      end
+    end
+
+    context 'when the service returns a 4xx' do
+      it 'fails without retrying' do
+        stub_request(:post, service_url).to_return(status: 400, body: '{"error":"bad image"}')
+        allow(File).to receive(:open)
+        expect(provision_service).not_to receive(:sleep)
+
+        expect { provision_service.provision(platform, inventory, vars, retry_attempts) }.to raise_error(ProvisionService::ServiceError) { |e|
+          expect(e).not_to be_a(ProvisionService::ServerError)
+          expect(e.attempts).to eq(1)
+        }
+        expect(a_request(:post, service_url)).to have_been_made.once
+      end
+    end
+  end
+
+  describe '#retry_delay' do
+    let(:svc) { ProvisionService.new }
+
+    it 'doubles the base delay on each attempt and adds up to 50% jitter' do
+      expect(svc.retry_delay(1)).to be_between(30, 45)
+      expect(svc.retry_delay(2)).to be_between(60, 90)
+      expect(svc.retry_delay(3)).to be_between(120, 180)
+    end
   end
 
   describe '#platform_to_cloud_request_parameters' do
@@ -198,19 +268,28 @@ describe 'ProvisionService' do
       expect(result).to eq('{}')
     end
 
-    it 'exits 1 with parsed JSON error details on a non-200 response' do
+    it 'raises a ServerError with parsed JSON error details on a 5xx response' do
       stub_request(:post, uri.to_s).to_return(status: 500, body: '{"error":"server error"}')
-      expect { svc.invoke_cloud_request({}, uri, nil, 'post', 0) }.to(
-        raise_error(SystemExit) { |e| expect(e.status).to eq(1) }
-          .and(output(include('"body":{"error":"server error"}', '"body_json":true')).to_stdout),
-      )
+      expect { svc.invoke_cloud_request({}, uri, nil, 'post', 0) }.to raise_error(ProvisionService::ServerError) { |e|
+        expect(e.code).to eq('500')
+        expect(e.body).to eq({ 'error' => 'server error' })
+        expect(e.body_json).to be(true)
+      }
     end
 
-    it 'exits 1 with raw body error details on a non-200 non-JSON response' do
+    it 'raises a ServerError with the raw body on a non-JSON 5xx response' do
       stub_request(:post, uri.to_s).to_return(status: 500, body: 'Internal Server Error')
-      expect { svc.invoke_cloud_request({}, uri, nil, 'post', 0) }.to(
-        raise_error(SystemExit) { |e| expect(e.status).to eq(1) },
-      )
+      expect { svc.invoke_cloud_request({}, uri, nil, 'post', 0) }.to raise_error(ProvisionService::ServerError) { |e|
+        expect(e.body).to eq('Internal Server Error')
+        expect(e.body_json).to be(false)
+      }
+    end
+
+    it 'raises a plain ServiceError on a 4xx response' do
+      stub_request(:post, uri.to_s).to_return(status: 404, body: '{"error":"not found"}')
+      expect { svc.invoke_cloud_request({}, uri, nil, 'post', 0) }.to raise_error(ProvisionService::ServiceError) { |e|
+        expect(e).not_to be_a(ProvisionService::ServerError)
+      }
     end
   end
 end
