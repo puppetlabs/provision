@@ -144,6 +144,39 @@ describe 'provision::abs' do
 
     it 'raises an error if abs returns error response'
 
+    it 'requests priority 3 (not 1) when running in CI' do
+      request = stub_request(:post, 'https://abs-prod.k8s.infracore.puppet.net/api/v2/request')
+                .with { |req| JSON.parse(req.body)['priority'] == 3 }
+                .to_return({ status: 202 }, { status: 200, body: response_body.to_json })
+
+      with_env('CI' => 'true') do
+        expect(abs.task(**params)).to eq({ status: 'ok', nodes: 1 })
+      end
+      expect(request).to have_been_made.at_least_once
+    end
+
+    it "requests priority 3 for AppVeyor's capitalized CI=True" do
+      request = stub_request(:post, 'https://abs-prod.k8s.infracore.puppet.net/api/v2/request')
+                .with { |req| JSON.parse(req.body)['priority'] == 3 }
+                .to_return({ status: 202 }, { status: 200, body: response_body.to_json })
+
+      with_env('CI' => 'True') do
+        expect(abs.task(**params)).to eq({ status: 'ok', nodes: 1 })
+      end
+      expect(request).to have_been_made.at_least_once
+    end
+
+    it 'requests priority 2 for local/non-CI runs' do
+      request = stub_request(:post, 'https://abs-prod.k8s.infracore.puppet.net/api/v2/request')
+                .with { |req| JSON.parse(req.body)['priority'] == 2 }
+                .to_return({ status: 202 }, { status: 200, body: response_body.to_json })
+
+      with_env('CI' => 'false') do
+        expect(abs.task(**params)).to eq({ status: 'ok', nodes: 1 })
+      end
+      expect(request).to have_been_made.at_least_once
+    end
+
     it 'uses AppVeyor job URL when running in AppVeyor CI' do
       stub_request(:post, 'https://abs-prod.k8s.infracore.puppet.net/api/v2/request')
         .with { |request| JSON.parse(request.body).dig('job', 'tags', 'jenkins_build_url') == 'https://ci.appveyor.com/project/org/repo/build/job/123' }
