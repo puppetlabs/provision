@@ -9,7 +9,7 @@ require 'puppet'
 def update_file(manifest, target_node)
   path = '/etc/puppetlabs/code/environments/production/manifests/nodes'
   _stdout, stderr, status = Open3.capture3("mkdir -p #{path}")
-  raise Puppet::Error, _("stderr: ' %{stderr}')" % { stderr: }) if status != 0
+  raise Puppet::Error, "stderr: '#{stderr}'" if !status.success?
 
   site_path = File.join(path, "#{target_node}.pp")
   if File.file?(site_path)
