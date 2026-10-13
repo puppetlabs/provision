@@ -10,7 +10,28 @@ require_relative '../lib/inventory_helper'
 
 # Provision and teardown vms through provision service.
 class ProvisionService
-  RETRY_COUNT = 3
+  RETRY_COUNT = 4
+  RETRY_BASE_DELAY = 30 # seconds; doubles on each attempt (30, 60, 120) plus up to 50% jitter
+
+  # Raised when the provision service returns a non-200 response.
+  class ServiceError < StandardError
+    attr_reader :code, :body, :body_json
+    attr_accessor :attempts
+
+    def initialize(code, body, body_json)
+      @code = code
+      @body = body
+      @body_json = body_json
+      super("provision service returned an error (HTTP #{code})")
+    end
+
+    def to_error_hash
+      { kind: 'provision_service/service_error', msg: message, code:, body:, body_json:, attempts: }.compact
+    end
+  end
+
+  # A 5xx response: the service (or the cloud behind it) is struggling, so the request is worth retrying.
+  class ServerError < ServiceError; end
 
   def default_uri
     'https://facade-release-6f3kfepqcq-ew.a.run.app/v1/provision'
@@ -78,9 +99,14 @@ class ProvisionService
         body = response.body
         body_json = false
       end
-      puts({ _error: { kind: 'provision_service/service_error', msg: 'provision service returned an error', code: response.code, body:, body_json: } }.to_json)
-      exit 1
+      error_class = response.code.start_with?('5') ? ServerError : ServiceError
+      raise error_class.new(response.code, body, body_json)
     end
+  end
+
+  def retry_delay(attempt)
+    delay = RETRY_BASE_DELAY * (2**(attempt - 1))
+    delay + rand(0..(delay / 2))
   end
 
   def provision(platform, inventory, vars, retry_attempts)
@@ -99,19 +125,24 @@ class ProvisionService
       data = JSON.parse(vars.tr(';', ','))
       job_url = data['job_url']
     end
-    currnet_retry_count = 0
+    attempt = 0
     begin
+      attempt += 1
       params = platform_to_cloud_request_parameters(platform, cloud, region, zone)
       response = invoke_cloud_request(params, uri, job_url, 'post', retry_attempts)
       response_hash = YAML.safe_load(response)
       # Knock the response for validity to make sure return payload is expected.
       # Have seen multiple occurances of nil:NilClass error where the response code is 200 but return payload is empty
-      raise if response_hash.nil? || response_hash.empty?
+      raise 'provision service returned an empty response' if response_hash.nil? || response_hash.empty?
     rescue StandardError => e
-      currnet_retry_count += 1
-      raise e if currnet_retry_count >= RETRY_COUNT
+      e.attempts = attempt if e.is_a?(ServiceError)
+      # A 4xx means the request itself is wrong; retrying won't help.
+      raise e if e.instance_of?(ServiceError) || attempt >= RETRY_COUNT
 
-      puts "Failed while provisioning the resource with response :\n #{response_hash}\nHence retrying #{currnet_retry_count} of #{RETRY_COUNT}"
+      delay = retry_delay(attempt)
+      # stderr, not stdout: Bolt only parses stdout as the task result, and it has to stay valid JSON.
+      warn "Provisioning attempt #{attempt} of #{RETRY_COUNT} failed: #{e.message}. Retrying in #{delay}s"
+      sleep delay
       retry
     end
 
@@ -179,6 +210,9 @@ class ProvisionService
       end
       puts result.to_json
       exit 0
+    rescue ServiceError => e
+      puts({ _error: e.to_error_hash }.to_json)
+      exit 1
     rescue StandardError => e
       puts({ _error: { kind: 'provision_service/failure', msg: e.message, details: { backtrace: e.backtrace } } }.to_json)
       exit 1
