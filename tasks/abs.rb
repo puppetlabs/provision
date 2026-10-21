@@ -114,7 +114,11 @@ class ABSProvision
   end
 
   def tear_down(node_name, inventory)
-    node = inventory.lookup(node_name, group: 'ssh_nodes')
+    # Not restricted to 'ssh_nodes': winrm (Windows) nodes provisioned by this task live in
+    # 'winrm_nodes', and restricting the lookup to 'ssh_nodes' made tear_down raise "Failed to
+    # lookup target" for every Windows agent -- aborting litmus's tear_down loop and leaking every
+    # node queued after it, not just the Windows one.
+    node = inventory.lookup(node_name)
 
     targets_to_remove = []
     inventory['groups'].each do |group|

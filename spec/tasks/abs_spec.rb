@@ -169,5 +169,30 @@ describe 'provision::abs' do
     end
 
     it 'raises an error if abs returns error response'
+
+    context 'when the node is a winrm (Windows) node' do
+      let(:inventory_yaml) do
+        empty = YAML.safe_load(empty_inventory_yaml)
+        groups = empty['groups']
+        winrm_nodes = groups.find { |g| g['name'] == 'winrm_nodes' }
+        winrm_nodes['targets'] << {
+          'uri' => 'foo-bar.test',
+          'facts' => {
+            'platform' => 'win-2019-x86_64',
+            'job_id' => 'a-job-id'
+          }
+        }
+        empty.to_yaml
+      end
+
+      it 'tears down the node' do
+        expect(abs).to receive(:token_from_fogfile).and_return('fog-token')
+        stub_request(:post, 'https://abs-prod.k8s.infracore.puppet.net/api/v2/return')
+          .to_return(status: 200)
+
+        expect(abs.task(**params)).to eq({ status: 'ok', removed: ['foo-bar.test'] })
+        expect(YAML.load_file(inventory_file)).to eq(YAML.safe_load(empty_inventory_yaml))
+      end
+    end
   end
 end
