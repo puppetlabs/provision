@@ -287,6 +287,10 @@ test_serv:
 
 In the provision step you can invoke bundle exec rake 'litmus:provision_list[test_serv]' and this will ensure the creation of two VMs in GCP.
 
+To request a specific VM machine type for a job (for example, a larger VM for memory-hungry tests), pass the optional `machine_type` task parameter or set the `PROVISION_MACHINE_TYPE` environment variable (the parameter wins; a blank value counts as unset). The variable is prefixed so that it cannot be confused with an unrelated `MACHINE_TYPE` set for other tooling, which is ignored. With Litmus, which cannot pass extra task parameters, put `provision_machine_type: <type>` under `params` in `provision.yaml` when using `litmus:provision_list` (Litmus exports each `params` key as an upper-cased environment variable) or set `PROVISION_MACHINE_TYPE` in the job's environment. It is sent to the service as `machine_type` on each VM and is omitted when unset, so the service keeps its default.
+
+The service has to support the field first. A service that does not yet know about `machine_type` ignores it without any error, so the VM silently stays at the service default size. A service that does support it returns HTTP 400 for a value it rejects, but the facade currently reports some of those rejections as a 5xx, which this task retries with backoff for a few minutes before failing.
+
 Manual invocation of the provision service task from a workflow can be done using:
 
 ```ruby
