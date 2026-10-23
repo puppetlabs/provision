@@ -174,6 +174,12 @@ Data type: `Optional[String[1]]`
 
 The release of PE you want to install e.g. 2018.1 (Default: 2019.2)
 
+##### `os`
+
+Data type: `Optional[String[1]]`
+
+The os of PE you are installing e.g. ubuntu-22.04-amd64  (Default: el-7-x86_64)
+
 ### <a name="install_puppetserver"></a>`install_puppetserver`
 
 install puppetserver community edition
@@ -311,6 +317,12 @@ Location of the inventory file
 Data type: `Optional[String[1]]`
 
 The address of the provisioning service
+
+##### `machine_type`
+
+Data type: `Optional[String[1]]`
+
+Machine type to request for the VM (e.g. n1-standard-4). Defaults to the PROVISION_MACHINE_TYPE environment variable, then to the service's own default
 
 ##### `retry_attempts`
 
