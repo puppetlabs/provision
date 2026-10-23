@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](http://semver.org).
 
+## [v3.1.0](https://github.com/puppetlabs/provision/tree/v3.1.0) - 2026-10-23
+
+[Full Changelog](https://github.com/puppetlabs/provision/compare/v3.0.1...v3.1.0)
+
+### Added
+
+- (MAINT) Add optional per-job machine_type to provision_service task [#301](https://github.com/puppetlabs/provision/pull/301) ([lynsaywright](https://github.com/lynsaywright))
+- (maint) Handle puppetcore9-nightly -> puppet9-nightly collection conversion [#295](https://github.com/puppetlabs/provision/pull/295) ([span786](https://github.com/span786))
+- (CAT-2590) Prepare for Puppetcore 9 [#292](https://github.com/puppetlabs/provision/pull/292) ([LukasAud](https://github.com/LukasAud))
+- (PE-39952) Add PE os version [#280](https://github.com/puppetlabs/provision/pull/280) ([seamymckenna](https://github.com/seamymckenna))
+
+### Fixed
+
+- Remove unused legacy codecov gem from Gemfile [#299](https://github.com/puppetlabs/provision/pull/299) ([LukasAud](https://github.com/LukasAud))
+- (MODULES-11965) Retry provision_service on HTTP 5xx [#298](https://github.com/puppetlabs/provision/pull/298) ([imaqsood](https://github.com/imaqsood))
+- (P4DEVOPS-15381) Fix ABS priority: CI runs no longer request priority 1 [#294](https://github.com/puppetlabs/provision/pull/294) ([isaac-jha](https://github.com/isaac-jha))
+- PA-7893 Update puppetserver package fetching urls [#289](https://github.com/puppetlabs/provision/pull/289) ([SugatD](https://github.com/SugatD))
+- (CAT-2193): Added codename for Debian 11 & 12 [#281](https://github.com/puppetlabs/provision/pull/281) ([span786](https://github.com/span786))
+
 ## [v3.0.1](https://github.com/puppetlabs/provision/tree/v3.0.1) - 2024-10-28
 
 [Full Changelog](https://github.com/puppetlabs/provision/compare/v3.0.0...v3.0.1)
@@ -28,8 +47,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 - Uncouple from the puppet_litmus gem [#260](https://github.com/puppetlabs/provision/pull/260) ([h0tw1r3](https://github.com/h0tw1r3))
 - tasks require path to inventory yaml [#259](https://github.com/puppetlabs/provision/pull/259) ([h0tw1r3](https://github.com/h0tw1r3))
 - LXD provisoner support [#251](https://github.com/puppetlabs/provision/pull/251) ([h0tw1r3](https://github.com/h0tw1r3))
-- Add additional Docker provisioner OS support [#244](https://github.com/puppetlabs/provision/pull/244) ([seanmil](https://github.com/seanmil))
-- Add flexible Linux box support for Vagrant [#242](https://github.com/puppetlabs/provision/pull/242) ([seanmil](https://github.com/seanmil))
 - (CAT-1264) - Add Support for CentOS 8, RHEL 8/9, Debian 10/11, Ubuntu 18/20/22, Windows 16/19/22 [#232](https://github.com/puppetlabs/provision/pull/232) ([jordanbreen28](https://github.com/jordanbreen28))
 - docker context and DOCKER_HOST env support [#200](https://github.com/puppetlabs/provision/pull/200) ([h0tw1r3](https://github.com/h0tw1r3))
 
@@ -44,6 +61,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 - fix sles ssh setup in docker if ssh already installed [#254](https://github.com/puppetlabs/provision/pull/254) ([h0tw1r3](https://github.com/h0tw1r3))
 - (CAT-1688) - Pin rubocop to `~> 1.50.0` [#249](https://github.com/puppetlabs/provision/pull/249) ([LukasAud](https://github.com/LukasAud))
 - Fix docker remote host support [#247](https://github.com/puppetlabs/provision/pull/247) ([seanmil](https://github.com/seanmil))
+
+### Other
+
+- Add additional Docker provisioner OS support [#244](https://github.com/puppetlabs/provision/pull/244) ([seanmil](https://github.com/seanmil))
+- Add flexible Linux box support for Vagrant [#242](https://github.com/puppetlabs/provision/pull/242) ([seanmil](https://github.com/seanmil))
 
 ## [v2.1.1](https://github.com/puppetlabs/provision/tree/v2.1.1) - 2023-07-27
 
