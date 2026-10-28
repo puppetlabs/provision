@@ -37,7 +37,7 @@ class ProvisionService
     'https://facade-release-6f3kfepqcq-ew.a.run.app/v1/provision'
   end
 
-  def platform_to_cloud_request_parameters(platform, cloud, region, zone, machine_type = nil)
+  def platform_to_cloud_request_parameters(platform, cloud, region, zone, machine_type = nil, disk_size_gb = nil)
     params = case platform
              when String
                { cloud:, region:, zone:, images: [platform] }
@@ -51,6 +51,8 @@ class ProvisionService
     # Only sent when requested, so the request is unchanged for callers that don't set it.
     machine_type = machine_type.to_s.strip
     params[:machine_type] = machine_type unless machine_type.empty?
+    disk_size_gb = disk_size_gb.to_s.strip
+    params[:disk_size_gb] = disk_size_gb.to_i unless disk_size_gb.empty?
     params
   end
 
@@ -113,7 +115,7 @@ class ProvisionService
     delay + rand(0..(delay / 2))
   end
 
-  def provision(platform, inventory, vars, retry_attempts, machine_type = nil)
+  def provision(platform, inventory, vars, retry_attempts, machine_type = nil, disk_size_gb = nil)
     # Call the provision service with the information necessary and write the inventory file locally
 
     if ENV['GITHUB_RUN_ID']
@@ -126,6 +128,7 @@ class ProvisionService
     region = ENV.fetch('REGION', nil)
     zone = ENV.fetch('ZONE', nil)
     machine_type = ENV.fetch('PROVISION_MACHINE_TYPE', nil) if machine_type.to_s.strip.empty?
+    disk_size_gb = ENV.fetch('PROVISION_DISK_SIZE_GB', nil) if disk_size_gb.to_s.strip.empty?
     if job_url.nil? && vars
       data = JSON.parse(vars.tr(';', ','))
       job_url = data['job_url']
@@ -133,7 +136,7 @@ class ProvisionService
     attempt = 0
     begin
       attempt += 1
-      params = platform_to_cloud_request_parameters(platform, cloud, region, zone, machine_type)
+      params = platform_to_cloud_request_parameters(platform, cloud, region, zone, machine_type, disk_size_gb)
       response = invoke_cloud_request(params, uri, job_url, 'post', retry_attempts)
       response_hash = YAML.safe_load(response)
       # Knock the response for validity to make sure return payload is expected.
@@ -190,13 +193,16 @@ class ProvisionService
   # - retry_attempts: The number of retry attempts for provisioning or tearing down.
   # - machine_type: Optional VM machine type to request from the service (e.g. 'n1-standard-4'). Falls back to the PROVISION_MACHINE_TYPE
   #   environment variable; when neither is set the service chooses its default.
+  # - disk_size_gb: Optional boot disk size (in GB) to request from the service. Falls back to the PROVISION_DISK_SIZE_GB environment
+  #   variable; when neither is set the service chooses its default (the source image's own size).
   # - inventory_location: The location of the inventory file. If not provided, defaults to './spec/fixtures/litmus_inventory.yaml'.
   # The result of the action is printed to stdout in JSON format.
   # Exits with status 0 on success, or 1 on failure.
   def self.run
     params = JSON.parse($stdin.read)
     params.transform_keys!(&:to_sym)
-    action, node_name, platform, vars, retry_attempts, inventory_location, machine_type = params.values_at(:action, :node_name, :platform, :vars, :retry_attempts, :inventory, :machine_type)
+    action, node_name, platform, vars, retry_attempts, inventory_location, machine_type, disk_size_gb =
+      params.values_at(:action, :node_name, :platform, :vars, :retry_attempts, :inventory, :machine_type, :disk_size_gb)
 
     inventory_location ||= File.join(Dir.pwd, '/spec/fixtures/litmus_inventory.yaml')
     inventory = InventoryHelper.open(inventory_location)
@@ -207,7 +213,7 @@ class ProvisionService
       when 'provision'
         raise 'specify a platform when provisioning' if platform.to_s.empty?
 
-        result = runner.provision(platform, inventory, vars, retry_attempts, machine_type)
+        result = runner.provision(platform, inventory, vars, retry_attempts, machine_type, disk_size_gb)
       when 'tear_down'
         raise 'specify a node_name when tearing down' if node_name.nil?
 
