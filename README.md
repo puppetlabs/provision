@@ -291,6 +291,10 @@ To request a specific VM machine type for a job (for example, a larger VM for me
 
 The service has to support the field first. A service that does not yet know about `machine_type` ignores it without any error, so the VM silently stays at the service default size. A service that does support it returns HTTP 400 for a value it rejects, but the facade currently reports some of those rejections as a 5xx, which this task retries with backoff for a few minutes before failing.
 
+To request a specific boot disk size for a job (for example, when a test suite runs out of disk space on the default-sized VM), pass the optional `disk_size_gb` task parameter or set the `PROVISION_DISK_SIZE_GB` environment variable (the parameter wins; a blank value counts as unset). With Litmus, which cannot pass extra task parameters, put `provision_disk_size_gb: <size>` under `params` in `provision.yaml` when using `litmus:provision_list` (Litmus exports each `params` key as an upper-cased environment variable) or set `PROVISION_DISK_SIZE_GB` in the job's environment. It is sent to the service as `disk_size_gb` on each VM and is omitted when unset, so the service keeps its default (the source image's own size).
+
+The service has to support the field first. A service that does not yet know about `disk_size_gb` ignores it without any error, so the VM silently stays at its default disk size. A service that does support it returns HTTP 400 for a value it rejects, but the facade currently reports some of those rejections as a 5xx, which this task retries with backoff for a few minutes before failing.
+
 Manual invocation of the provision service task from a workflow can be done using:
 
 ```ruby
