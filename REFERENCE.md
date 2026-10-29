@@ -324,6 +324,12 @@ Data type: `Optional[String[1]]`
 
 Machine type to request for the VM (e.g. n1-standard-4). Defaults to the PROVISION_MACHINE_TYPE environment variable, then to the service's own default
 
+##### `disk_size_gb`
+
+Data type: `Optional[Integer[1]]`
+
+Boot disk size in GB to request for the VM. Defaults to the PROVISION_DISK_SIZE_GB environment variable, then to the service's own default (the source image's own size)
+
 ##### `retry_attempts`
 
 Data type: `Optional[Integer[1]]`

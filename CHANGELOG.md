@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](http://semver.org).
 
+## [v3.2.0](https://github.com/puppetlabs/provision/tree/v3.2.0) - 2026-10-29
+
+[Full Changelog](https://github.com/puppetlabs/provision/compare/v3.1.0...v3.2.0)
+
+### Added
+
+- Add optional per-job disk_size_gb to provision_service task [#303](https://github.com/puppetlabs/provision/pull/303) ([LukasAud](https://github.com/LukasAud))
+
 ## [v3.1.0](https://github.com/puppetlabs/provision/tree/v3.1.0) - 2026-10-23
 
 [Full Changelog](https://github.com/puppetlabs/provision/compare/v3.0.1...v3.1.0)
