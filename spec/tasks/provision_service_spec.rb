@@ -8,6 +8,17 @@ ENV['GITHUB_RUN_ID'] = '1234567890'
 ENV['GITHUB_URL'] = 'https://api.github.com/repos/puppetlabs/puppetlabs-iis/actions/runs/1234567890'
 
 describe 'ProvisionService' do
+  around(:each) do |example|
+    saved = ENV.slice('PROVISION_MACHINE_TYPE', 'PROVISION_DISK_SIZE_GB')
+    ENV.delete('PROVISION_MACHINE_TYPE')
+    ENV.delete('PROVISION_DISK_SIZE_GB')
+    example.run
+  ensure
+    ENV.delete('PROVISION_MACHINE_TYPE')
+    ENV.delete('PROVISION_DISK_SIZE_GB')
+    saved.each { |key, value| ENV[key] = value }
+  end
+
   describe '.run' do
     context 'when inputs are invalid' do
       it 'return exception' do
@@ -67,7 +78,23 @@ describe 'ProvisionService' do
       allow($stdin).to receive(:read).and_return('{"action":"provision","platform":"centos-8"}')
       runner = ProvisionService.new
       allow(ProvisionService).to receive(:new).and_return(runner)
-      expect(runner).to receive(:provision).with('centos-8', instance_of(InventoryHelper), nil, nil).and_return({ status: 'ok', node_name: 'centos-8' })
+      expect(runner).to receive(:provision).with('centos-8', instance_of(InventoryHelper), nil, nil, nil, nil).and_return({ status: 'ok', node_name: 'centos-8' })
+      expect { ProvisionService.run }.to raise_error(SystemExit) { |e| expect(e.status).to eq(0) }
+    end
+
+    it 'passes machine_type through to provision' do
+      allow($stdin).to receive(:read).and_return('{"action":"provision","platform":"centos-8","machine_type":"n1-standard-4"}')
+      runner = ProvisionService.new
+      allow(ProvisionService).to receive(:new).and_return(runner)
+      expect(runner).to receive(:provision).with('centos-8', instance_of(InventoryHelper), nil, nil, 'n1-standard-4', nil).and_return({ status: 'ok', node_name: 'centos-8' })
+      expect { ProvisionService.run }.to raise_error(SystemExit) { |e| expect(e.status).to eq(0) }
+    end
+
+    it 'passes disk_size_gb through to provision' do
+      allow($stdin).to receive(:read).and_return('{"action":"provision","platform":"centos-8","disk_size_gb":100}')
+      runner = ProvisionService.new
+      allow(ProvisionService).to receive(:new).and_return(runner)
+      expect(runner).to receive(:provision).with('centos-8', instance_of(InventoryHelper), nil, nil, nil, 100).and_return({ status: 'ok', node_name: 'centos-8' })
       expect { ProvisionService.run }.to raise_error(SystemExit) { |e| expect(e.status).to eq(0) }
     end
 
@@ -183,6 +210,98 @@ describe 'ProvisionService' do
       end
     end
 
+    context 'when a machine_type is requested' do
+      let(:request_body) do
+        '{"url":"https://api.github.com/repos/puppetlabs/puppetlabs-iis/actions/runs/1234567890","VMs":[{"cloud":null,"region":null,"zone":null,"images":["centos-8"],"machine_type":"n1-standard-4"}]}'
+      end
+
+      it 'sends it to the service when passed as a parameter' do
+        stub = stub_request(:post, service_url).with(body: request_body).to_return(status: 200, body: response_body.to_json, headers: {})
+        allow(File).to receive(:open)
+        expect(provision_service.provision(platform, inventory, vars, retry_attempts, 'n1-standard-4')[:status]).to eq('ok')
+        expect(stub).to have_been_requested
+      end
+
+      it 'falls back to the PROVISION_MACHINE_TYPE environment variable' do
+        stub = stub_request(:post, service_url).with(body: request_body).to_return(status: 200, body: response_body.to_json, headers: {})
+        allow(File).to receive(:open)
+        ENV['PROVISION_MACHINE_TYPE'] = 'n1-standard-4'
+        expect(provision_service.provision(platform, inventory, vars, retry_attempts)[:status]).to eq('ok')
+        expect(stub).to have_been_requested
+      end
+
+      it 'ignores a generic MACHINE_TYPE environment variable' do
+        stub = stub_request(:post, service_url)
+               .with { |request| JSON.parse(request.body)['VMs'].none? { |vm| vm.key?('machine_type') } }
+               .to_return(status: 200, body: response_body.to_json, headers: {})
+        allow(File).to receive(:open)
+        ENV['MACHINE_TYPE'] = 'e2-micro'
+        begin
+          expect(provision_service.provision(platform, inventory, vars, retry_attempts)[:status]).to eq('ok')
+        ensure
+          ENV.delete('MACHINE_TYPE')
+        end
+        expect(stub).to have_been_requested
+      end
+
+      it 'prefers the parameter over the PROVISION_MACHINE_TYPE environment variable' do
+        stub = stub_request(:post, service_url).with(body: request_body).to_return(status: 200, body: response_body.to_json, headers: {})
+        allow(File).to receive(:open)
+        ENV['PROVISION_MACHINE_TYPE'] = 'e2-standard-2'
+        expect(provision_service.provision(platform, inventory, vars, retry_attempts, 'n1-standard-4')[:status]).to eq('ok')
+        expect(stub).to have_been_requested
+      end
+
+      it 'sends nothing for a blank parameter and blank environment variable' do
+        stub = stub_request(:post, service_url)
+               .with { |request| JSON.parse(request.body)['VMs'].none? { |vm| vm.key?('machine_type') } }
+               .to_return(status: 200, body: response_body.to_json, headers: {})
+        allow(File).to receive(:open)
+        ENV['PROVISION_MACHINE_TYPE'] = ' '
+        expect(provision_service.provision(platform, inventory, vars, retry_attempts, '  ')[:status]).to eq('ok')
+        expect(stub).to have_been_requested
+      end
+    end
+
+    context 'when a disk_size_gb is requested' do
+      let(:request_body) do
+        '{"url":"https://api.github.com/repos/puppetlabs/puppetlabs-iis/actions/runs/1234567890","VMs":[{"cloud":null,"region":null,"zone":null,"images":["centos-8"],"disk_size_gb":100}]}'
+      end
+
+      it 'sends it to the service when passed as a parameter' do
+        stub = stub_request(:post, service_url).with(body: request_body).to_return(status: 200, body: response_body.to_json, headers: {})
+        allow(File).to receive(:open)
+        expect(provision_service.provision(platform, inventory, vars, retry_attempts, nil, 100)[:status]).to eq('ok')
+        expect(stub).to have_been_requested
+      end
+
+      it 'falls back to the PROVISION_DISK_SIZE_GB environment variable' do
+        stub = stub_request(:post, service_url).with(body: request_body).to_return(status: 200, body: response_body.to_json, headers: {})
+        allow(File).to receive(:open)
+        ENV['PROVISION_DISK_SIZE_GB'] = '100'
+        expect(provision_service.provision(platform, inventory, vars, retry_attempts)[:status]).to eq('ok')
+        expect(stub).to have_been_requested
+      end
+
+      it 'prefers the parameter over the PROVISION_DISK_SIZE_GB environment variable' do
+        stub = stub_request(:post, service_url).with(body: request_body).to_return(status: 200, body: response_body.to_json, headers: {})
+        allow(File).to receive(:open)
+        ENV['PROVISION_DISK_SIZE_GB'] = '50'
+        expect(provision_service.provision(platform, inventory, vars, retry_attempts, nil, 100)[:status]).to eq('ok')
+        expect(stub).to have_been_requested
+      end
+
+      it 'sends nothing for a blank parameter and blank environment variable' do
+        stub = stub_request(:post, service_url)
+               .with { |request| JSON.parse(request.body)['VMs'].none? { |vm| vm.key?('disk_size_gb') } }
+               .to_return(status: 200, body: response_body.to_json, headers: {})
+        allow(File).to receive(:open)
+        ENV['PROVISION_DISK_SIZE_GB'] = ' '
+        expect(provision_service.provision(platform, inventory, vars, retry_attempts, nil, '  ')[:status]).to eq('ok')
+        expect(stub).to have_been_requested
+      end
+    end
+
     context 'when the service returns a 5xx and then succeeds' do
       it 'retries with a backoff and returns a valid response' do
         stub_request(:post, service_url)
@@ -249,6 +368,30 @@ describe 'ProvisionService' do
       platform = { cloud: 'gcp', images: 'centos-8' }
       result = svc.platform_to_cloud_request_parameters(platform, nil, nil, nil)
       expect(result[:images]).to eq(['centos-8'])
+    end
+
+    it 'omits machine_type unless one is given' do
+      expect(svc.platform_to_cloud_request_parameters('centos-8', nil, nil, nil)).not_to have_key(:machine_type)
+      expect(svc.platform_to_cloud_request_parameters('centos-8', nil, nil, nil, '')).not_to have_key(:machine_type)
+      expect(svc.platform_to_cloud_request_parameters('centos-8', nil, nil, nil, ' ')).not_to have_key(:machine_type)
+    end
+
+    it 'adds machine_type for String, Array and Hash platforms' do
+      expect(svc.platform_to_cloud_request_parameters('centos-8', nil, nil, nil, 'n1-standard-4')[:machine_type]).to eq('n1-standard-4')
+      expect(svc.platform_to_cloud_request_parameters(['centos-8'], nil, nil, nil, 'n1-standard-4')[:machine_type]).to eq('n1-standard-4')
+      expect(svc.platform_to_cloud_request_parameters({ images: 'centos-8' }, nil, nil, nil, 'n1-standard-4')[:machine_type]).to eq('n1-standard-4')
+    end
+
+    it 'omits disk_size_gb unless one is given' do
+      expect(svc.platform_to_cloud_request_parameters('centos-8', nil, nil, nil)).not_to have_key(:disk_size_gb)
+      expect(svc.platform_to_cloud_request_parameters('centos-8', nil, nil, nil, nil, '')).not_to have_key(:disk_size_gb)
+      expect(svc.platform_to_cloud_request_parameters('centos-8', nil, nil, nil, nil, ' ')).not_to have_key(:disk_size_gb)
+    end
+
+    it 'adds disk_size_gb as an Integer for String, Array and Hash platforms' do
+      expect(svc.platform_to_cloud_request_parameters('centos-8', nil, nil, nil, nil, 100)[:disk_size_gb]).to eq(100)
+      expect(svc.platform_to_cloud_request_parameters(['centos-8'], nil, nil, nil, nil, '100')[:disk_size_gb]).to eq(100)
+      expect(svc.platform_to_cloud_request_parameters({ images: 'centos-8' }, nil, nil, nil, nil, 100)[:disk_size_gb]).to eq(100)
     end
 
     it 'handles a Hash platform and overrides the cloud' do
