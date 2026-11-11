@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](http://semver.org).
 
+## [v3.2.1](https://github.com/puppetlabs/provision/tree/v3.2.1) - 2026-11-11
+
+[Full Changelog](https://github.com/puppetlabs/provision/compare/v3.2.0...v3.2.1)
+
+### Fixed
+
+- (maint) fix update node pp [#287](https://github.com/puppetlabs/provision/pull/287) ([seamymckenna](https://github.com/seamymckenna))
+
 ## [v3.2.0](https://github.com/puppetlabs/provision/tree/v3.2.0) - 2026-10-29
 
 [Full Changelog](https://github.com/puppetlabs/provision/compare/v3.1.0...v3.2.0)
